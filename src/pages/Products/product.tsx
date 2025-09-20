@@ -1,0 +1,266 @@
+import ComponentCard from "@/components/common/ComponentCard2";
+import { columns, Product } from "./Columns";
+import { DataTable } from "./DataTable";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import { Button } from "@/components/ui/button";
+import { DownloadIcon } from "lucide-react";
+import { useModal } from "@/hooks/useModal";
+import { Modal } from "@/components/ui/modal";
+import { Input } from "@/components/ui/input";
+import { useMemo, useState } from "react";
+import { set } from "zod";
+import { record_sale } from "@/supabaseClient";
+function getData(): Product[] {
+  // Fetch data from your API here.
+  return [
+    {
+      id: "728ed52f",
+      name: "Pants",
+      price: "100",
+      stock: 200,
+      created_at: "2025-09-04T12:34:56.789Z",
+      category: "Clothes",
+      dealer: "McPherson clothes",
+    },
+    {
+      id: "728ed42f",
+      name: "Shoes",
+      price: "300",
+      stock: 600,
+      created_at: "2023-09-04T12:34:56.789Z",
+      category: "Clothes",
+      dealer: "McPherson clothes",
+    },
+    {
+      id: "728ed62f",
+      name: "Panties",
+      price: "100",
+      stock: 400,
+      created_at: "2024-09-04T12:34:56.789Z",
+      category: "Clothes",
+      dealer: "McPherson clothes",
+    },
+    // ...
+  ];
+}
+
+export default function Products({ products }: { products: Product[] }) {
+  const [filtered, setFiltered] = useState<Product[]>([]);
+  const [selected, setSelected] = useState<Product[]>([]);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+
+  const handleQuantityChange = (id: string, value: any) => {
+    const num = Number(value);
+
+    if (!isNaN(num) && num >= 0) {
+      setQuantities((prev) => ({ ...prev, [id]: num }));
+    }
+  };
+
+  const selectedProducts = useMemo(
+    () =>
+      selected.map((s) => ({
+        product: s.id, // assuming your product has an `id` field
+        quantity: quantities[s.id] ?? 1,
+        unitCost: Number(s.price),
+      })),
+    [selected, quantities]
+  );
+
+  const total = selectedProducts.reduce(
+    (sum, item) => sum + item.unitCost * item.quantity,
+    0
+  );
+
+  const onChange = (value: string) => {
+    if (value.trim() === "") {
+      setFiltered([]); // nothing when empty
+    } else {
+      setFiltered(
+        products.filter((e) =>
+          e.name.toLowerCase().includes(value.toLowerCase())
+        )
+      );
+    }
+  };
+
+  const { openModal, isOpen, closeModal } = useModal();
+
+  return (
+    <div className="container mx-auto py-10">
+      <PageBreadcrumb pageTitle="Products" />
+      <ComponentCard
+        title="Products List"
+        className="text-[40px]"
+        desc="Track your store's progress to boost your sales."
+        buttons={
+          <div className="flex items-center justify-between gap-1 md:gap-5 mb-2 md:mb-0 md:mr-5">
+            <Button
+              variant="outline"
+              className="text-gray-400 flex-end md:py-6 text-[12px] md:text-[15px] flex items-center"
+            >
+              Export <DownloadIcon className="ml-1 h-4 w-4" />
+            </Button>
+            <Button
+              variant="default"
+              className="text-white bg-blue-700 hover:bg-blue-800 flex-end md:py-6 text-[12px] md:text-[15px]"
+              onClick={() => openModal()}
+            >
+              Create Sale
+            </Button>
+            <Button
+              variant="default"
+              className="text-white bg-blue-700 hover:bg-blue-800 flex-end md:py-6 text-[12px] md:text-[15px]"
+              onClick={() => (window.location.href = "/products/add")}
+            >
+              Add Product +
+            </Button>
+          </div>
+        }
+      >
+        <DataTable columns={columns} data={products} />
+      </ComponentCard>
+      <Modal
+        isOpen={isOpen}
+        onClose={closeModal}
+        className="max-w-[700px] p-6 lg:p-10 max-h-[80%] overflow-y-auto"
+      >
+        <div className="flex flex-col px-2 overflow-y-auto max-h-[80%] custom-scrollbar">
+          <div>
+            <h5 className="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl">
+              Record Sale
+            </h5>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Create a Sale, by defining the quantity and submitting
+            </p>
+          </div>
+          <div>
+            <div className="flex-col relative ">
+              <Input
+                placeholder="Search..."
+                className="max-w-sm dark:bg-gray-800 placeholder:text-gray-500 mt-10"
+                onChange={(e) => onChange(e.target.value)}
+              />
+              <div hidden={filtered.length == 0} className="divide-y-1 mt-3 rounded-md dark:bg-gray-800 w-sm z-100 absolute border-1 border-gray-500">
+                {filtered?.map((f, index) => (
+                  <div
+                    key={f.id || index}
+                    onClick={() => {
+                      const find = selected.find((e) => e.id == f.id);
+                      if (find) {
+                        console.log("b");
+                      } else {
+                        setSelected((prev) => [...prev, f]);
+                      }
+                      setFiltered([]);
+                    }}
+                    className="p-1 py-3 px-5 text-[14px] flex justify-between group font-medium text-gray-500 cursor-pointer"
+                  >
+                    <div className="text-white transition-all duration-200">
+                      {f.name}
+                    </div>
+
+                    <div className="flex mr-5">
+                      <div className="text-white mr-5">
+                        {" "}
+                        {new Intl.NumberFormat("en-NG", {
+                          style: "currency",
+                          currency: "NGN",
+                        }).format(Number(f.price))}
+                      </div>
+                      <div className="text-white">QTY: {f.stock}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <div className="p-1 px-5 text-[14px] w-full flex items-center  mt-10 group font-medium text-gray-500 cursor-pointer">
+                  <div className="flex-1">Product</div>
+                  <div className="mr-8">Cost</div>
+                  <div className="mr-4">Quantity</div>
+                </div>
+                {selected?.map((s, index) => {
+                  const quantity = quantities[s.id] ?? "";
+                  const cost = Number(s.price) * quantity;
+                  return (
+                    <div
+                      key={index}
+                      className="p-1 px-5 text-[14px] w-full flex items-center  group font-medium text-gray-500 cursor-pointer"
+                    >
+                      <div className="text-white flex-1">{s.name}</div>
+                      <div className="text-white mr-5">
+                        {" "}
+                        {new Intl.NumberFormat("en-NG", {
+                          style: "currency",
+                          currency: "NGN",
+                        }).format(cost)}
+                      </div>
+                      <Input
+                        className="max-w-[70px] text-white no-spinner"
+                        type="number"
+                        min={1}
+                        max={s.stock}
+                        value={quantity}
+                        onChange={(e) => {
+                          let val = e.target.value;
+
+                          // Allow clearing the field without forcing a number immediately
+                          if (val === "") {
+                            handleQuantityChange(s.id, "");
+                            return;
+                          }
+
+                          let num = Number(val);
+
+                          // Clamp between 1 and s.stock
+                          if (num < 1) num = 1;
+                          if (num > s.stock) num = s.stock;
+
+                          handleQuantityChange(s.id, num);
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+                <div className="text-right text-white font-bold mt-4">
+                  Total:{" "}
+                  {new Intl.NumberFormat("en-NG", {
+                    style: "currency",
+                    currency: "NGN",
+                  }).format(total)}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="md:flex md:space-x-3 md:space-y-0 space-y-3 mt-5">
+            <Button
+              variant="outline"
+              className="mt-10 text-white bg-blue-700 hover:bg-blue-800 flex-end md:py-6 text-[12px] md:text-[15px]"
+              onClick={() => {
+                // Handle form submission here
+                setSelected([]);
+                setQuantities({});
+              }}
+            >
+              Reset
+            </Button>
+            <Button
+              variant="default"
+              className="mt-10 text-white bg-blue-700 hover:bg-blue-800 flex-end md:py-6 text-[12px] md:text-[15px]"
+              onClick={() => {
+                // Handle form submission here
+                console.log("Selected Products:", selectedProducts);
+                record_sale(selectedProducts);
+                setSelected([]);
+                setQuantities({});
+              }}
+            >
+              Submit
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
