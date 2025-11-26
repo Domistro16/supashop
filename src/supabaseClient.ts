@@ -1,11 +1,15 @@
-import { createClient } from "@supabase/supabase-js";
-import { error } from "console";
+/**
+ * Legacy Supabase Client Compatibility Layer
+ *
+ * This file provides backward compatibility for components still using
+ * the old Supabase client. It wraps the new API client.
+ *
+ * DEPRECATED: New components should import from '@/lib/api' instead.
+ */
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import api from './lib/api';
 
-
+// Legacy types (kept for compatibility)
 type Product = {
   id: string;
   name: string;
@@ -23,163 +27,165 @@ type Transaction = {
   created_at: string;
   staff_id: string;
 };
+
 type Item = {
   product: string;
   quantity: number;
   unitCost: number;
 };
 
+// Legacy Supabase client (for components that still reference it)
+// Note: This is a dummy object to prevent errors. New code should use api.auth.*
+export const supabase = {
+  auth: {
+    getSession: async () => ({ data: { session: null }, error: null }),
+    getUser: async () => ({ data: { user: null }, error: null }),
+    signInWithPassword: async () => ({ data: null, error: new Error('Use api.auth.signIn instead') }),
+    signUp: async () => ({ data: null, error: new Error('Use api.auth.signUp instead') }),
+    signOut: async () => ({ error: null }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+  },
+  from: () => ({
+    select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
+    insert: () => ({ select: () => ({ single: async () => ({ data: null, error: null }) }) }),
+    update: () => ({ eq: async () => ({ data: null, error: null }) }),
+  }),
+  rpc: async () => ({ data: null, error: null }),
+  functions: {
+    invoke: async () => ({ data: null, error: new Error('Use api endpoints instead') }),
+  },
+};
+
+// Wrapper functions that use the new API
 export const getCategories = async () => {
-  const { data, error } = await supabase.rpc("get_unique_categories");
-
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    });
+  try {
+    const categories = await api.products.getCategories();
+    return new Response(JSON.stringify({ categories }), { status: 200 });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-
-  return new Response(JSON.stringify({ categories: data }), { status: 200 });
 };
 
 export const getDealers = async () => {
-  const { data, error } = await supabase.rpc("get_unique_dealers");
-
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    });
+  try {
+    const dealers = await api.products.getDealers();
+    return new Response(JSON.stringify({ categories: dealers }), { status: 200 });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-
-  return new Response(JSON.stringify({ categories: data }), { status: 200 });
 };
 
-export const getProducts = async () => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const { data, error } = await supabase.rpc("get_products_for_user");
-
-  if (!session?.access_token) {
+export const getProducts = async (): Promise<Product[]> => {
+  try {
+    const products = await api.products.getAll();
+    return products.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      stock: item.stock,
+      price: item.price.toString(),
+      created_at: item.createdAt,
+      category: item.categoryName || '',
+      dealer: item.dealer || '',
+    }));
+  } catch (error) {
+    console.error('Failed to get products:', error);
     return [];
   }
+};
 
-  if (error) {
-    console.error(error.message);
-    return [];
+export const getStaff = async (id: string): Promise<string | undefined> => {
+  try {
+    const staff = await api.staff.getById(id);
+    return staff.name;
+  } catch (error) {
+    console.error('Failed to get staff:', error);
+    return undefined;
   }
-  console.log(data);
-
-  const products: Product[] = data.map((item: any) => ({
-    id: item.id,
-    name: item.name,
-    stock: item.stock,
-    price: item.price,
-    created_at: item.created_at,
-    category: item.category_name,
-    dealer: item.dealer,
-  }));
-  return products;
 };
 
-export const getStaff = async (id: string) => {
-  console.log(id);
-  const { data, error } = await supabase.rpc("get_staff_by_id", { _id: id });
-  console.log(data);
-  if (!error) return data.name;
-};
 export const getProduct = async (id: string) => {
-  const { data, error } = await supabase.rpc("get_product_by_id", { _id: id });
-  if (!error) return data;
+  try {
+    const product = await api.products.getById(id);
+    return {
+      name: product.name,
+      category_name: product.categoryName,
+      ...product,
+    };
+  } catch (error) {
+    console.error('Failed to get product:', error);
+    return null;
+  }
 };
 
 export const getShop = async () => {
-  const { data, error } = await supabase.rpc("get_shop_by_id");
-  console.log(data);
-  if (!error) return data;
-};
-export const getSales = async () => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const { data, error } = await supabase.rpc("get_sales_for_user");
-
-  if (!session?.access_token) {
-    return [];
+  try {
+    const shop = await api.shops.getCurrent();
+    return shop;
+  } catch (error) {
+    console.error('Failed to get shop:', error);
+    return null;
   }
-
-  if (error) {
-    console.error(error.message);
-    return [];
-  }
-  console.log(data);
-
-  const transactions: Transaction[] = [];
-  for (const item of data) {
-    const staffName = await getStaff(item.staff_id);
-    console.log(staffName);
-    transactions.push({
-      id: item.id,
-      order_id: item.order_id,
-      total_amount: item.total_amount,
-      created_at: item.created_at,
-      staff_id: staffName,
-    });
-  }
-  console.log(transactions);
-  return transactions;
 };
 
-export const getSaleItems = async (sale_id: string) => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const { data, error } = await supabase.rpc("get_sale_items_for_user", {
-    _sale_id: sale_id,
-  });
+export const getSales = async (): Promise<Transaction[]> => {
+  try {
+    const sales = await api.sales.getAll();
 
-  if (!session?.access_token) {
-    console.log("not authenticated");
+    const transactions: Transaction[] = [];
+    for (const item of sales) {
+      const staffName = item.staff?.name || 'Unknown';
+      transactions.push({
+        id: item.id,
+        order_id: item.orderId,
+        total_amount: item.totalAmount.toString(),
+        created_at: item.createdAt,
+        staff_id: staffName,
+      });
+    }
+
+    return transactions;
+  } catch (error) {
+    console.error('Failed to get sales:', error);
     return [];
   }
+};
 
-  if (error) {
-    console.error(error.message);
-    return [];
-  }
-  console.log(data);
+export const getSaleItems = async (sale_id: string): Promise<Item[]> => {
+  try {
+    const saleItems = await api.sales.getItems(sale_id);
 
-  const items: Item[] = [];
-  for (const item of data) {
-    const { name } = await getProduct(item.product_id);
-    console.log(name);
-    items.push({
-      product: name,
+    const items: Item[] = saleItems.map((item: any) => ({
+      product: item.product?.name || 'Unknown',
       quantity: Number(item.quantity),
       unitCost: Number(item.price),
-    });
-  }
+    }));
 
-  console.log(items);
-  return items;
+    return items;
+  } catch (error) {
+    console.error('Failed to get sale items:', error);
+    return [];
+  }
 };
 
 export async function getRecentItems() {
-  const { data, error } = await supabase.rpc("get_recent_items");
-  console.log(data);
-  if (!error) {
+  try {
+    const recentItems = await api.sales.getRecentItems(10);
+
     const items = [];
-    for (const item of data) {
-      const { name, category_name } = await getProduct(item.product_id);
-      console.log(category_name);
+    for (const item of recentItems) {
       items.push({
         id: item.id,
-        name,
-        category: category_name,
+        name: item.product.name,
+        category: item.product.categoryName || '',
         variants: `${item.quantity} Variants`,
         price: Number(item.price),
       });
     }
+
     return items;
+  } catch (error) {
+    console.error('Failed to get recent items:', error);
+    return [];
   }
 }
 
@@ -190,151 +196,72 @@ export const addProduct = async (
   stock: number,
   price: number
 ) => {
-  const { data, error } = await supabase.functions.invoke("dynamic-processor", {
-    body: {
+  try {
+    const product = await api.products.create({
       name,
-      category_name: category,
+      categoryName: category,
       dealer,
       stock,
       price,
-    },
-    method: "POST",
-  });
+    });
 
-  if (data) {
-    return data;
+    return { success: true, data: product };
+  } catch (error: any) {
+    console.error('Failed to add product:', error);
+    return { success: false, error: error.message };
   }
 };
+
 export async function getProfiles() {
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(session?.access_token);
-    if (authError || !user) {
-      console.error("Error:", authError);
-    }
-    const { data: userProf, error: userError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("shop_id", user?.id)
-      .single();
-    const shop_id = userProf?.shop_id;
-    const { data: profiles, error: prodError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("shop_id", shop_id);
+    const [profiles, shop] = await Promise.all([
+      api.staff.getAll(),
+      api.shops.getCurrent(),
+    ]);
 
-    return { profiles, userProf };
+    // Find current user profile
+    const userProf = profiles.find((p: any) => p.id === api.shops.getCurrentShopId());
+
+    return {
+      profiles,
+      userProf: userProf || (profiles.length > 0 ? profiles[0] : null)
+    };
   } catch (error) {
-    console.error("Unexpected error", error);
+    console.error('Failed to get profiles:', error);
+    return { profiles: [], userProf: null };
   }
 }
 
-export const record_sale = async (items: Item[]) => {
+export const record_sale = async (items: Item[]): Promise<boolean> => {
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(session?.access_token);
-    if (authError || !user) {
-      console.error("Error:", authError);
+    if (!Array.isArray(items) || items.length === 0) {
+      console.error('Invalid items array');
+      return false;
     }
-    // 2️⃣ Parse body
-    // items = [{ product_id, quantity, price }]
-    const { data: profile, error: prodError } = await supabase
-      .from("profiles")
-      .select("id, shop_id")
-      .eq("id", user?.id)
-      .single();
-    const shop_id = profile?.shop_id;
-    if (!profile?.shop_id || !Array.isArray(items) || items.length === 0) {
-      return console.error("Invlid Input");
-    }
-    // 3️⃣ Check products + stock
+
+    // Calculate total
     let totalAmount = 0;
-    for (const item of items) {
-      const { product: product_id, quantity, unitCost: price } = item;
-      if (!product_id || !quantity || quantity <= 0 || !price) {
-        return console.error("Invalid Argument");
-      }
-      const { data: product, error: prodError } = await supabase
-        .from("products")
-        .select("id, stock, shop_id")
-        .eq("shop_id", shop_id)
-        .eq("id", product_id)
-        .single();
-      if (prodError || !product) {
-        return console.error(`Product ${product_id} not found`);
-      }
-      if (product?.stock < quantity) {
-        return console.error(`Insufficient stock for product ${product_id}`);
-      }
-      totalAmount += price * quantity;
-    }
-    // 4️⃣ Insert into `sales`
-    const { data: sale, error: saleError } = await supabase
-      .from("sales")
-      .insert([
-        {
-          shop_id,
-          staff_id: user?.id,
-          total_amount: totalAmount,
-        },
-      ])
-      .select()
-      .single();
-    if (saleError || !sale) {
-      console.error("Sale creation failed", saleError);
-    }
-    // 5️⃣ Insert sale items + update stock
-    const saleItems = items.map((item) => ({
-      shop_id,
-      sale_id: sale.id,
-      product_id: item.product,
-      quantity: item.quantity,
-      price: item.unitCost,
-    }));
-    const { error: itemsError } = await supabase
-      .from("sale_items")
-      .insert(saleItems);
-    if (itemsError) {
-      console.error("Sale items insertion failed", itemsError);
-    }
-    // 6️⃣ Update product stocks
-    for (const item of items) {
-      const { data: product } = await supabase
-        .from("products")
-        .select("price, stock")
-        .eq("id", item.product)
-        .single();
-      await supabase
-        .from("products")
-        .update({
-          stock: product?.stock - item.quantity,
-        })
-        .eq("id", item.product);
-    }
-    await supabase.from("activity_logs").insert([
-      {
-        staff_id: user?.id,
-        action: "record_sale",
-        details: {
-          sale,
-          saleItems,
-        },
-        shop_id: shop_id,
-      },
-    ]);
-    console.log("Sale recorded");
+    const saleItems = items.map(item => {
+      const subtotal = item.unitCost * item.quantity;
+      totalAmount += subtotal;
+
+      return {
+        productId: item.product,
+        quantity: item.quantity,
+        price: item.unitCost,
+      };
+    });
+
+    // Create sale
+    await api.sales.create({
+      items: saleItems,
+      totalAmount,
+    });
+
+    console.log('Sale recorded successfully');
     return true;
-  } catch (err) {
-    return console.error("Unexpected error", err);
+  } catch (error) {
+    console.error('Failed to record sale:', error);
+    return false;
   }
 };
