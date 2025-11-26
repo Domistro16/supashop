@@ -25,6 +25,7 @@ import Single from "./pages/Transaction/single";
 import Staffs from "./pages/Staff/staff";
 import AddStaffs from "./pages/Staff/addStaff";
 import Invite from "./pages/Staff/invites";
+import RolesManagement from "./pages/Roles/index";
 import Login from "./pages/AuthPages/login";
 import { AuthProvider, useAuth } from "./auth";
 
@@ -138,6 +139,7 @@ export default function App() {
               <Route path="/staff" element={<Staffs />} />
               <Route path="/staff/add" element={<AddStaffs />} />
               <Route path="/staff/invites" element={<Invite />} />
+              <Route path="/roles" element={<RolesManagement />} />
               <Route path="/blank" element={<Blank />} />
 
               {/* Forms */}

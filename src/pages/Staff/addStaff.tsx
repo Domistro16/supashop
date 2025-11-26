@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import ComponentCard from "@/components/common/ComponentCard2";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { z } from "zod";
@@ -22,33 +24,106 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Copy, Check } from "lucide-react";
+import api from "@/lib/api";
+import { toast } from "sonner";
 const formSchema = z.object({
-  name: z.string().min(2, {
-    error: "Full name must be at least 2 characters.",
+  email: z.string().email({
+    message: "Please enter a valid email address.",
   }),
-  email: z.string().min(2, {
-    error: "Category name must be at least 2 characters.",
-  }),
-  role: z.string().min(0, {
-    error: "Stock must be at least 0",
+  roleId: z.string().min(1, {
+    message: "Please select a role.",
   }),
 });
 
 export default function AddStaffs() {
+  const [roles, setRoles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingRoles, setLoadingRoles] = useState(true);
+  const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
+  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [copiedField, setCopiedField] = useState<'email' | 'password' | null>(null);
+  const navigate = useNavigate();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
       email: "",
-      role: "",
+      roleId: "",
     },
   });
 
-  // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
+  useEffect(() => {
+    loadRoles();
+  }, []);
+
+  async function loadRoles() {
+    try {
+      setLoadingRoles(true);
+      const rolesList = await api.roles.getAll();
+      setRoles(rolesList);
+    } catch (error) {
+      console.error("Failed to load roles:", error);
+      toast.error("Failed to load roles");
+    } finally {
+      setLoadingRoles(false);
+    }
+  }
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      setLoading(true);
+
+      const result = await api.staff.invite({
+        email: values.email,
+        roleId: values.roleId,
+      });
+
+      if (result.isNewUser && result.tempPassword) {
+        // Show credentials dialog for new users
+        setCredentials({
+          email: result.user.email,
+          password: result.tempPassword,
+        });
+        setCredentialsDialogOpen(true);
+        toast.success("Staff member created successfully!");
+      } else {
+        // Existing user added to shop
+        toast.success("Staff member added to shop successfully!");
+        navigate("/staff");
+      }
+    } catch (error: any) {
+      console.error("Failed to invite staff:", error);
+      toast.error(error.message || "Failed to send invitation");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function copyToClipboard(text: string, field: 'email' | 'password') {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      toast.success(`${field === 'email' ? 'Email' : 'Password'} copied to clipboard!`);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (error) {
+      toast.error("Failed to copy to clipboard");
+    }
+  }
+
+  function handleCredentialsDialogClose() {
+    setCredentialsDialogOpen(false);
+    setCredentials(null);
+    setCopiedField(null);
+    navigate("/staff");
   }
   return (
     <div className="container mx-auto py-10">
@@ -59,39 +134,20 @@ export default function AddStaffs() {
             <div className="flex w-full gap-5">
               <FormField
                 control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Product Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter Staff's Full Name"
-                        {...field}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      This is the name of the product.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email Address</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter Email"
+                        type="email"
+                        placeholder="staff@example.com"
                         {...field}
                         className="w-full"
                       />
                     </FormControl>
                     <FormDescription>
-                      This is the email of the staff.
+                      Enter the email address of the staff member to invite.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -101,38 +157,130 @@ export default function AddStaffs() {
             <div className="flex w-full gap-5">
               <FormField
                 control={form.control}
-                name="role"
+                name="roleId"
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormLabel>Role</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      disabled={loadingRoles}
                     >
                       <FormControl>
-                        <SelectTrigger className="w-[180px] dark:bg-gray-900">
-                          <SelectValue placeholder="Select Role" />
+                        <SelectTrigger className="w-full dark:bg-gray-900">
+                          <SelectValue placeholder={loadingRoles ? "Loading roles..." : "Select a role"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem value="manager">Manager</SelectItem>
-                          <SelectItem value="cashier">Cashier</SelectItem>
+                          {roles.map((role) => (
+                            <SelectItem key={role.id} value={role.id}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{role.name}</span>
+                                {role.description && (
+                                  <span className="text-xs text-gray-500">{role.description}</span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      This is the Role of the Staff.
+                      Select the role for this staff member. This determines their permissions.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <Button type="submit">Generate Invite</Button>
+            <div className="flex gap-3">
+              <Button type="submit" disabled={loading || loadingRoles}>
+                {loading ? "Sending invitation..." : "Send Invitation"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/staff")}
+              >
+                Cancel
+              </Button>
+            </div>
           </form>
         </Form>
       </ComponentCard>
+
+      {/* Credentials Dialog */}
+      <Dialog open={credentialsDialogOpen} onOpenChange={(open) => {
+        if (!open) handleCredentialsDialogClose();
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Staff Credentials</DialogTitle>
+            <DialogDescription>
+              Share these credentials with the staff member. They can change their password after logging in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={credentials?.email || ''}
+                  readOnly
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyToClipboard(credentials?.email || '', 'email')}
+                  className="shrink-0"
+                >
+                  {copiedField === 'email' ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Temporary Password</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={credentials?.password || ''}
+                  readOnly
+                  className="flex-1 font-mono"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyToClipboard(credentials?.password || '', 'password')}
+                  className="shrink-0"
+                >
+                  {copiedField === 'password' ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-3">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Important:</strong> Make sure to copy and securely share these credentials with the staff member. They will not be shown again.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleCredentialsDialogClose}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

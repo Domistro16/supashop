@@ -22,7 +22,7 @@ export type Staff = {
   role: string;
 };
 
-export const columns: ColumnDef<Staff>[] = [
+export const createColumns = (onDelete: (staff: Staff) => void): ColumnDef<Staff>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -111,7 +111,12 @@ export const columns: ColumnDef<Staff>[] = [
                 Copy Staff ID
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Delete Staff</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onDelete(staff)}
+                className="text-red-600 focus:text-red-600"
+              >
+                Delete Staff
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
