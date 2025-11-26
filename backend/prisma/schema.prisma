@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  name          String
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  ownedShops    Shop[]         @relation("ShopOwner")
+  staffShops    StaffShop[]
+  sales         Sale[]
+  activityLogs  ActivityLog[]
+
+  @@map("users")
+}
+
+// ============================================
+// SHOP
+// ============================================
+
+model Shop {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  target    Decimal? @db.Decimal(10, 2)
+  ownerId   String   @map("owner_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  owner         User          @relation("ShopOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  staff         StaffShop[]
+  products      Product[]
+  sales         Sale[]
+  roles         Role[]
+  activityLogs  ActivityLog[]
+
+  @@map("shops")
+}
+
+// ============================================
+// STAFF-SHOP MANY-TO-MANY RELATIONSHIP
+// ============================================
+
+model StaffShop {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  shopId    String   @map("shop_id")
+  roleId    String   @map("role_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+  isActive  Boolean  @default(true) @map("is_active")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, shopId])
+  @@map("staff_shops")
+}
+
+// ============================================
+// RBAC: ROLES & PERMISSIONS
+// ============================================
+
+model Role {
+  id          String   @id @default(uuid())
+  shopId      String   @map("shop_id")
+  name        String   // e.g., "owner", "manager", "cashier", "inventory_clerk"
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system") // System roles (owner) cannot be deleted
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  shop            Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  staffShops      StaffShop[]
+  rolePermissions RolePermission[]
+
+  @@unique([shopId, name])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., "products:read", "products:write", "sales:create"
+  description String?
+  category    String   // e.g., "products", "sales", "staff", "shop"
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  // Relationships
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ============================================
+// PRODUCTS
+// ============================================
+
+model Product {
+  id           String   @id @default(uuid())
+  shopId       String   @map("shop_id")
+  name         String
+  stock        Int      @default(0)
+  price        Decimal  @db.Decimal(10, 2)
+  categoryName String?  @map("category_name")
+  dealer       String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  saleItems SaleItem[]
+
+  @@map("products")
+}
+
+// ============================================
+// SALES & TRANSACTIONS
+// ============================================
+
+model Sale {
+  id          String   @id @default(uuid())
+  orderId     String   @unique @map("order_id")
+  shopId      String   @map("shop_id")
+  staffId     String   @map("staff_id")
+  totalAmount Decimal  @map("total_amount") @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  staff     User       @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  saleItems SaleItem[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String  @map("sale_id")
+  productId String  @map("product_id")
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2) // Price at time of sale
+
+  // Relationships
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("sale_items")
+}
+
+// ============================================
+// ACTIVITY LOGS
+// ============================================
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  shopId    String   @map("shop_id")
+  staffId   String   @map("staff_id")
+  action    String   // e.g., "record_sale", "add_product", "update_stock"
+  details   Json?    // Additional data about the action
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  shop  Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  staff User @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@map("activity_logs")
+}

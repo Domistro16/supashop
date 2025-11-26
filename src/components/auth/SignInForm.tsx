@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import { Input } from "@/components/ui/input";
 import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
-import { supabase } from "@/supabaseClient";
+import api from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/auth";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,71 +15,41 @@ export default function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
+  const navigate = useNavigate();
+  const { refreshAuth } = useAuth();
 
+  // Note: OAuth is not yet implemented in the new backend
+  // Keeping the buttons for future implementation
   const signInWithGoogle = async () => {
-    setLoading(true);
-    setMessage("");
-
-    // Staff or owner login
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { skipBrowserRedirect: false },
-    });
-    if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage("Login successful!");
-      // redirect to dashboard
-    }
-    window.location.href = "/";
-
-    setLoading(false);
+    toast.info("Google Sign In coming soon!");
+    // TODO: Implement OAuth flow with backend
   };
 
   const signInWithX = async () => {
-    setLoading(true);
-    setMessage("");
-
-    // Staff or owner login
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "twitter",
-      options: { skipBrowserRedirect: false },
-    });
-    if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage("Login successful!");
-      // redirect to dashboard
-    }
-    window.location.href = "/";
-
-    setLoading(false);
+    toast.info("X/Twitter Sign In coming soon!");
+    // TODO: Implement OAuth flow with backend
   };
 
-  const signInWithEmail = async () => {
+  const signInWithEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
-    setMessage("");
 
-    // Staff or owner login
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage("Login successful!");
-      setLoggedIn(true);
-      // redirect to dashboard
+    try {
+      const response = await api.auth.signIn(email, password);
+
+      toast.success("Login successful!");
+
+      // Refresh auth context
+      await refreshAuth();
+
+      // Redirect to dashboard
+      navigate("/");
+    } catch (error: any) {
+      console.error("Sign in error:", error);
+      toast.error(error.message || "Failed to sign in. Please check your credentials.");
+    } finally {
+      setLoading(false);
     }
-    if (data.user?.confirmed_at != undefined) {
-      window.location.href = "/";
-    } else {
-      toast("Please Check your email to confirm your account.");
-    }
-    setLoading(false);
   };
 
   return (
@@ -97,6 +68,7 @@ export default function SignInForm() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
               <button
                 onClick={signInWithGoogle}
+                type="button"
                 className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
               >
                 <svg
@@ -127,6 +99,7 @@ export default function SignInForm() {
               </button>
               <button
                 onClick={signInWithX}
+                type="button"
                 className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
               >
                 <svg
@@ -152,15 +125,18 @@ export default function SignInForm() {
                 </span>
               </div>
             </div>
-            <form>
+            <form onSubmit={signInWithEmail}>
               <div className="space-y-6">
                 <div>
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
                   <Input
+                    type="email"
                     placeholder="info@gmail.com"
+                    value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
                 <div>
@@ -171,9 +147,9 @@ export default function SignInForm() {
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
+                      value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      pattern="(?=.*\d)(?=.*[\W_]).{7,}"
-                      title="Minimum of 7 characters. Should have at least one special character and one number."
+                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -203,11 +179,12 @@ export default function SignInForm() {
                 </div>
                 <div>
                   <Button
+                    type="submit"
                     className="w-full"
                     size="sm"
-                    onClick={signInWithEmail}
+                    disabled={loading}
                   >
-                    {loading ? "..." : "Sign in"}
+                    {loading ? "Signing in..." : "Sign in"}
                   </Button>
                 </div>
               </div>

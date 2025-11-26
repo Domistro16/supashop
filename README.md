@@ -1,192 +1,244 @@
-# TailAdmin React - Free React Tailwind Admin Dashboard Template
+# SupaShop - Shop Management Platform with RBAC
 
-TailAdmin is a free and open-source admin dashboard template built on **React and Tailwind CSS**, providing developers
-with everything they need to create a comprehensive, data-driven back-end,
-dashboard, or admin panel solution for upcoming web projects.
-
-With TailAdmin, you get access to all the necessary dashboard UI components, elements, and pages required to build a
-feature-rich and complete dashboard or admin panel. Whether you're building dashboard or admin panel for a complex web
-application or a simple website, TailAdmin is the perfect solution to help you get up and running quickly.
-
-![TailAdmin React.js Dashboard Preview](./banner.png)
+A modern shop management SaaS platform with comprehensive role-based access control, built with React, TypeScript, Express, and PostgreSQL.
 
 ## Overview
 
-TailAdmin provides essential UI components and layouts for building feature-rich, data-driven admin dashboards and
-control panels. It's built on:
+SupaShop is an online shop dashboard platform where shop owners can sign up, create their shops, and manage staff, products, transactions, and sales with fine-grained permission control.
 
-- React 19
-- TypeScript
-- Tailwind CSS
+### Key Features
 
-### Quick Links
+- **Multi-tenant Architecture**: Shop owners and staff can work with multiple shops
+- **Role-Based Access Control (RBAC)**: Granular permissions for different staff roles
+- **Product Management**: Full CRUD operations with inventory tracking
+- **Sales Tracking**: Record and analyze sales transactions
+- **Staff Management**: Invite staff, assign roles, and manage permissions
+- **Shop Selection**: Easy switching between multiple shops for staff
+- **Real-time Updates**: Activity logging and audit trails
 
-- [✨ Visit Website](https://tailadmin.com)
-- [📄 Documentation](https://tailadmin.com/docs)
-- [⬇️ Download](https://tailadmin.com/download)
-- [🖌️ Figma Design File (Community Edition)](https://www.figma.com/community/file/1214477970819985778)
-- [⚡ Get PRO Version](https://tailadmin.com/pricing)
+## Project Structure
 
-### Demos
+```
+supashop/
+├── backend/                 # Express + TypeScript API
+│   ├── src/
+│   │   ├── controllers/     # Route controllers
+│   │   ├── middleware/      # Auth & RBAC middleware
+│   │   ├── routes/          # API routes
+│   │   ├── types/           # TypeScript types
+│   │   └── utils/           # Helper functions
+│   ├── prisma/             # Database schema & migrations
+│   ├── README.md           # Backend documentation
+│   └── SETUP.md            # Setup instructions
+├── src/                    # React frontend
+│   ├── components/         # React components
+│   ├── pages/             # Page components
+│   ├── lib/               # API client & utilities
+│   └── auth.tsx           # Auth context
+├── MIGRATION_GUIDE.md     # Migration instructions
+└── README.md              # This file
+```
 
-- [Free Version](https://free-react-demo.tailadmin.com/)
-- [Pro Version](https://react-demo.tailadmin.com)
-
-### Other Versions
-
-- [HTML Version](https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template)
-- [Next.js Version](https://github.com/TailAdmin/free-nextjs-admin-dashboard)
-- [Vue.js Version](https://github.com/TailAdmin/vue-tailwind-admin-dashboard)
-
-## Installation
+## Quick Start
 
 ### Prerequisites
 
-To get started with TailAdmin, ensure you have the following prerequisites installed and set up:
+- Node.js 18+
+- PostgreSQL 14+
+- Docker (optional, for PostgreSQL)
 
-- Node.js 18.x or later (recommended to use Node.js 20.x or later)
-
-### Cloning the Repository
-
-Clone the repository using the following command:
+### Backend Setup
 
 ```bash
-git clone https://github.com/TailAdmin/free-react-tailwind-admin-dashboard.git
+# Navigate to backend
+cd backend
+
+# Start PostgreSQL (using Docker)
+docker-compose up -d
+
+# Install dependencies
+npm install
+
+# Setup database
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+
+# Start development server
+npm run dev
 ```
 
-> Windows Users: place the repository near the root of your drive if you face issues while cloning.
+Backend runs on `http://localhost:3001`
 
-1. Install dependencies:
+### Frontend Setup
 
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+```bash
+# Install dependencies
+npm install
 
-   > Use the `--legacy-peer-deps` flag, if you face issues while installing.
+# Start development server
+npm run dev
+```
 
-2. Start the development server:
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
+Frontend runs on `http://localhost:5173`
 
-## Components
+## Migration from Supabase
 
-TailAdmin is a pre-designed starting point for building a web-based dashboard using React.js and Tailwind CSS. The
-template includes:
+This project has been migrated from Supabase to a self-hosted PostgreSQL backend. See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for detailed migration instructions.
 
-- Sophisticated and accessible sidebar
-- Data visualization components
-- Prebuilt profile management and 404 page
-- Tables and Charts(Line and Bar)
-- Authentication forms and input elements
-- Alerts, Dropdowns, Modals, Buttons and more
-- Can't forget Dark Mode 🕶️
+### What's New
 
-All components are built with React and styled using Tailwind CSS for easy customization.
+#### Backend
+- **Express API** with TypeScript
+- **Prisma ORM** for database operations
+- **JWT Authentication** replacing Supabase Auth
+- **Custom RBAC** with granular permissions
+- **PostgreSQL** instead of Supabase PostgreSQL
 
-## Feature Comparison
+#### Frontend
+- **New API Client** (`src/lib/api.ts`) replacing Supabase client
+- **Enhanced Auth Context** with shop management
+- **Shop Selector** component for multi-shop users
+- **Permission-based UI** rendering
 
-### Free Version
+## Features
 
-- 1 Unique Dashboard
-- 30+ dashboard components
-- 50+ UI elements
-- Basic Figma design files
-- Community support
+### Authentication
+- Email/password authentication
+- JWT-based sessions
+- Multi-shop support per user
 
-### Pro Version
+### RBAC System
 
-- 5 Unique Dashboards: Analytics, Ecommerce, Marketing, CRM, Stocks (more coming soon)
-- 400+ dashboard components and UI elements
-- Complete Figma design file
-- Email support
+The system includes the following permission categories:
 
-To learn more about pro version features and pricing, visit our [pricing page](https://tailadmin.com/pricing).
+- **Products**: `products:read`, `products:create`, `products:update`, `products:delete`
+- **Sales**: `sales:read`, `sales:create`, `sales:update`, `sales:delete`
+- **Staff**: `staff:read`, `staff:create`, `staff:update`, `staff:delete`, `staff:manage_roles`
+- **Shop**: `shop:read`, `shop:update`, `shop:delete`
+- **Roles**: `roles:read`, `roles:create`, `roles:update`, `roles:delete`
+- **Analytics**: `analytics:read`
 
-## Changelog
+### Default Roles
 
-### Version 2.0.2 - [March 25, 2025]
+- **Owner**: Full access to all features (created automatically)
+- **Custom Roles**: Can be created by owners with specific permissions
 
-- Upgraded to React 19
-- Included overrides for packages to prevent peer dependency errors.
-- Migrated from react-flatpickr to flatpickr package for React 19 support
+## API Documentation
 
-### Version 2.0.1 - [February 27, 2025]
+See [backend/README.md](./backend/README.md) for complete API documentation.
 
-#### Update Overview
+### Key Endpoints
 
-- Upgraded to Tailwind CSS v4 for better performance and efficiency.
-- Updated class usage to match the latest syntax and features.
-- Replaced deprecated class and optimized styles.
+- `POST /api/auth/signup` - Register new user
+- `POST /api/auth/signin` - Sign in
+- `GET /api/products` - List products
+- `POST /api/products` - Create product
+- `GET /api/sales` - List sales
+- `POST /api/sales` - Record sale
+- `GET /api/staff` - List staff
+- `POST /api/staff/invite` - Invite staff member
+- `GET /api/roles` - List roles
+- `POST /api/roles` - Create custom role
 
-#### Next Steps
+## Environment Variables
 
-- Run npm install or yarn install to update dependencies.
-- Check for any style changes or compatibility issues.
-- Refer to the Tailwind CSS v4 [Migration Guide](https://tailwindcss.com/docs/upgrade-guide) on this release. if needed.
-- This update keeps the project up to date with the latest Tailwind improvements. 🚀
+### Backend (.env)
 
-### Version 2.0.0 - [February 2025]
+```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/supashop
+PORT=3001
+NODE_ENV=development
+JWT_SECRET=your-secret-key
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:5173
+```
 
-A major update with comprehensive redesign and modern React patterns implementation.
+### Frontend (.env)
 
-#### Major Improvements
+```bash
+VITE_API_BASE_URL=http://localhost:3001/api
+```
 
-- Complete UI redesign with modern React patterns
-- New features: collapsible sidebar, chat, and calendar
-- Improved performance and accessibility
-- Updated data visualization using ApexCharts
+## Database Schema
 
-#### Key Features
+Key tables:
+- `users` - User accounts
+- `shops` - Shop information
+- `staff_shops` - Many-to-many user-shop relationship
+- `roles` - Shop-specific roles
+- `permissions` - Available permissions
+- `role_permissions` - Role-permission mappings
+- `products` - Product inventory
+- `sales` - Sales transactions
+- `sale_items` - Transaction line items
+- `activity_logs` - Audit trail
 
-- Redesigned dashboards (Ecommerce, Analytics, Marketing, CRM)
-- Enhanced navigation with React Router integration
-- Advanced tables with sorting and filtering
-- Calendar with drag-and-drop support
-- New UI components and improved existing ones
+See [backend/prisma/schema.prisma](./backend/prisma/schema.prisma) for complete schema.
 
-#### Breaking Changes
+## Deployment
 
-- Updated sidebar component API
-- Migrated charts to ApexCharts
-- Revised authentication system
+### Backend
 
-[Read more](https://tailadmin.com/docs/update-logs/react) on this release.
+```bash
+cd backend
 
-### Version 1.3.7 - [June 20, 2024]
+# Build
+npm run build
 
-#### Enhancements
+# Set production environment variables
+export DATABASE_URL="your-production-db-url"
+export JWT_SECRET="your-production-secret"
+export NODE_ENV=production
 
-1. Remove Repetition of DefaultLayout in every Pages
-2. Add ClickOutside Component for reduce repeated functionality in Header Message, Notification and User Dropdowns.
+# Run migrations
+npx prisma migrate deploy
 
-### Version 1.3.6 - [Jan 31, 2024]
+# Start
+npm start
+```
 
-#### Enhancements
+### Frontend
 
-1. Integrate flatpickr in [Date Picker/Form Elements]
-2. Change color after select an option [Select Element/Form Elements].
-3. Make it functional [Multiselect Dropdown/Form Elements].
-4. Make best value editable [Pricing Table One/Pricing Table].
-5. Rearrange Folder structure.
+```bash
+# Build
+npm run build
 
-### Version 1.2.0 - [Apr 28, 2023]
+# Deploy dist/ folder to your hosting provider
+```
 
-- Add Typescript in TailAdmin React.
+## Tech Stack
 
-### Version 1.0.0 - Initial Release - [Mar 13, 2023]
+### Backend
+- Express.js
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- JWT Authentication
+- bcrypt for password hashing
 
-- Initial release of TailAdmin React.
-
-## License
-
-TailAdmin React.js Free Version is released under the MIT License.
+### Frontend
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS 4
+- Radix UI
+- React Router v7
+- React Hook Form
+- Zod validation
+- ApexCharts
 
 ## Support
 
-If you find this project helpful, please consider giving it a star on GitHub. Your support helps us continue developing
-and maintaining this template.
+For issues or questions:
+- Backend docs: `backend/README.md`
+- Backend setup: `backend/SETUP.md`
+- Migration guide: `MIGRATION_GUIDE.md`
+
+## License
+
+MIT License
+
+## Acknowledgments
+
+Built on top of [TailAdmin React Dashboard Template](https://github.com/TailAdmin/free-react-tailwind-admin-dashboard)

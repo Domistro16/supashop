@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import { Input } from "@/components/ui/input";
 import Checkbox from "../form/input/Checkbox";
-import { supabase } from "@/supabaseClient";
+import api from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/auth";
 
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,40 +18,46 @@ export default function SignUpForm() {
   const [last, setLast] = useState("");
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
-  const signUpWithEmail = async () => {
-    if (!email || !password || !first || !last || !shopName || !address) return;
-    setLoading(true);
-    // Owner registration
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
-      { email, password }
-    );
+  const navigate = useNavigate();
+  const { refreshAuth } = useAuth();
 
-    if (!signUpError && signUpData) {
-      const userId = signUpData.user?.id;
-      if (userId) {
-        await supabase.from("shops").insert({
-          owner_id: userId,
-          name: shopName,
-          address: address,
-        });
-        await supabase.from("profiles").insert({
-          id: userId,
-          shop_id: (
-            await supabase
-              .from("shops")
-              .select("id")
-              .eq("owner_id", userId)
-              .single()
-          ).data?.id,
-          name: first + " " + last,
-          role: "owner",
-        });
-      }
-      if (signUpData.session) {
-        window.location.href = "/";
-      } else {
-        toast("Please Verify Your Email. Check Your Mailbox for a confirmation email");
-      }
+  const signUpWithEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email || !password || !first || !last || !shopName) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (!isChecked) {
+      toast.error("Please accept the Terms and Conditions");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await api.auth.signUp({
+        email,
+        password,
+        firstName: first,
+        lastName: last,
+        shopName,
+        shopAddress: address,
+      });
+
+      toast.success("Account created successfully!");
+
+      // Refresh auth context
+      await refreshAuth();
+
+      // Redirect to dashboard
+      navigate("/");
+    } catch (error: any) {
+      console.error("Sign up error:", error);
+      toast.error(error.message || "Failed to create account");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,7 +74,7 @@ export default function SignUpForm() {
             </p>
           </div>
           <div>
-            <form>
+            <form onSubmit={signUpWithEmail}>
               <div className="space-y-5">
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   {/* <!-- First Name --> */}
@@ -80,8 +87,9 @@ export default function SignUpForm() {
                       id="fname"
                       name="fname"
                       placeholder="Enter your first name"
-                      required
+                      value={first}
                       onChange={(e) => setFirst(e.target.value)}
+                      required
                     />
                   </div>
                   {/* <!-- Last Name --> */}
@@ -94,8 +102,9 @@ export default function SignUpForm() {
                       id="lname"
                       name="lname"
                       placeholder="Enter your last name"
-                      required
+                      value={last}
                       onChange={(e) => setLast(e.target.value)}
+                      required
                     />
                   </div>
                 </div>
@@ -109,8 +118,9 @@ export default function SignUpForm() {
                     id="ShopName"
                     name="ShopName"
                     placeholder="Enter your Shop's Name"
-                    required
+                    value={shopName}
                     onChange={(e) => setShopName(e.target.value)}
+                    required
                   />
                 </div>
                 {/* <!-- Email --> */}
@@ -123,21 +133,22 @@ export default function SignUpForm() {
                     id="email"
                     name="email"
                     placeholder="Enter your email"
-                    required
+                    value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
                 {/* <!-- Address --> */}
                 <div>
                   <Label>
-                    Shop's Address<span className="text-error-500">*</span>
+                    Shop's Address
                   </Label>
                   <Input
-                    type="address"
+                    type="text"
                     id="address"
                     name="address"
-                    placeholder="Enter your Shop's address"
-                    required
+                    placeholder="Enter your Shop's address (optional)"
+                    value={address}
                     onChange={(e) => setAddress(e.target.value)}
                   />
                 </div>
@@ -150,8 +161,10 @@ export default function SignUpForm() {
                     <Input
                       placeholder="Enter your password"
                       type={showPassword ? "text" : "password"}
-                      required
+                      value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -186,11 +199,11 @@ export default function SignUpForm() {
                 {/* <!-- Button --> */}
                 <div>
                   <button
-                    onClick={signUpWithEmail}
+                    type="submit"
                     className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:no-cursor disabled:bg-brand-700"
                     disabled={loading}
                   >
-                    {loading ? "..." : "Sign Up"}
+                    {loading ? "Creating account..." : "Sign Up"}
                   </button>
                 </div>
               </div>
