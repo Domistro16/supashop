@@ -24,6 +24,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Copy, Check } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 const formSchema = z.object({
@@ -39,6 +48,9 @@ export default function AddStaffs() {
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingRoles, setLoadingRoles] = useState(true);
+  const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
+  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [copiedField, setCopiedField] = useState<'email' | 'password' | null>(null);
   const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -70,19 +82,48 @@ export default function AddStaffs() {
     try {
       setLoading(true);
 
-      await api.staff.invite({
+      const result = await api.staff.invite({
         email: values.email,
         roleId: values.roleId,
       });
 
-      toast.success("Staff invitation sent successfully!");
-      navigate("/staff");
+      if (result.isNewUser && result.tempPassword) {
+        // Show credentials dialog for new users
+        setCredentials({
+          email: result.user.email,
+          password: result.tempPassword,
+        });
+        setCredentialsDialogOpen(true);
+        toast.success("Staff member created successfully!");
+      } else {
+        // Existing user added to shop
+        toast.success("Staff member added to shop successfully!");
+        navigate("/staff");
+      }
     } catch (error: any) {
       console.error("Failed to invite staff:", error);
       toast.error(error.message || "Failed to send invitation");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function copyToClipboard(text: string, field: 'email' | 'password') {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      toast.success(`${field === 'email' ? 'Email' : 'Password'} copied to clipboard!`);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (error) {
+      toast.error("Failed to copy to clipboard");
+    }
+  }
+
+  function handleCredentialsDialogClose() {
+    setCredentialsDialogOpen(false);
+    setCredentials(null);
+    setCopiedField(null);
+    navigate("/staff");
   }
   return (
     <div className="container mx-auto py-10">
@@ -168,6 +209,78 @@ export default function AddStaffs() {
           </form>
         </Form>
       </ComponentCard>
+
+      {/* Credentials Dialog */}
+      <Dialog open={credentialsDialogOpen} onOpenChange={(open) => {
+        if (!open) handleCredentialsDialogClose();
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Staff Credentials</DialogTitle>
+            <DialogDescription>
+              Share these credentials with the staff member. They can change their password after logging in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={credentials?.email || ''}
+                  readOnly
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyToClipboard(credentials?.email || '', 'email')}
+                  className="shrink-0"
+                >
+                  {copiedField === 'email' ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Temporary Password</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={credentials?.password || ''}
+                  readOnly
+                  className="flex-1 font-mono"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyToClipboard(credentials?.password || '', 'password')}
+                  className="shrink-0"
+                >
+                  {copiedField === 'password' ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-3">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Important:</strong> Make sure to copy and securely share these credentials with the staff member. They will not be shown again.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleCredentialsDialogClose}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

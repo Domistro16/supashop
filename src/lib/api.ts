@@ -335,7 +335,12 @@ export const staff = {
     return apiCall(`/staff/${id}`, {}, true);
   },
 
-  invite: async (data: { email: string; roleId: string }): Promise<{ message: string; user: User }> => {
+  invite: async (data: { email: string; roleId: string }): Promise<{
+    message: string;
+    user: User;
+    tempPassword: string | null;
+    isNewUser: boolean;
+  }> => {
     return apiCall('/staff/invite', {
       method: 'POST',
       body: JSON.stringify(data),

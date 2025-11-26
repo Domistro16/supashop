@@ -1,16 +1,30 @@
 import { useEffect, useState } from "react";
 import ComponentCard from "@/components/common/ComponentCard2";
-import { columns, Staff } from "./Columns";
+import { createColumns, Staff } from "./Columns";
 import { DataTable } from "./DataTable";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DownloadIcon } from "lucide-react";
 import { getProfiles } from "@/supabaseClient";
+import api from "@/lib/api";
 import { toast } from "sonner";
 
 export default function Staffs() {
   const [data, setData] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadStaff();
@@ -42,6 +56,32 @@ export default function Staffs() {
       setLoading(false);
     }
   }
+
+  function handleDeleteClick(staff: Staff) {
+    setStaffToDelete(staff);
+    setDeleteDialogOpen(true);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!staffToDelete) return;
+
+    try {
+      setDeleting(true);
+      await api.staff.remove(staffToDelete.id);
+      toast.success("Staff member removed successfully");
+      setDeleteDialogOpen(false);
+      setStaffToDelete(null);
+      await loadStaff(); // Reload the staff list
+    } catch (error: any) {
+      console.error("Failed to delete staff:", error);
+      toast.error(error.message || "Failed to remove staff member");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const columns = createColumns(handleDeleteClick);
+
   return (
     <div className="container mx-auto py-10">
       <PageBreadcrumb pageTitle="Staffs" />
@@ -75,6 +115,28 @@ export default function Staffs() {
           <DataTable columns={columns} data={data} />
         )}
       </ComponentCard>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove "{staffToDelete?.name}" from your shop. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? "Removing..." : "Remove Staff"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
