@@ -145,10 +145,14 @@ export async function inviteStaff(req: AuthRequest, res: Response) {
       where: { email },
     });
 
+    let tempPassword: string | null = null;
+    let isNewUser = false;
+
     // If user doesn't exist, create a new user with a temporary password
     if (!user) {
-      const tempPassword = Math.random().toString(36).slice(-10);
+      tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-6).toUpperCase();
       const passwordHash = await hashPassword(tempPassword);
+      isNewUser = true;
 
       user = await prisma.user.create({
         data: {
@@ -157,8 +161,6 @@ export async function inviteStaff(req: AuthRequest, res: Response) {
           name: email.split('@')[0], // Use email prefix as temporary name
         },
       });
-
-      // TODO: Send invitation email with temporary password or invitation link
     }
 
     // Check if user is already staff at this shop
@@ -200,6 +202,8 @@ export async function inviteStaff(req: AuthRequest, res: Response) {
         email: user.email,
         name: user.name,
       },
+      tempPassword,
+      isNewUser,
     });
   } catch (error) {
     console.error('Invite staff error:', error);
