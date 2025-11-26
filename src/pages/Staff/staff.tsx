@@ -1,36 +1,47 @@
+import { useEffect, useState } from "react";
 import ComponentCard from "@/components/common/ComponentCard2";
 import { columns, Staff } from "./Columns";
 import { DataTable } from "./DataTable";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon } from "lucide-react";
-function getData(): Staff[] {
-  // Fetch data from your API here.
-  return [
-    {
-      id: "728ed52f",
-      name: "Desmond Egwurube",
-      email: "random@gmail.com",
-      role: "Owner",
-    },
-    {
-      id: "728ed52f",
-      name: "Desmond Egwurube",
-      email: "random@gmail.com",
-      role: "Owner",
-    },
-    {
-      id: "728ed52f",
-      name: "Desmond Egwurube",
-      email: "random@gmail.com",
-      role: "Owner",
-    },
-    // ...
-  ];
-}
+import { getProfiles } from "@/supabaseClient";
+import { toast } from "sonner";
 
 export default function Staffs() {
-  const data = getData();
+  const [data, setData] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStaff();
+  }, []);
+
+  async function loadStaff() {
+    try {
+      setLoading(true);
+      const result = await getProfiles();
+
+      if (result && result.profiles) {
+        // Map the profiles to the Staff type
+        const staffList: Staff[] = result.profiles.map((profile: any) => ({
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+        }));
+
+        setData(staffList);
+      } else {
+        setData([]);
+      }
+    } catch (error) {
+      console.error("Failed to load staff:", error);
+      toast.error("Failed to load staff members");
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <div className="container mx-auto py-10">
       <PageBreadcrumb pageTitle="Staffs" />
@@ -56,7 +67,13 @@ export default function Staffs() {
           </div>
         }
       >
-        <DataTable columns={columns} data={data} />
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <p className="text-gray-500">Loading staff...</p>
+          </div>
+        ) : (
+          <DataTable columns={columns} data={data} />
+        )}
       </ComponentCard>
     </div>
   );
