@@ -7,6 +7,9 @@ import { MoreDotIcon } from "../../icons";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "../ui/modal";
 import { Button } from "../ui/button";
+import { api } from "@/lib/api";
+import { useUser } from "@/context/UserContext";
+import { toast } from "sonner";
 
 export default function MonthlyTarget({
   revenue,
@@ -66,6 +69,10 @@ export default function MonthlyTarget({
     labels: ["Progress"],
   };
   const [isOpen, setIsOpen] = useState(false);
+  const [targetValue, setTargetValue] = useState<string>(target > 0 ? target.toString() : "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { currentShop } = useUser();
+  const isOwner = currentShop?.role === "owner";
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -75,6 +82,37 @@ export default function MonthlyTarget({
     setIsOpen(false);
   }
   const { openModal, isOpen: open, closeModal } = useModal();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!isOwner) {
+      toast.error("Only shop owners can set monthly targets");
+      return;
+    }
+
+    const numericTarget = parseFloat(targetValue);
+
+    if (isNaN(numericTarget) || numericTarget <= 0) {
+      toast.error("Please enter a valid target amount");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await api.shops.update({ target: numericTarget });
+      toast.success("Monthly target updated successfully!");
+      closeModal();
+      // Reload the page to reflect the new target
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to update target:", error);
+      toast.error("Failed to update monthly target. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <div className="rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-white/[0.03]">
       <div className="px-5 pt-5 bg-white shadow-default rounded-2xl pb-11 dark:bg-gray-900 sm:px-6 sm:pt-6">
@@ -214,11 +252,69 @@ export default function MonthlyTarget({
       <Modal
         isOpen={open}
         onClose={closeModal}
-        className="max-w-[700px] p-6 lg:p-10 max-h-[80%] overflow-y-auto"
+        className="max-w-[500px] p-6 lg:p-8 max-h-[80%] overflow-y-auto"
       >
-        <div className="flex flex-col px-2 overflow-y-auto max-h-[80%] custom-scrollbar">
-          {" "}
-          Set Monthly Target
+        <div className="flex flex-col">
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2">
+            {target > 0 ? "Update Monthly Target" : "Set Monthly Target"}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            {isOwner
+              ? "Set a monthly revenue target for your shop to track performance."
+              : "Only shop owners can set monthly targets."}
+          </p>
+
+          {!isOwner ? (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                You don't have permission to set monthly targets. Please contact the shop owner.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <div className="mb-6">
+                <label
+                  htmlFor="target"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Monthly Target Amount (₦)
+                </label>
+                <input
+                  type="number"
+                  id="target"
+                  value={targetValue}
+                  onChange={(e) => setTargetValue(e.target.value)}
+                  placeholder="e.g., 1000000"
+                  min="1"
+                  step="0.01"
+                  required
+                  disabled={isSubmitting}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  This target will be used to calculate your monthly performance metrics.
+                </p>
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <Button
+                  type="button"
+                  onClick={closeModal}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? "Saving..." : target > 0 ? "Update Target" : "Set Target"}
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </Modal>
     </div>
