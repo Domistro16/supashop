@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth';
-import { requireShopContext } from '../middleware/shop';
+import { authenticate, setShopContext } from '../middleware/auth';
 import {
   getSalesPredictions,
   getBusinessSummary,
@@ -10,7 +9,7 @@ import {
 const router = Router();
 
 // All AI routes require authentication and shop context
-router.use(authenticateToken, requireShopContext);
+router.use(authenticate, setShopContext);
 
 /**
  * @route   GET /api/ai/predictions
