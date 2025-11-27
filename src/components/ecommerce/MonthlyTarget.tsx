@@ -10,6 +10,7 @@ import { Button } from "../ui/button";
 import { api } from "@/lib/api";
 import { useUser } from "@/context/UserContext";
 import { toast } from "sonner";
+import { formatCurrency } from "@/utils/formatters";
 
 export default function MonthlyTarget({
   revenue,
@@ -162,7 +163,7 @@ export default function MonthlyTarget({
         </div>
         <p className="mx-auto mt-10 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base">
           {target !== 0 ? (
-            `You earn ₦${today} today, Keep up your good work!`
+            `You earn ${formatCurrency(today)} today, Keep up your good work!`
           ) : (
             <Button
               className="primary bg-blue-700 text-white text-lg hover:bg-blue-800"
@@ -181,7 +182,7 @@ export default function MonthlyTarget({
             Target
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
-            ₦{target}
+            {formatCurrency(target)}
             <svg
               width="16"
               height="16"
@@ -206,7 +207,7 @@ export default function MonthlyTarget({
             Revenue
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
-            ₦{revenue}
+            {formatCurrency(revenue)}
             <svg
               width="16"
               height="16"
@@ -231,7 +232,7 @@ export default function MonthlyTarget({
             Today
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
-            ₦{today}
+            {formatCurrency(today)}
             <svg
               width="16"
               height="16"
