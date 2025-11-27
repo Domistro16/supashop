@@ -13,6 +13,7 @@ import shopsRoutes from './routes/shops.routes';
 import staffRoutes from './routes/staff.routes';
 import rolesRoutes from './routes/roles.routes';
 import aiRoutes from './routes/ai.routes';
+import notificationsRoutes from './routes/notifications.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -44,6 +45,7 @@ app.use('/api/shops', shopsRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

@@ -23,10 +23,11 @@ model User {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relationships
-  ownedShops    Shop[]         @relation("ShopOwner")
+  ownedShops    Shop[]          @relation("ShopOwner")
   staffShops    StaffShop[]
   sales         Sale[]
   activityLogs  ActivityLog[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -45,12 +46,13 @@ model Shop {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relationships
-  owner         User          @relation("ShopOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner         User            @relation("ShopOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   staff         StaffShop[]
   products      Product[]
   sales         Sale[]
   roles         Role[]
   activityLogs  ActivityLog[]
+  notifications Notification[]
 
   @@map("shops")
 }
@@ -197,4 +199,28 @@ model ActivityLog {
   staff User @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   @@map("activity_logs")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id        String   @id @default(uuid())
+  shopId    String   @map("shop_id")
+  userId    String   @map("user_id") // User who should receive the notification
+  type      String   // e.g., "low_stock", "sale", "staff_action", "target_achieved"
+  title     String
+  message   String
+  data      Json?    // Additional data (product info, sale details, etc.)
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([shopId, createdAt])
+  @@map("notifications")
 }
