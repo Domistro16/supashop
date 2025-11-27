@@ -452,6 +452,46 @@ export const permissions = {
   },
 };
 
+// ============================================
+// AI API
+// ============================================
+
+export interface AIPredictions {
+  predictions: string;
+  trends: string;
+  recommendations: string[];
+}
+
+export interface AIBusinessSummary {
+  summary: string;
+  highlights: string[];
+  insights: string;
+}
+
+export interface AIRestockingSuggestions {
+  urgentRestocks: Array<{
+    productName: string;
+    currentStock: number;
+    reason: string;
+  }>;
+  recommendations: string[];
+  insights: string;
+}
+
+export const ai = {
+  getSalesPredictions: async (): Promise<AIPredictions> => {
+    return apiCall('/ai/predictions', {}, true);
+  },
+
+  getBusinessSummary: async (period: 'daily' | 'monthly' = 'daily'): Promise<AIBusinessSummary> => {
+    return apiCall(`/ai/summary?period=${period}`, {}, true);
+  },
+
+  getRestockingSuggestions: async (): Promise<AIRestockingSuggestions> => {
+    return apiCall('/ai/restocking', {}, true);
+  },
+};
+
 export const api = {
   auth,
   shops,
@@ -460,6 +500,7 @@ export const api = {
   staff,
   roles,
   permissions,
+  ai,
 };
 
 export default api;
