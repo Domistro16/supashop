@@ -6,6 +6,9 @@ import RecentOrders from "../../components/ecommerce/RecentOrders";
 import DemographicCard from "../../components/ecommerce/DemographicCard";
 import PageMeta from "../../components/common/PageMeta";
 import { Transaction } from "../Transaction/Columns";
+import AIBusinessSummary from "../../components/ai/AIBusinessSummary";
+import AISalesPredictions from "../../components/ai/AISalesPredictions";
+import AIRestockingAlert from "../../components/ai/AIRestockingAlert";
 
 function filterToday(sales: Transaction[]) {
   const now = new Date();
@@ -124,15 +127,20 @@ export default function Home({
           <MonthlyTarget revenue={rev} target={shop.target} today={total} />
         </div>
 
-        {/*  <div className="col-span-12">
-          <StatisticsChart />
+        {/* AI-Powered Insights Section */}
+        <div className="col-span-12">
+          <AIBusinessSummary period="daily" />
         </div>
- */}
-        {/*  <div className="col-span-12 xl:col-span-5">
-          <DemographicCard />
-        </div> */}
 
-        <div className="col-span-12 ">
+        <div className="col-span-12 lg:col-span-6">
+          <AISalesPredictions />
+        </div>
+
+        <div className="col-span-12 lg:col-span-6">
+          <AIRestockingAlert />
+        </div>
+
+        <div className="col-span-12">
           <RecentOrders items={items} />
         </div>
       </div>
