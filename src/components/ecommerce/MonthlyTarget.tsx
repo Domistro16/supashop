@@ -162,7 +162,7 @@ export default function MonthlyTarget({
         </div>
         <p className="mx-auto mt-10 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base">
           {target !== 0 ? (
-            "You earn ₦{today} today, Keep up your good work!"
+            `You earn ₦${today} today, Keep up your good work!`
           ) : (
             <Button
               className="primary bg-blue-700 text-white text-lg hover:bg-blue-800"
