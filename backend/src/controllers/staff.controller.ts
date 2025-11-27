@@ -114,6 +114,54 @@ export async function getStaffById(req: AuthRequest, res: Response) {
 }
 
 /**
+ * Get all staff invites for the current shop
+ */
+export async function getStaffInvites(req: AuthRequest, res: Response) {
+  try {
+    if (!req.shopId) {
+      return res.status(400).json({ error: 'Shop context required' });
+    }
+
+    const staffShops = await prisma.staffShop.findMany({
+      where: {
+        shopId: req.shopId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        role: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        joinedAt: 'desc',
+      },
+    });
+
+    const invites = staffShops.map((ss) => ({
+      id: ss.id,
+      name: ss.user.name,
+      email: ss.user.email,
+      role: ss.role.name,
+      accepted: ss.isActive,
+    }));
+
+    res.json(invites);
+  } catch (error) {
+    console.error('Get staff invites error:', error);
+    res.status(500).json({ error: 'Failed to fetch staff invites' });
+  }
+}
+
+/**
  * Invite a staff member (create new user or add existing user to shop)
  */
 export async function inviteStaff(req: AuthRequest, res: Response) {

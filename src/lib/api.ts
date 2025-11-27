@@ -15,11 +15,16 @@ export interface User {
 export interface Shop {
   id: string;
   name: string;
-  address?: string;
+  address?: string | null;
   target?: number;
   role: string;
   permissions: string[];
   joinedAt?: string;
+  owner?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export interface AuthResponse {
@@ -204,6 +209,13 @@ export const auth = {
   getUser: async (): Promise<{ user: User; shops: Shop[] }> => {
     return apiCall('/auth/me');
   },
+
+  updateProfile: async (data: { name: string }): Promise<{ user: User }> => {
+    return apiCall('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 // ============================================
@@ -333,6 +345,16 @@ export const staff = {
 
   getById: async (id: string): Promise<Staff> => {
     return apiCall(`/staff/${id}`, {}, true);
+  },
+
+  getInvites: async (): Promise<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    accepted: boolean;
+  }[]> => {
+    return apiCall('/staff/invites', {}, true);
   },
 
   invite: async (data: { email: string; roleId: string }): Promise<{

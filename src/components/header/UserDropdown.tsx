@@ -2,9 +2,12 @@ import { useState } from "react";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { Link } from "react-router";
+import { useUser } from "@/context/UserContext";
+import { getRoleAvatar, getInitials } from "@/utils/avatarUtils";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, currentShop, loading } = useUser();
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -13,6 +16,27 @@ export default function UserDropdown() {
   function closeDropdown() {
     setIsOpen(false);
   }
+
+  // Show loading state or defaults if user data is not available
+  if (loading || !user) {
+    return (
+      <div className="relative">
+        <button className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400">
+          <span className="mr-3 overflow-hidden rounded-full h-11 w-11 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <span className="text-gray-500">...</span>
+          </span>
+          <span className="block mr-1 font-medium text-theme-sm">Loading...</span>
+        </button>
+      </div>
+    );
+  }
+
+  const userName = user.name || "User";
+  const userEmail = user.email || "";
+  const userRole = currentShop?.role || "staff";
+  const avatarUrl = getRoleAvatar(userRole);
+  const firstName = userName.split(' ')[0];
+
   return (
     <div className="relative">
       <button
@@ -20,10 +44,10 @@ export default function UserDropdown() {
         className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400"
       >
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
-          <img src="/images/user/owner.jpg" alt="User" />
+          <img src={avatarUrl} alt={userName} />
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">Desmond</span>
+        <span className="block mr-1 font-medium text-theme-sm">{firstName}</span>
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
@@ -51,10 +75,13 @@ export default function UserDropdown() {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            Musharof Chowdhury
+            {userName}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            randomuser@pimjo.com
+            {userEmail}
+          </span>
+          <span className="mt-1 inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 capitalize">
+            {userRole}
           </span>
         </div>
 

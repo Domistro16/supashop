@@ -9,6 +9,7 @@ const router = Router();
 router.use(authenticate, setShopContext);
 
 router.get('/', requirePermission('staff:read'), staffController.getStaff);
+router.get('/invites', requirePermission('staff:read'), staffController.getStaffInvites);
 router.get('/:id', requirePermission('staff:read'), staffController.getStaffById);
 router.post('/invite', requirePermission('staff:create'), staffController.inviteStaff);
 router.put('/:id/role', requirePermission('staff:manage_roles'), staffController.updateStaffRole);

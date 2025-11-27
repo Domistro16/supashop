@@ -3,6 +3,8 @@ import { AuthRequest, SignUpRequest, SignInRequest, AuthResponse } from '../type
 import { PrismaClient } from '@prisma/client';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth';
 import { getUserPermissions } from '../middleware/rbac';
+import { createDefaultRoles } from '../utils/defaultRoles';
+
 
 const prisma = new PrismaClient();
 
@@ -78,6 +80,9 @@ export async function signUp(req: AuthRequest, res: Response) {
           roleId: ownerRole.id,
         },
       });
+
+      // Create default roles (manager, cashier, clerk)
+      await createDefaultRoles(tx, shop.id);
 
       return { user, shop, role: ownerRole };
     });
@@ -253,5 +258,38 @@ export async function getMe(req: AuthRequest, res: Response) {
   } catch (error) {
     console.error('Get me error:', error);
     res.status(500).json({ error: 'Failed to get user info' });
+  }
+}
+
+/**
+ * Update user profile
+ */
+export async function updateProfile(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { name } = req.body;
+
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { name: name.trim() },
+    });
+
+    res.json({
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+      },
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
   }
 }
