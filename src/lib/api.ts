@@ -492,6 +492,52 @@ export const ai = {
   },
 };
 
+// ============================================
+// Notifications API
+// ============================================
+
+export interface Notification {
+  id: string;
+  shopId: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  data?: any;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  unreadCount: number;
+}
+
+export const notifications = {
+  getAll: async (limit = 20, unreadOnly = false): Promise<NotificationsResponse> => {
+    return apiCall(`/notifications?limit=${limit}&unreadOnly=${unreadOnly}`, {}, true);
+  },
+
+  markAsRead: async (notificationId: string): Promise<void> => {
+    return apiCall(`/notifications/${notificationId}/read`, {
+      method: 'PUT',
+    }, true);
+  },
+
+  markAllAsRead: async (): Promise<void> => {
+    return apiCall('/notifications/read-all', {
+      method: 'PUT',
+      body: JSON.stringify({ all: true }),
+    }, true);
+  },
+
+  delete: async (notificationId: string): Promise<void> => {
+    return apiCall(`/notifications/${notificationId}`, {
+      method: 'DELETE',
+    }, true);
+  },
+};
+
 export const api = {
   auth,
   shops,
@@ -501,6 +547,7 @@ export const api = {
   roles,
   permissions,
   ai,
+  notifications,
 };
 
 export default api;

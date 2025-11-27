@@ -5,6 +5,7 @@ import {
   GroupIcon,
 } from "../../icons";
 import Badge from "../ui/badge/Badge";
+import { formatCurrency, formatPercentage } from "@/utils/formatters";
 
 export default function EcommerceMetrics({
   sales,
@@ -36,7 +37,7 @@ export default function EcommerceMetrics({
           </div>
           <Badge color={salesChange > 0 ? "success" : "error"}>
             {salesChange > 0 ? <ArrowUpIcon /> : <ArrowDownIcon />}
-            {salesChange}%
+            {formatPercentage(salesChange)}
           </Badge>
         </div>
       </div>
@@ -53,13 +54,13 @@ export default function EcommerceMetrics({
               Today's Revenue
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              ₦{revenue}
+              {formatCurrency(revenue)}
             </h4>
           </div>
 
           <Badge color={revenueChange > 0 ? "success" : "error"}>
             {revenueChange > 0 ? <ArrowUpIcon /> : <ArrowDownIcon />}
-            {revenueChange}%
+            {formatPercentage(revenueChange)}
           </Badge>
         </div>
       </div>
