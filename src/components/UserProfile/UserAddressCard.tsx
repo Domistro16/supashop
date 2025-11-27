@@ -4,7 +4,14 @@ import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 
-export default function UserAddressCard() {
+interface UserAddressCardProps {
+  shopName: string;
+  shopAddress: string | null;
+  ownerName: string;
+  ownerEmail: string;
+}
+
+export default function UserAddressCard({ shopName, shopAddress, ownerName, ownerEmail }: UserAddressCardProps) {
   const { isOpen, openModal, closeModal } = useModal();
   const handleSave = () => {
     // Handle save logic here
@@ -26,7 +33,7 @@ export default function UserAddressCard() {
                   Shop Name
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  Supashop
+                  {shopName}
                 </p>
               </div>
 
@@ -35,7 +42,7 @@ export default function UserAddressCard() {
                   Address
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  Phoenix, Arizona, United States.
+                  {shopAddress || 'Not specified'}
                 </p>
               </div>
 
@@ -44,7 +51,7 @@ export default function UserAddressCard() {
                   Owner Name
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  Desmond
+                  {ownerName}
                 </p>
               </div>
 
@@ -53,7 +60,7 @@ export default function UserAddressCard() {
                   Owner Email
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  randomuser@gmail.com
+                  {ownerEmail}
                 </p>
               </div>
             </div>

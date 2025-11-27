@@ -4,36 +4,32 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon } from "lucide-react";
 import { Invites, columns } from "./Columns2";
-function getData(): Invites[] {
-  // Fetch data from your API here.
-  return [
-    {
-      id: "728ed52f",
-      name: "Desmond Egwurube",
-      email: "random@gmail.com",
-      role: "Owner",
-      accepted: true,
-    },
-    {
-      id: "728ed52f",
-      name: "Desmond Egwurube",
-      email: "random@gmail.com",
-      role: "Owner",
-      accepted: true,
-    },
-    {
-      id: "728ed52f",
-      name: "Desmond Egwurube",
-      email: "random@gmail.com",
-      role: "Owner",
-      accepted: true,
-    },
-    // ...
-  ];
-}
+import { useEffect, useState } from "react";
+import api from "@/lib/api";
 
 export default function Invite() {
-  const data = getData();
+  const [data, setData] = useState<Invites[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchInvites = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const invites = await api.staff.getInvites();
+        setData(invites);
+      } catch (err) {
+        console.error("Failed to fetch invites:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch invites");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInvites();
+  }, []);
+
   return (
     <div className="container mx-auto py-10">
       <PageBreadcrumb pageTitle="Invites" />
@@ -59,7 +55,17 @@ export default function Invite() {
           </div>
         }
       >
-        <DataTable columns={columns} data={data} />
+        {loading ? (
+          <div className="flex justify-center items-center py-10">
+            <p className="text-gray-500">Loading invites...</p>
+          </div>
+        ) : error ? (
+          <div className="flex justify-center items-center py-10">
+            <p className="text-red-500">Error: {error}</p>
+          </div>
+        ) : (
+          <DataTable columns={columns} data={data} />
+        )}
       </ComponentCard>
     </div>
   );

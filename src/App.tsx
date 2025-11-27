@@ -28,6 +28,7 @@ import Invite from "./pages/Staff/invites";
 import RolesManagement from "./pages/Roles/index";
 import Login from "./pages/AuthPages/login";
 import { AuthProvider, useAuth } from "./auth";
+import { UserProvider } from "./context/UserContext";
 
 import { useEffect, useState } from "react";
 
@@ -97,79 +98,81 @@ export default function App() {
   return (
     <>
       <AuthProvider>
-        <Router>
-          <ScrollToTop />
-          <Routes>
-            {/* Dashboard Layout */}
-            <Route path="/" element={<ProtectedPage />}>
-              <Route
-                index
-                path="/"
-                element={
-                  <Home
-                    sales={sales ? sales : []}
-                    shop={
-                      shop
-                        ? shop
-                        : {
-                            target: 0,
-                          }
-                    }
-                    items={recent ? recent : []}
-                  />
-                }
-              />
+        <UserProvider>
+          <Router>
+            <ScrollToTop />
+            <Routes>
+              {/* Dashboard Layout */}
+              <Route path="/" element={<ProtectedPage />}>
+                <Route
+                  index
+                  path="/"
+                  element={
+                    <Home
+                      sales={sales ? sales : []}
+                      shop={
+                        shop
+                          ? shop
+                          : {
+                              target: 0,
+                            }
+                      }
+                      items={recent ? recent : []}
+                    />
+                  }
+                />
 
-              {/* Others Page */}
-              <Route path="/profile" element={<UserProfiles />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route
-                path="/products"
-                element={<Products products={products ? products : []} />}
-              />
-              <Route path="/products/add" element={<AddProducts />} />
-              <Route
-                path="/transactions"
-                element={<Transactions sales={sales ? sales : []} />}
-              />
-              <Route
-                path="/transaction/:orderId"
-                element={<Single transactions={sales ? sales : []} />}
-              />
-              <Route path="/staff" element={<Staffs />} />
-              <Route path="/staff/add" element={<AddStaffs />} />
-              <Route path="/staff/invites" element={<Invite />} />
-              <Route path="/roles" element={<RolesManagement />} />
-              <Route path="/blank" element={<Blank />} />
+                {/* Others Page */}
+                <Route path="/profile" element={<UserProfiles />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route
+                  path="/products"
+                  element={<Products products={products ? products : []} />}
+                />
+                <Route path="/products/add" element={<AddProducts />} />
+                <Route
+                  path="/transactions"
+                  element={<Transactions sales={sales ? sales : []} />}
+                />
+                <Route
+                  path="/transaction/:orderId"
+                  element={<Single transactions={sales ? sales : []} />}
+                />
+                <Route path="/staff" element={<Staffs />} />
+                <Route path="/staff/add" element={<AddStaffs />} />
+                <Route path="/staff/invites" element={<Invite />} />
+                <Route path="/roles" element={<RolesManagement />} />
+                <Route path="/blank" element={<Blank />} />
 
-              {/* Forms */}
-              <Route path="/form-elements" element={<FormElements />} />
+                {/* Forms */}
+                <Route path="/form-elements" element={<FormElements />} />
 
-              {/* Tables */}
-              <Route path="/basic-tables" element={<BasicTables />} />
+                {/* Tables */}
+                <Route path="/basic-tables" element={<BasicTables />} />
 
-              {/* Ui Elements */}
-              <Route path="/alerts" element={<Alerts />} />
-              <Route path="/avatars" element={<Avatars />} />
-              <Route path="/badge" element={<Badges />} />
-              <Route path="/buttons" element={<Buttons />} />
-              <Route path="/images" element={<Images />} />
-              <Route path="/videos" element={<Videos />} />
+                {/* Ui Elements */}
+                <Route path="/alerts" element={<Alerts />} />
+                <Route path="/avatars" element={<Avatars />} />
+                <Route path="/badge" element={<Badges />} />
+                <Route path="/buttons" element={<Buttons />} />
+                <Route path="/images" element={<Images />} />
+                <Route path="/videos" element={<Videos />} />
 
-              {/* Charts */}
-              <Route path="/line-chart" element={<LineChart />} />
-              <Route path="/bar-chart" element={<BarChart />} />
-            </Route>
+                {/* Charts */}
+                <Route path="/line-chart" element={<LineChart />} />
+                <Route path="/bar-chart" element={<BarChart />} />
+              </Route>
 
-            {/* Auth Layout */}
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/auth" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
+              {/* Auth Layout */}
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/auth" element={<Login />} />
+              <Route path="/signup" element={<SignUp />} />
 
-            {/* Fallback Route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Router>
+              {/* Fallback Route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Router>
+        </UserProvider>
       </AuthProvider>
     </>
   );
