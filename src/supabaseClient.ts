@@ -17,7 +17,6 @@ type Product = {
   price: string;
   created_at: string;
   category: string;
-  dealer: string;
 };
 
 type Transaction = {
@@ -66,14 +65,7 @@ export const getCategories = async () => {
   }
 };
 
-export const getDealers = async () => {
-  try {
-    const dealers = await api.products.getDealers();
-    return new Response(JSON.stringify({ categories: dealers }), { status: 200 });
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
-};
+
 
 export const getProducts = async (): Promise<Product[]> => {
   try {
@@ -85,7 +77,7 @@ export const getProducts = async (): Promise<Product[]> => {
       price: item.price.toString(),
       created_at: item.createdAt,
       category: item.categoryName || '',
-      dealer: item.dealer || '',
+
     }));
   } catch (error) {
     console.error('Failed to get products:', error);
@@ -193,7 +185,6 @@ export async function getRecentItems() {
 export const addProduct = async (
   name: string,
   category: string,
-  dealer: string,
   stock: number,
   price: number,
   supplierId?: string
@@ -202,7 +193,6 @@ export const addProduct = async (
     const product = await api.products.create({
       name,
       categoryName: category,
-      dealer,
       stock,
       price,
       supplierId: supplierId || undefined,

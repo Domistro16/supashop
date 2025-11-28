@@ -15,8 +15,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { addProduct } from "@/supabaseClient";
-import { useState, useEffect } from "react";
-import api, { Supplier } from "@/lib/api";
+import { useState } from "react";
+import { Supplier } from "@/lib/api";
+import SupplierSearchSelect from "@/components/suppliers/SupplierSearchSelect";
 
 interface QuantityInputProps {
   value: number;
@@ -62,18 +63,14 @@ const formSchema = z.object({
   stock: z.int().min(0, {
     error: "Stock must be at least 0",
   }),
-  dealer: z.string().min(2, {
-    error: "Dealer name must be at least 2 characters.",
-  }),
   price: z.string().min(2, {
     error: "Price must be at least 2 characters.",
   }),
-  supplier_id: z.string().optional(),
 });
 
 export default function AddProducts() {
   const [loading, setLoading] = useState(false);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -81,24 +78,9 @@ export default function AddProducts() {
       product_name: "",
       category: "",
       stock: 0,
-      dealer: "",
       price: "",
-      supplier_id: "",
     },
   });
-
-  // Fetch suppliers on component mount
-  useEffect(() => {
-    async function fetchSuppliers() {
-      try {
-        const { suppliers: fetchedSuppliers } = await api.suppliers.getAll();
-        setSuppliers(fetchedSuppliers);
-      } catch (error) {
-        console.error("Failed to fetch suppliers:", error);
-      }
-    }
-    fetchSuppliers();
-  }, []);
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -109,14 +91,14 @@ export default function AddProducts() {
     const response = await addProduct(
       values.product_name,
       values.category,
-      values.dealer,
       values.stock,
       parseFloat(values.price),
-      values.supplier_id || undefined
+      selectedSupplier?.id
     );
     if (response) {
       setLoading(false);
       form.reset();
+      setSelectedSupplier(null);
     }
     console.log("response from addProduct: ", response);
   }
@@ -185,53 +167,19 @@ export default function AddProducts() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="dealer"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Dealer</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter Dealer"
-                        {...field}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      This is the dealer of the product.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
-            <FormField
-              control={form.control}
-              name="supplier_id"
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Supplier (Optional)</FormLabel>
-                  <FormControl>
-                    <select
-                      {...field}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-gray-800 dark:text-white dark:border-gray-700"
-                    >
-                      <option value="">No supplier</option>
-                      {suppliers.map((supplier) => (
-                        <option key={supplier.id} value={supplier.id}>
-                          {supplier.name}
-                        </option>
-                      ))}
-                    </select>
-                  </FormControl>
-                  <FormDescription>
-                    Select the supplier for this product (optional).
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="flex w-full gap-5">
+              <div className="flex-1">
+                <FormLabel>Supplier (Optional)</FormLabel>
+                <SupplierSearchSelect
+                  selectedSupplier={selectedSupplier}
+                  onSelectSupplier={setSelectedSupplier}
+                />
+                <FormDescription className="mt-2">
+                  Search for an existing supplier or create a new one.
+                </FormDescription>
+              </div>
+            </div>
             <FormField
               control={form.control}
               name="stock"
