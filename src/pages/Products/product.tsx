@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { useMemo, useState } from "react";
 import { set } from "zod";
 import { record_sale } from "@/supabaseClient";
+import CustomerSearchSelect from "@/components/customers/CustomerSearchSelect";
+import { Customer } from "@/lib/api";
 function getData(): Product[] {
   // Fetch data from your API here.
   return [
@@ -48,6 +50,7 @@ export default function Products({ products }: { products: Product[] }) {
   const [filtered, setFiltered] = useState<Product[]>([]);
   const [selected, setSelected] = useState<Product[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const handleQuantityChange = (id: string, value: any) => {
     const num = Number(value);
@@ -134,10 +137,22 @@ export default function Products({ products }: { products: Product[] }) {
               Create a Sale, by defining the quantity and submitting
             </p>
           </div>
+
+          {/* Customer Selection */}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Customer (Optional)
+            </label>
+            <CustomerSearchSelect
+              selectedCustomer={selectedCustomer}
+              onSelectCustomer={setSelectedCustomer}
+            />
+          </div>
+
           <div>
             <div className="flex-col relative ">
               <Input
-                placeholder="Search..."
+                placeholder="Search products..."
                 className="max-w-sm dark:bg-gray-800 placeholder:text-gray-500 mt-10"
                 onChange={(e) => onChange(e.target.value)}
               />
@@ -241,6 +256,7 @@ export default function Products({ products }: { products: Product[] }) {
                 // Handle form submission here
                 setSelected([]);
                 setQuantities({});
+                setSelectedCustomer(null);
               }}
             >
               Reset
@@ -251,9 +267,12 @@ export default function Products({ products }: { products: Product[] }) {
               onClick={() => {
                 // Handle form submission here
                 console.log("Selected Products:", selectedProducts);
-                record_sale(selectedProducts);
+                console.log("Selected Customer:", selectedCustomer);
+                record_sale(selectedProducts, selectedCustomer?.id);
                 setSelected([]);
                 setQuantities({});
+                setSelectedCustomer(null);
+                closeModal();
               }}
             >
               Submit
