@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api, { Customer } from '../../lib/api';
 import { toast } from 'react-hot-toast';
 
@@ -16,6 +17,7 @@ export default function QuickAddCustomer({ onSuccess, onCancel }: QuickAddCustom
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to parent form
 
     if (!formData.name.trim()) {
       toast.error('Customer name is required');
@@ -38,9 +40,20 @@ export default function QuickAddCustomer({ onSuccess, onCancel }: QuickAddCustom
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 p-6 w-full max-w-md">
+  const modalContent = (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={(e) => {
+        e.stopPropagation();
+        if (e.target === e.currentTarget) {
+          onCancel();
+        }
+      }}
+    >
+      <div
+        className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 p-6 w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white/90 mb-4">Quick Add Customer</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -95,4 +108,6 @@ export default function QuickAddCustomer({ onSuccess, onCancel }: QuickAddCustom
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

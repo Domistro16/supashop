@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api, { Supplier } from '../../lib/api';
 import { toast } from 'react-hot-toast';
 
@@ -44,8 +45,8 @@ export default function QuickAddSupplier({ onSuccess, onCancel, initialName = ''
     }
   };
 
-  return (
-    <div 
+  const modalContent = (
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={(e) => {
         e.stopPropagation();
@@ -54,7 +55,7 @@ export default function QuickAddSupplier({ onSuccess, onCancel, initialName = ''
         }
       }}
     >
-      <div 
+      <div
         className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 p-6 w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
@@ -140,4 +141,6 @@ export default function QuickAddSupplier({ onSuccess, onCancel, initialName = ''
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
