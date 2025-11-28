@@ -29,6 +29,9 @@ import RolesManagement from "./pages/Roles/index";
 import CustomersPage from "./pages/Customers/index";
 import CustomerProfilePage from "./pages/Customers/CustomerProfilePage";
 import CustomerFormPage from "./pages/Customers/CustomerFormPage";
+import SuppliersPage from "./pages/Suppliers/index";
+import SupplierProfilePage from "./pages/Suppliers/SupplierProfilePage";
+import SupplierFormPage from "./pages/Suppliers/SupplierFormPage";
 import SalesReport from "./pages/Reports/SalesReport";
 import Login from "./pages/AuthPages/login";
 import { AuthProvider, useAuth } from "./auth";
@@ -149,6 +152,9 @@ export default function App() {
                 <Route path="/customers" element={<CustomersPage />} />
                 <Route path="/customers/:id" element={<CustomerProfilePage />} />
                 <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
+                <Route path="/suppliers" element={<SuppliersPage />} />
+                <Route path="/suppliers/:id" element={<SupplierProfilePage />} />
+                <Route path="/suppliers/:id/edit" element={<SupplierFormPage />} />
                 <Route path="/reports/sales" element={<SalesReport />} />
                 <Route path="/blank" element={<Blank />} />
 

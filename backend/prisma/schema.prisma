@@ -54,6 +54,7 @@ model Shop {
   activityLogs  ActivityLog[]
   notifications Notification[]
   customers     Customer[]
+  suppliers     Supplier[]
 
   @@map("shops")
 }
@@ -128,12 +129,42 @@ model RolePermission {
 }
 
 // ============================================
+// SUPPLIERS
+// ============================================
+
+model Supplier {
+  id            String   @id @default(uuid())
+  shopId        String   @map("shop_id")
+  name          String
+  contactPerson String?  @map("contact_person")
+  email         String?
+  phone         String?
+  address       String?
+  notes         String?
+  totalOrders   Int      @default(0) @map("total_orders")
+  totalSpent    Decimal  @default(0) @map("total_spent") @db.Decimal(10, 2)
+  lastOrder     DateTime? @map("last_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@index([shopId, name])
+  @@index([shopId, phone])
+  @@index([shopId, email])
+  @@map("suppliers")
+}
+
+// ============================================
 // PRODUCTS
 // ============================================
 
 model Product {
   id           String   @id @default(uuid())
   shopId       String   @map("shop_id")
+  supplierId   String?  @map("supplier_id")
   name         String
   stock        Int      @default(0)
   price        Decimal  @db.Decimal(10, 2)
@@ -144,6 +175,7 @@ model Product {
 
   // Relationships
   shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  supplier  Supplier?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   saleItems SaleItem[]
 
   @@map("products")
