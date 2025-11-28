@@ -53,6 +53,7 @@ model Shop {
   roles         Role[]
   activityLogs  ActivityLog[]
   notifications Notification[]
+  customers     Customer[]
 
   @@map("shops")
 }
@@ -157,12 +158,14 @@ model Sale {
   orderId     String   @unique @map("order_id")
   shopId      String   @map("shop_id")
   staffId     String   @map("staff_id")
+  customerId  String?  @map("customer_id") // Optional - for registered customers
   totalAmount Decimal  @map("total_amount") @db.Decimal(10, 2)
   createdAt   DateTime @default(now()) @map("created_at")
 
   // Relationships
   shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
   staff     User       @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  customer  Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
   saleItems SaleItem[]
 
   @@map("sales")
@@ -223,4 +226,47 @@ model Notification {
   @@index([userId, isRead])
   @@index([shopId, createdAt])
   @@map("notifications")
+}
+
+// ============================================
+// CUSTOMER MANAGEMENT
+// ============================================
+
+model Customer {
+  id          String    @id @default(uuid())
+  shopId      String    @map("shop_id")
+  name        String
+  email       String?
+  phone       String?
+  address     String?
+  totalSpent  Decimal   @default(0) @map("total_spent") @db.Decimal(10, 2)
+  visitCount  Int       @default(0) @map("visit_count")
+  lastVisit   DateTime? @map("last_visit")
+  notes       String?
+  tags        String[]  @default([])
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relationships
+  shop         Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  sales        Sale[]
+  loyaltyPoint LoyaltyPoint?
+
+  @@index([shopId, name])
+  @@index([shopId, phone])
+  @@index([shopId, email])
+  @@map("customers")
+}
+
+model LoyaltyPoint {
+  id         String   @id @default(uuid())
+  customerId String   @unique @map("customer_id")
+  points     Int      @default(0)
+  tier       String   @default("bronze") // bronze, silver, gold, platinum
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("loyalty_points")
 }
