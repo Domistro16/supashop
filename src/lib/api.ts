@@ -538,6 +538,111 @@ export const notifications = {
   },
 };
 
+// ============================================
+// Customers API
+// ============================================
+
+export interface Customer {
+  id: string;
+  shopId: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  totalSpent: number;
+  visitCount: number;
+  lastVisit?: string | null;
+  notes?: string | null;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  loyaltyPoint?: LoyaltyPoint;
+  _count?: {
+    sales: number;
+  };
+}
+
+export interface LoyaltyPoint {
+  id: string;
+  customerId: string;
+  points: number;
+  tier: string;
+  updatedAt: string;
+}
+
+export interface CustomerStats {
+  totalCustomers: number;
+  newCustomersThisMonth: number;
+  topCustomers: Customer[];
+  avgCustomerValue: number;
+  loyaltyTierDistribution: Array<{
+    tier: string;
+    _count: {
+      tier: number;
+    };
+  }>;
+}
+
+export const customers = {
+  getAll: async (params?: {
+    search?: string;
+    tag?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<{ customers: Customer[] }> => {
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.tag) queryParams.append('tag', params.tag);
+    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+
+    const query = queryParams.toString();
+    return apiCall(`/customers${query ? `?${query}` : ''}`, {}, true);
+  },
+
+  getById: async (id: string): Promise<{ customer: Customer }> => {
+    return apiCall(`/customers/${id}`, {}, true);
+  },
+
+  create: async (data: {
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    notes?: string;
+    tags?: string[];
+  }): Promise<{ customer: Customer }> => {
+    return apiCall('/customers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }, true);
+  },
+
+  update: async (id: string, data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    notes?: string;
+    tags?: string[];
+  }): Promise<{ customer: Customer }> => {
+    return apiCall(`/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }, true);
+  },
+
+  delete: async (id: string): Promise<{ message: string }> => {
+    return apiCall(`/customers/${id}`, {
+      method: 'DELETE',
+    }, true);
+  },
+
+  getStats: async (): Promise<CustomerStats> => {
+    return apiCall('/customers/stats', {}, true);
+  },
+};
+
 export const api = {
   auth,
   shops,
@@ -548,6 +653,7 @@ export const api = {
   permissions,
   ai,
   notifications,
+  customers,
 };
 
 export default api;
