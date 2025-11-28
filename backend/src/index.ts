@@ -15,6 +15,7 @@ import rolesRoutes from './routes/roles.routes';
 import aiRoutes from './routes/ai.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import customersRoutes from './routes/customers.routes';
+import suppliersRoutes from './routes/suppliers.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -48,6 +49,7 @@ app.use('/api/roles', rolesRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/customers', customersRoutes);
+app.use('/api/suppliers', suppliersRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
