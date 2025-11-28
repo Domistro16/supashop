@@ -19,6 +19,7 @@ export default function QuickAddSupplier({ onSuccess, onCancel, initialName = ''
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to parent form
 
     if (!formData.name.trim()) {
       toast.error('Supplier name is required');
