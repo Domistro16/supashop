@@ -268,7 +268,16 @@ export async function createSale(req: AuthRequest, res: Response) {
       include: {
         saleItems: {
           include: {
-            product: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                stock: true,
+                categoryName: true,
+                supplierId: true,
+              },
+            },
           },
         },
         customer: {
@@ -307,7 +316,16 @@ export async function getRecentItems(req: AuthRequest, res: Response) {
         },
       },
       include: {
-        product: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            stock: true,
+            categoryName: true,
+            supplierId: true,
+          },
+        },
         sale: {
           select: {
             createdAt: true,

@@ -59,7 +59,7 @@ export async function getProduct(req: AuthRequest, res: Response) {
  */
 export async function createProduct(req: AuthRequest, res: Response) {
   try {
-    const { name, stock, price, categoryName, dealer }: CreateProductRequest = req.body;
+    const { name, stock, price, categoryName }: CreateProductRequest = req.body;
 
     if (!req.shopId) {
       return res.status(400).json({ error: 'Shop context required' });
@@ -76,7 +76,6 @@ export async function createProduct(req: AuthRequest, res: Response) {
         stock,
         price,
         categoryName,
-        dealer,
       },
     });
 
@@ -230,29 +229,3 @@ export async function getCategories(req: AuthRequest, res: Response) {
   }
 }
 
-/**
- * Get unique dealers for the current shop
- */
-export async function getDealers(req: AuthRequest, res: Response) {
-  try {
-    if (!req.shopId) {
-      return res.status(400).json({ error: 'Shop context required' });
-    }
-
-    const products = await prisma.product.findMany({
-      where: {
-        shopId: req.shopId,
-        dealer: { not: null },
-      },
-      select: { dealer: true },
-      distinct: ['dealer'],
-    });
-
-    const dealers = products.map((p) => p.dealer).filter(Boolean);
-
-    res.json(dealers);
-  } catch (error) {
-    console.error('Get dealers error:', error);
-    res.status(500).json({ error: 'Failed to fetch dealers' });
-  }
-}
