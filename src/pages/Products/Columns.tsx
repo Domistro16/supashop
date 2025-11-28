@@ -39,7 +39,6 @@ export type Product = {
   price: string;
   created_at: string;
   category: string;
-  dealer: string;
 };
 
 const formSchema = z.object({
@@ -51,9 +50,6 @@ const formSchema = z.object({
   }),
   stock: z.int().min(0, {
     error: "Stock must be at least 0",
-  }),
-  dealer: z.string().min(2, {
-    error: "Dealer name must be at least 2 characters.",
   }),
   price: z.string().min(2, {
     error: "Price must be at least 2 characters.",
@@ -151,21 +147,7 @@ export const columns: ColumnDef<Product>[] = [
 
       return <div className="text-left font-medium">{formatted}</div>;
     },
-  },
-  {
-    accessorKey: "dealer",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="text-theme-xs"
-        >
-          Dealer
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+
   },
   {
     accessorKey: "created_at",
@@ -205,7 +187,6 @@ export const columns: ColumnDef<Product>[] = [
           product_name: product.name,
           category: product.category,
           stock: product.stock,
-          dealer: product.dealer,
           price: product.price,
         },
       });
@@ -290,48 +271,6 @@ export const columns: ColumnDef<Product>[] = [
                             </FormControl>
                             <FormDescription>
                               This is the category the product belongs to.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="flex w-full gap-5">
-                      <FormField
-                        control={form.control}
-                        name="price"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel>Price</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="₦"
-                                {...field}
-                                className="w-full"
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              This is the Price of the Product.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="dealer"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel>Dealer</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter Dealer"
-                                {...field}
-                                className="w-full"
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              This is the dealer of the product.
                             </FormDescription>
                             <FormMessage />
                           </FormItem>

@@ -39,7 +39,6 @@ export interface Product {
   stock: number;
   price: string | number;
   categoryName?: string;
-  dealer?: string;
   supplierId?: string | null;
   supplier?: {
     id: string;
@@ -276,7 +275,7 @@ export const products = {
     stock: number;
     price: number;
     categoryName?: string;
-    dealer?: string;
+
   }): Promise<Product> => {
     return apiCall('/products', {
       method: 'POST',
@@ -289,7 +288,7 @@ export const products = {
     stock?: number;
     price?: number;
     categoryName?: string;
-    dealer?: string;
+
   }): Promise<Product> => {
     return apiCall(`/products/${id}`, {
       method: 'PUT',
@@ -307,9 +306,7 @@ export const products = {
     return apiCall('/products/categories', {}, true);
   },
 
-  getDealers: async (): Promise<string[]> => {
-    return apiCall('/products/dealers', {}, true);
-  },
+
 };
 
 // ============================================
