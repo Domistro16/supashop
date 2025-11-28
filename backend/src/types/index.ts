@@ -53,6 +53,7 @@ export interface CreateProductRequest {
   stock: number;
   price: number;
   categoryName?: string;
+  supplierId?: string;
 }
 
 export interface UpdateProductRequest {
@@ -60,6 +61,7 @@ export interface UpdateProductRequest {
   stock?: number;
   price?: number;
   categoryName?: string;
+  supplierId?: string;
   [key: string]: any;
 }
 
