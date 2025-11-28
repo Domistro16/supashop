@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { addProduct } from "@/supabaseClient";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api, { Supplier } from "@/lib/api";
 
 interface QuantityInputProps {
   value: number;
@@ -67,10 +68,12 @@ const formSchema = z.object({
   price: z.string().min(2, {
     error: "Price must be at least 2 characters.",
   }),
+  supplier_id: z.string().optional(),
 });
 
 export default function AddProducts() {
   const [loading, setLoading] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,8 +83,22 @@ export default function AddProducts() {
       stock: 0,
       dealer: "",
       price: "",
+      supplier_id: "",
     },
   });
+
+  // Fetch suppliers on component mount
+  useEffect(() => {
+    async function fetchSuppliers() {
+      try {
+        const { suppliers: fetchedSuppliers } = await api.suppliers.getAll();
+        setSuppliers(fetchedSuppliers);
+      } catch (error) {
+        console.error("Failed to fetch suppliers:", error);
+      }
+    }
+    fetchSuppliers();
+  }, []);
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -94,7 +111,8 @@ export default function AddProducts() {
       values.category,
       values.dealer,
       values.stock,
-      parseFloat(values.price)
+      parseFloat(values.price),
+      values.supplier_id || undefined
     );
     if (response) {
       setLoading(false);
@@ -188,6 +206,32 @@ export default function AddProducts() {
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="supplier_id"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Supplier (Optional)</FormLabel>
+                  <FormControl>
+                    <select
+                      {...field}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-gray-800 dark:text-white dark:border-gray-700"
+                    >
+                      <option value="">No supplier</option>
+                      {suppliers.map((supplier) => (
+                        <option key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </option>
+                      ))}
+                    </select>
+                  </FormControl>
+                  <FormDescription>
+                    Select the supplier for this product (optional).
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="stock"

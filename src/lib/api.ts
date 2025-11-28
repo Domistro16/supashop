@@ -40,6 +40,11 @@ export interface Product {
   price: string | number;
   categoryName?: string;
   dealer?: string;
+  supplierId?: string | null;
+  supplier?: {
+    id: string;
+    name: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -648,6 +653,99 @@ export const customers = {
   },
 };
 
+// ============================================
+// Suppliers API
+// ============================================
+
+export interface Supplier {
+  id: string;
+  shopId: string;
+  name: string;
+  contactPerson?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  notes?: string | null;
+  totalOrders: number;
+  totalSpent: number;
+  lastOrder?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    products: number;
+  };
+}
+
+export interface SupplierStats {
+  totalSuppliers: number;
+  activeSuppliers: number;
+  totalProducts: number;
+  topSuppliers: Array<{
+    id: string;
+    name: string;
+    productCount: number;
+    totalSpent: number;
+  }>;
+}
+
+export const suppliers = {
+  getAll: async (params?: {
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<{ suppliers: Supplier[] }> => {
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+
+    const query = queryParams.toString();
+    return apiCall(`/suppliers${query ? `?${query}` : ''}`, {}, true);
+  },
+
+  getById: async (id: string): Promise<{ supplier: Supplier }> => {
+    return apiCall(`/suppliers/${id}`, {}, true);
+  },
+
+  create: async (data: {
+    name: string;
+    contactPerson?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    notes?: string;
+  }): Promise<{ supplier: Supplier }> => {
+    return apiCall('/suppliers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }, true);
+  },
+
+  update: async (id: string, data: {
+    name?: string;
+    contactPerson?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    notes?: string;
+  }): Promise<{ supplier: Supplier }> => {
+    return apiCall(`/suppliers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }, true);
+  },
+
+  delete: async (id: string): Promise<{ message: string }> => {
+    return apiCall(`/suppliers/${id}`, {
+      method: 'DELETE',
+    }, true);
+  },
+
+  getStats: async (): Promise<SupplierStats> => {
+    return apiCall('/suppliers/stats', {}, true);
+  },
+};
+
 export const api = {
   auth,
   shops,
@@ -659,6 +757,7 @@ export const api = {
   ai,
   notifications,
   customers,
+  suppliers,
 };
 
 export default api;

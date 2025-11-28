@@ -195,7 +195,8 @@ export const addProduct = async (
   category: string,
   dealer: string,
   stock: number,
-  price: number
+  price: number,
+  supplierId?: string
 ) => {
   try {
     const product = await api.products.create({
@@ -204,7 +205,8 @@ export const addProduct = async (
       dealer,
       stock,
       price,
-    });
+      supplierId: supplierId || undefined,
+    } as any);
 
     return { success: true, data: product };
   } catch (error: any) {
