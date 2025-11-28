@@ -126,14 +126,14 @@ export default function CustomerForm({ customerId, onSuccess, onCancel }: Custom
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6 space-y-6">
-        <h2 className="text-xl font-semibold text-gray-900">
+      <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6 space-y-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white/90">
           {customerId ? 'Edit Customer' : 'Add New Customer'}
         </h2>
 
         {/* Name - Required */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -142,13 +142,13 @@ export default function CustomerForm({ customerId, onSuccess, onCancel }: Custom
             required
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         {/* Email */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Email
           </label>
           <input
@@ -156,13 +156,13 @@ export default function CustomerForm({ customerId, onSuccess, onCancel }: Custom
             id="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         {/* Phone */}
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Phone
           </label>
           <input
@@ -170,13 +170,13 @@ export default function CustomerForm({ customerId, onSuccess, onCancel }: Custom
             id="phone"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         {/* Address */}
         <div>
-          <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Address
           </label>
           <textarea
@@ -184,13 +184,13 @@ export default function CustomerForm({ customerId, onSuccess, onCancel }: Custom
             rows={3}
             value={formData.address}
             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         {/* Notes */}
         <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Notes
           </label>
           <textarea
@@ -198,14 +198,14 @@ export default function CustomerForm({ customerId, onSuccess, onCancel }: Custom
             rows={3}
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Internal notes about this customer..."
           />
         </div>
 
         {/* Tags */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Tags</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tags</label>
           <div className="mt-1 flex gap-2">
             <input
               type="text"
@@ -217,13 +217,13 @@ export default function CustomerForm({ customerId, onSuccess, onCancel }: Custom
                   handleAddTag();
                 }
               }}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Add a tag (e.g., VIP, Wholesale)"
             />
             <button
               type="button"
               onClick={handleAddTag}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               Add
             </button>
@@ -233,13 +233,13 @@ export default function CustomerForm({ customerId, onSuccess, onCancel }: Custom
               {formData.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300"
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => handleRemoveTag(tag)}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
+                    className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
                   >
                     ×
                   </button>
@@ -256,7 +256,7 @@ export default function CustomerForm({ customerId, onSuccess, onCancel }: Custom
           type="button"
           onClick={handleCancel}
           disabled={loading}
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+          className="px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-white/[0.03] hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
         >
           Cancel
         </button>
