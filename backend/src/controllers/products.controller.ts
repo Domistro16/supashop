@@ -59,7 +59,7 @@ export async function getProduct(req: AuthRequest, res: Response) {
  */
 export async function createProduct(req: AuthRequest, res: Response) {
   try {
-    const { name, stock, price, categoryName }: CreateProductRequest = req.body;
+    const { name, stock, price, categoryName, supplierId }: CreateProductRequest = req.body;
 
     if (!req.shopId) {
       return res.status(400).json({ error: 'Shop context required' });
@@ -76,6 +76,7 @@ export async function createProduct(req: AuthRequest, res: Response) {
         stock,
         price,
         categoryName,
+        supplierId: supplierId || null,
       },
     });
 
