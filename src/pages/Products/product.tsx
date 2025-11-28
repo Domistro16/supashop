@@ -12,6 +12,8 @@ import { set } from "zod";
 import { record_sale } from "@/supabaseClient";
 import CustomerSearchSelect from "@/components/customers/CustomerSearchSelect";
 import { Customer } from "@/lib/api";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 function getData(): Product[] {
   // Fetch data from your API here.
   return [
@@ -87,6 +89,63 @@ export default function Products({ products }: { products: Product[] }) {
     }
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+
+    // Add title
+    doc.setFontSize(18);
+    doc.text("Product List", 14, 22);
+
+    // Add date
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    const exportDate = new Date().toLocaleDateString("en-NG", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    doc.text(`Exported on: ${exportDate}`, 14, 30);
+
+    // Prepare table data
+    const tableData = products.map((product) => [
+      product.name,
+      product.category,
+      new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+      }).format(Number(product.price)),
+      product.stock.toString(),
+      new Date(product.created_at).toLocaleDateString("en-NG", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+    ]);
+
+    // Generate table
+    autoTable(doc, {
+      head: [["Product Name", "Category", "Price", "Stock", "Created At"]],
+      body: tableData,
+      startY: 35,
+      theme: "grid",
+      headStyles: {
+        fillColor: [37, 99, 235], // Blue color
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+      },
+      styles: {
+        fontSize: 10,
+        cellPadding: 3,
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 250],
+      },
+    });
+
+    // Save the PDF
+    doc.save(`products-${new Date().toISOString().split("T")[0]}.pdf`);
+  };
+
   const { openModal, isOpen, closeModal } = useModal();
 
   return (
@@ -101,6 +160,7 @@ export default function Products({ products }: { products: Product[] }) {
             <Button
               variant="outline"
               className="text-gray-400 flex-end md:py-6 text-[12px] md:text-[15px] flex items-center"
+              onClick={exportToPDF}
             >
               Export <DownloadIcon className="ml-1 h-4 w-4" />
             </Button>
