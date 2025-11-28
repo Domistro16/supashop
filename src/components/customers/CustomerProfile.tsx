@@ -33,13 +33,13 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
   const getTierBadgeColor = (tier: string) => {
     switch (tier) {
       case 'platinum':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300';
       case 'gold':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300';
       case 'silver':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
       default:
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300';
     }
   };
 
@@ -54,7 +54,7 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
   if (!customer) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Customer not found</p>
+        <p className="text-gray-500 dark:text-gray-400">Customer not found</p>
       </div>
     );
   }
@@ -62,16 +62,16 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center">
-            <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center">
-              <span className="text-3xl text-blue-600 font-medium">
+            <div className="h-20 w-20 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+              <span className="text-3xl text-blue-600 dark:text-blue-300 font-medium">
                 {customer.name.charAt(0).toUpperCase()}
               </span>
             </div>
             <div className="ml-6">
-              <h1 className="text-2xl font-bold text-gray-900">{customer.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white/90">{customer.name}</h1>
               {customer.loyaltyPoint && (
                 <div className="flex items-center gap-2 mt-2">
                   <span
@@ -81,7 +81,7 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
                   >
                     {customer.loyaltyPoint.tier.toUpperCase()} MEMBER
                   </span>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     {customer.loyaltyPoint.points} points
                   </span>
                 </div>
@@ -89,7 +89,7 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
               {customer.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {customer.tags.map((tag) => (
-                    <span key={tag} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                    <span key={tag} className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded">
                       {tag}
                     </span>
                   ))}
@@ -108,25 +108,25 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white shadow rounded-lg p-6">
-          <p className="text-sm text-gray-500">Total Spent</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Total Spent</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white/90 mt-1">
             {formatCurrency(customer.totalSpent)}
           </p>
         </div>
-        <div className="bg-white shadow rounded-lg p-6">
-          <p className="text-sm text-gray-500">Total Visits</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{customer.visitCount}</p>
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Total Visits</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white/90 mt-1">{customer.visitCount}</p>
         </div>
-        <div className="bg-white shadow rounded-lg p-6">
-          <p className="text-sm text-gray-500">Last Visit</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Last Visit</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white/90 mt-1">
             {customer.lastVisit ? formatTimeAgo(customer.lastVisit) : 'Never'}
           </p>
         </div>
-        <div className="bg-white shadow rounded-lg p-6">
-          <p className="text-sm text-gray-500">Avg. Order Value</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Avg. Order Value</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white/90 mt-1">
             {customer.visitCount > 0
               ? formatCurrency(customer.totalSpent / customer.visitCount)
               : formatCurrency(0)}
@@ -135,55 +135,55 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
       </div>
 
       {/* Contact Information */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h2>
+      <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white/90 mb-4">Contact Information</h2>
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <dt className="text-sm font-medium text-gray-500">Email</dt>
-            <dd className="mt-1 text-sm text-gray-900">{customer.email || '-'}</dd>
+            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</dt>
+            <dd className="mt-1 text-sm text-gray-900 dark:text-white/90">{customer.email || '-'}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Phone</dt>
-            <dd className="mt-1 text-sm text-gray-900">{customer.phone || '-'}</dd>
+            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</dt>
+            <dd className="mt-1 text-sm text-gray-900 dark:text-white/90">{customer.phone || '-'}</dd>
           </div>
           <div className="md:col-span-2">
-            <dt className="text-sm font-medium text-gray-500">Address</dt>
-            <dd className="mt-1 text-sm text-gray-900">{customer.address || '-'}</dd>
+            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</dt>
+            <dd className="mt-1 text-sm text-gray-900 dark:text-white/90">{customer.address || '-'}</dd>
           </div>
         </dl>
       </div>
 
       {/* Notes */}
       {customer.notes && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Notes</h2>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{customer.notes}</p>
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white/90 mb-4">Notes</h2>
+          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{customer.notes}</p>
         </div>
       )}
 
       {/* Recent Sales */}
       {customer._count && customer._count.sales > 0 && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white/90 mb-4">
             Recent Purchases ({customer._count.sales} total)
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Purchase history integration coming soon...
           </p>
         </div>
       )}
 
       {/* Account Info */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h2>
+      <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white/90 mb-4">Account Information</h2>
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <dt className="text-sm font-medium text-gray-500">Customer Since</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatTimeAgo(customer.createdAt)}</dd>
+            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Since</dt>
+            <dd className="mt-1 text-sm text-gray-900 dark:text-white/90">{formatTimeAgo(customer.createdAt)}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Last Updated</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatTimeAgo(customer.updatedAt)}</dd>
+            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</dt>
+            <dd className="mt-1 text-sm text-gray-900 dark:text-white/90">{formatTimeAgo(customer.updatedAt)}</dd>
           </div>
         </dl>
       </div>

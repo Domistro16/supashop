@@ -29,19 +29,19 @@ export default function CustomerStats() {
   const getTierBadgeColor = (tier: string) => {
     switch (tier) {
       case 'platinum':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300';
       case 'gold':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300';
       case 'silver':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
       default:
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300';
     }
   };
 
   if (loading) {
     return (
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -57,15 +57,15 @@ export default function CustomerStats() {
     <div className="space-y-6">
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Total Customers</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalCustomers}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Customers</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white/90 mt-1">{stats.totalCustomers}</p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
               <svg
-                className="h-6 w-6 text-blue-600"
+                className="h-6 w-6 text-blue-600 dark:text-blue-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -81,17 +81,17 @@ export default function CustomerStats() {
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">New This Month</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400">New This Month</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white/90 mt-1">
                 {stats.newCustomersThisMonth}
               </p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
               <svg
-                className="h-6 w-6 text-green-600"
+                className="h-6 w-6 text-green-600 dark:text-green-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -107,17 +107,17 @@ export default function CustomerStats() {
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Avg. Customer Value</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Avg. Customer Value</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white/90 mt-1">
                 {formatCurrency(stats.avgCustomerValue)}
               </p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900 flex items-center justify-center">
               <svg
-                className="h-6 w-6 text-yellow-600"
+                className="h-6 w-6 text-yellow-600 dark:text-yellow-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -136,39 +136,39 @@ export default function CustomerStats() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Customers */}
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Top Customers</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white/90">Top Customers</h3>
             <button
               onClick={() => navigate('/customers')}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
             >
               View All
             </button>
           </div>
           {stats.topCustomers.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">No customers yet</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No customers yet</p>
           ) : (
             <div className="space-y-3">
               {stats.topCustomers.map((customer) => (
                 <div
                   key={customer.id}
                   onClick={() => navigate(`/customers/${customer.id}`)}
-                  className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+                  className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer"
                 >
                   <div className="flex items-center">
-                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-blue-600 font-medium">
+                    <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                      <span className="text-blue-600 dark:text-blue-300 font-medium">
                         {customer.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">{customer.name}</p>
-                      <p className="text-xs text-gray-500">{customer.visitCount} visits</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white/90">{customer.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{customer.visitCount} visits</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white/90">
                       {formatCurrency(customer.totalSpent)}
                     </p>
                     {customer.loyaltyPoint && (
@@ -188,10 +188,10 @@ export default function CustomerStats() {
         </div>
 
         {/* Loyalty Tier Distribution */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Loyalty Tiers</h3>
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white/90 mb-4">Loyalty Tiers</h3>
           {stats.loyaltyTierDistribution.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">No loyalty data yet</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No loyalty data yet</p>
           ) : (
             <div className="space-y-4">
               {stats.loyaltyTierDistribution.map((tier) => {
@@ -210,11 +210,11 @@ export default function CustomerStats() {
                       >
                         {tier.tier.toUpperCase()}
                       </span>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
                         {tier._count.tier} ({percentage}%)
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${
                           tier.tier === 'platinum'
