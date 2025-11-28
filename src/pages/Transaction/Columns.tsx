@@ -22,6 +22,11 @@ export type Transaction = {
   total_amount: string;
   created_at: string;
   staff_id: string;
+  customer?: {
+    id: string;
+    name: string;
+    phone?: string;
+  } | null;
 };
 
 export const columns: ColumnDef<Transaction>[] = [
@@ -107,6 +112,28 @@ export const columns: ColumnDef<Transaction>[] = [
           Sold By
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
+      );
+    },
+  },
+  {
+    accessorKey: "customer",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Sold To
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const customer = row.getValue("customer") as Transaction["customer"];
+      return (
+        <div className="font-medium text-gray-700 dark:text-gray-300">
+          {customer ? customer.name : '-'}
+        </div>
       );
     },
   },

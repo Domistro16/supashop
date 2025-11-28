@@ -232,7 +232,7 @@ export async function getProfiles() {
   }
 }
 
-export const record_sale = async (items: Item[]): Promise<boolean> => {
+export const record_sale = async (items: Item[], customerId?: string): Promise<boolean> => {
   try {
     if (!Array.isArray(items) || items.length === 0) {
       console.error('Invalid items array');
@@ -252,11 +252,12 @@ export const record_sale = async (items: Item[]): Promise<boolean> => {
       };
     });
 
-    // Create sale
+    // Create sale with optional customer
     await api.sales.create({
       items: saleItems,
       totalAmount,
-    });
+      customerId,
+    } as any);
 
     console.log('Sale recorded successfully');
     return true;
