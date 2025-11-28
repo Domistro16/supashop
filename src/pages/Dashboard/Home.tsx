@@ -9,6 +9,7 @@ import { Transaction } from "../Transaction/Columns";
 import AIBusinessSummary from "../../components/ai/AIBusinessSummary";
 import AISalesPredictions from "../../components/ai/AISalesPredictions";
 import AIRestockingAlert from "../../components/ai/AIRestockingAlert";
+import CustomerStats from "../../components/customers/CustomerStats";
 
 function filterToday(sales: Transaction[]) {
   const now = new Date();
@@ -138,6 +139,11 @@ export default function Home({
 
         <div className="col-span-12 lg:col-span-6">
           <AIRestockingAlert />
+        </div>
+
+        {/* Customer Management Section */}
+        <div className="col-span-12">
+          <CustomerStats />
         </div>
 
         <div className="col-span-12">

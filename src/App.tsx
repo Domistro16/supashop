@@ -26,6 +26,9 @@ import Staffs from "./pages/Staff/staff";
 import AddStaffs from "./pages/Staff/addStaff";
 import Invite from "./pages/Staff/invites";
 import RolesManagement from "./pages/Roles/index";
+import CustomersPage from "./pages/Customers/index";
+import CustomerProfilePage from "./pages/Customers/CustomerProfilePage";
+import CustomerFormPage from "./pages/Customers/CustomerFormPage";
 import Login from "./pages/AuthPages/login";
 import { AuthProvider, useAuth } from "./auth";
 import { UserProvider } from "./context/UserContext";
@@ -142,6 +145,9 @@ export default function App() {
                 <Route path="/staff/add" element={<AddStaffs />} />
                 <Route path="/staff/invites" element={<Invite />} />
                 <Route path="/roles" element={<RolesManagement />} />
+                <Route path="/customers" element={<CustomersPage />} />
+                <Route path="/customers/:id" element={<CustomerProfilePage />} />
+                <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
                 <Route path="/blank" element={<Blank />} />
 
                 {/* Forms */}
