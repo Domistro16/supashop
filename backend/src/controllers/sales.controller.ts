@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest, CreateSaleRequest } from '../types';
 import { PrismaClient } from '@prisma/client';
+import { updateCustomerFromSale } from './customers.controller';
 
 const prisma = new PrismaClient();
 
@@ -30,6 +31,13 @@ export async function getSales(req: AuthRequest, res: Response) {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
           },
         },
       },
@@ -65,6 +73,13 @@ export async function getSale(req: AuthRequest, res: Response) {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
           },
         },
         saleItems: {
@@ -138,7 +153,7 @@ export async function getSaleItems(req: AuthRequest, res: Response) {
  */
 export async function createSale(req: AuthRequest, res: Response) {
   try {
-    const { items, totalAmount }: CreateSaleRequest = req.body;
+    const { items, totalAmount, customerId }: CreateSaleRequest & { customerId?: string } = req.body;
 
     if (!req.shopId || !req.user) {
       return res.status(400).json({ error: 'Shop context and authentication required' });
@@ -146,6 +161,20 @@ export async function createSale(req: AuthRequest, res: Response) {
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: 'At least one item is required' });
+    }
+
+    // Validate customer if provided
+    if (customerId) {
+      const customer = await prisma.customer.findFirst({
+        where: {
+          id: customerId,
+          shopId: req.shopId,
+        },
+      });
+
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
     }
 
     // Validate products exist and have sufficient stock
@@ -178,6 +207,7 @@ export async function createSale(req: AuthRequest, res: Response) {
           orderId: generateOrderId(),
           shopId: req.shopId!,
           staffId: req.user!.id,
+          customerId: customerId || null,
           totalAmount,
         },
       });
@@ -222,6 +252,16 @@ export async function createSale(req: AuthRequest, res: Response) {
       return newSale;
     });
 
+    // Update customer stats if customer was provided
+    if (customerId) {
+      try {
+        await updateCustomerFromSale(customerId, Number(totalAmount));
+      } catch (error) {
+        console.error('Failed to update customer stats:', error);
+        // Don't fail the sale if customer update fails
+      }
+    }
+
     // Fetch created sale with items
     const createdSale = await prisma.sale.findUnique({
       where: { id: sale.id },
@@ -229,6 +269,13 @@ export async function createSale(req: AuthRequest, res: Response) {
         saleItems: {
           include: {
             product: true,
+          },
+        },
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
           },
         },
       },
