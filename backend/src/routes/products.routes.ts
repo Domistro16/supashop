@@ -8,9 +8,8 @@ const router = Router();
 // All product routes require authentication and shop context
 router.use(authenticate, setShopContext);
 
-// Get unique categories and dealers
+// Get unique categories
 router.get('/categories', requirePermission('products:read'), productsController.getCategories);
-router.get('/dealers', requirePermission('products:read'), productsController.getDealers);
 
 // CRUD operations
 router.get('/', requirePermission('products:read'), productsController.getProducts);

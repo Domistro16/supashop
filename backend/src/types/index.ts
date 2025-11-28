@@ -53,7 +53,6 @@ export interface CreateProductRequest {
   stock: number;
   price: number;
   categoryName?: string;
-  dealer?: string;
 }
 
 export interface UpdateProductRequest {
@@ -61,7 +60,7 @@ export interface UpdateProductRequest {
   stock?: number;
   price?: number;
   categoryName?: string;
-  dealer?: string;
+  [key: string]: any;
 }
 
 // Sale DTOs
