@@ -40,12 +40,12 @@ export default function QuickAddCustomer({ onSuccess, onCancel }: QuickAddCustom
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Add Customer</h2>
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 p-6 w-full max-w-md">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white/90 mb-4">Quick Add Customer</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="quick-name" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="quick-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -55,13 +55,13 @@ export default function QuickAddCustomer({ onSuccess, onCancel }: QuickAddCustom
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Customer name"
             />
           </div>
 
           <div>
-            <label htmlFor="quick-phone" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="quick-phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Phone (optional)
             </label>
             <input
@@ -69,7 +69,7 @@ export default function QuickAddCustomer({ onSuccess, onCancel }: QuickAddCustom
               id="quick-phone"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Phone number"
             />
           </div>
@@ -79,7 +79,7 @@ export default function QuickAddCustomer({ onSuccess, onCancel }: QuickAddCustom
               type="button"
               onClick={onCancel}
               disabled={loading}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              className="px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-white/[0.03] hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
             >
               Cancel
             </button>
