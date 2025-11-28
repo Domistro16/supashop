@@ -54,6 +54,11 @@ export interface Sale {
     name: string;
     email: string;
   };
+  customer?: {
+    id: string;
+    name: string;
+    phone?: string;
+  } | null;
 }
 
 export interface SaleItem {

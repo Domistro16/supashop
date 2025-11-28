@@ -140,6 +140,7 @@ export const getSales = async (): Promise<Transaction[]> => {
         total_amount: item.totalAmount.toString(),
         created_at: item.createdAt,
         staff_id: staffName,
+        customer: item.customer || null,
       });
     }
 
