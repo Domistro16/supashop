@@ -2,6 +2,7 @@ import ComponentCard from "@/components/common/ComponentCard2";
 import { columns, Product } from "./Columns";
 import { DataTable } from "./DataTable";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import PageMeta from "@/components/common/PageMeta";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon, RefreshCw } from "lucide-react";
 import { useModal } from "@/hooks/useModal";
@@ -177,6 +178,7 @@ export default function Products({ products }: { products: Product[] }) {
 
   return (
     <div className="container mx-auto py-10">
+      <PageMeta title="Products | Supashop" description="Manage and track your store's products inventory" />
       <PageBreadcrumb pageTitle="Products" />
       <ComponentCard
         title="Products List"

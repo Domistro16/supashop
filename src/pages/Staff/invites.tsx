@@ -1,6 +1,7 @@
 import ComponentCard from "@/components/common/ComponentCard2";
 import { DataTable } from "./DataTable2";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import PageMeta from "@/components/common/PageMeta";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon } from "lucide-react";
 import { Invites, columns } from "./Columns2";
@@ -32,6 +33,7 @@ export default function Invite() {
 
   return (
     <div className="container mx-auto py-10">
+      <PageMeta title="Staff Invites | Supashop" description="View and manage staff invitations" />
       <PageBreadcrumb pageTitle="Invites" />
       <ComponentCard
         title="Invite List"
