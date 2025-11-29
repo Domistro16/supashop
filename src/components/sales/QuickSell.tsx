@@ -5,6 +5,7 @@ import { Customer } from '@/lib/api';
 import CustomerSearchSelect from '@/components/customers/CustomerSearchSelect';
 import { record_sale } from '@/supabaseClient';
 import { toast } from 'react-hot-toast';
+import { useDataRefresh } from '@/context/DataRefreshContext';
 
 interface QuickSellProps {
   product: Product;
@@ -16,6 +17,7 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
   const [quantity, setQuantity] = useState(1);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(false);
+  const { refreshSales, refreshProducts } = useDataRefresh();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +41,10 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
 
       if (success) {
         toast.success(`Sold ${quantity} ${product.name}${selectedCustomer ? ` to ${selectedCustomer.name}` : ''}`);
+
+        // Refresh sales and products data
+        await Promise.all([refreshSales(), refreshProducts()]);
+
         onSuccess();
         onClose();
       } else {

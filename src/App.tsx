@@ -36,6 +36,8 @@ import SalesReport from "./pages/Reports/SalesReport";
 import Login from "./pages/AuthPages/login";
 import { AuthProvider, useAuth } from "./auth";
 import { UserProvider } from "./context/UserContext";
+import { DataRefreshProvider } from "./context/DataRefreshContext";
+import { Toaster } from "react-hot-toast";
 
 import { useEffect, useState } from "react";
 
@@ -106,9 +108,39 @@ export default function App() {
     <>
       <AuthProvider>
         <UserProvider>
-          <Router>
-            <ScrollToTop />
-            <Routes>
+          <DataRefreshProvider
+            setProducts={setProducts}
+            setSales={setSales}
+            setShop={setShop}
+            setRecent={setRecent}
+          >
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: "#333",
+                  color: "#fff",
+                },
+                success: {
+                  duration: 3000,
+                  iconTheme: {
+                    primary: "#10b981",
+                    secondary: "#fff",
+                  },
+                },
+                error: {
+                  duration: 4000,
+                  iconTheme: {
+                    primary: "#ef4444",
+                    secondary: "#fff",
+                  },
+                },
+              }}
+            />
+            <Router>
+              <ScrollToTop />
+              <Routes>
               {/* Dashboard Layout */}
               <Route path="/" element={<ProtectedPage />}>
                 <Route
@@ -184,8 +216,9 @@ export default function App() {
 
               {/* Fallback Route */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Router>
+              </Routes>
+            </Router>
+          </DataRefreshProvider>
         </UserProvider>
       </AuthProvider>
     </>

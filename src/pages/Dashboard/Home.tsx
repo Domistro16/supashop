@@ -10,6 +10,11 @@ import AIBusinessSummary from "../../components/ai/AIBusinessSummary";
 import AISalesPredictions from "../../components/ai/AISalesPredictions";
 import AIRestockingAlert from "../../components/ai/AIRestockingAlert";
 import CustomerStats from "../../components/customers/CustomerStats";
+import { useDataRefresh } from "../../context/DataRefreshContext";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { Button } from "../../components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 function filterToday(sales: Transaction[]) {
   const now = new Date();
@@ -70,6 +75,22 @@ export default function Home({
   shop: any;
   items: Product[];
 }) {
+  const { refreshAll } = useDataRefresh();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshAll();
+      toast.success("Dashboard data refreshed successfully!");
+    } catch (error) {
+      console.error("Error refreshing dashboard:", error);
+      toast.error("Failed to refresh dashboard");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const todaySales = filterToday(sales);
   const yesterdaySales = filterYesterday(sales);
   console.log(todaySales);
@@ -112,6 +133,18 @@ export default function Home({
         title="Supashop Dashboard | Admin Dashboard Template"
         description="This is the Ecommerce Dashboard page for Supashop"
       />
+      <div className="mb-6 flex justify-between items-center">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
+        <Button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          Refresh Dashboard
+        </Button>
+      </div>
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         <div className="col-span-12 space-y-6 xl:col-span-7">
           <EcommerceMetrics

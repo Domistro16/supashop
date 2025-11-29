@@ -12,6 +12,13 @@ export default function NotificationDropdown() {
 
   useEffect(() => {
     loadNotifications();
+
+    // Auto-refresh notifications every 30 seconds
+    const interval = setInterval(() => {
+      loadNotifications();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadNotifications = async () => {
