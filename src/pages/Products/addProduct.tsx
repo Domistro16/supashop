@@ -21,6 +21,23 @@ import SupplierSearchSelect from "@/components/suppliers/SupplierSearchSelect";
 import CategorySuggest from "@/components/products/CategorySuggest";
 import toast from "react-hot-toast";
 import { useDataRefresh } from "@/context/DataRefreshContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const UNIT_MULTIPLIERS = [
+  { label: "Pieces", value: "pieces", multiplier: 1 },
+  { label: "By 6s", value: "by6", multiplier: 6 },
+  { label: "By 12s", value: "by12", multiplier: 12 },
+  { label: "By 24s", value: "by24", multiplier: 24 },
+  { label: "Crates (30)", value: "crates30", multiplier: 30 },
+  { label: "Cartons (50)", value: "cartons50", multiplier: 50 },
+  { label: "Dozens", value: "dozens", multiplier: 12 },
+];
 
 interface QuantityInputProps {
   value: number;
@@ -28,30 +45,66 @@ interface QuantityInputProps {
 }
 
 export function QuantityInput({ value, onChange }: QuantityInputProps) {
-  const increase = () => onChange(value + 1);
-  const decrease = () => onChange(Math.max(0, value - 1));
+  const [inputValue, setInputValue] = useState<string>("0");
+  const [selectedUnit, setSelectedUnit] = useState<string>("pieces");
+
+  const currentMultiplier = UNIT_MULTIPLIERS.find(
+    (u) => u.value === selectedUnit
+  )?.multiplier || 1;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputValue(val);
+
+    const num = parseInt(val) || 0;
+    const totalStock = num * currentMultiplier;
+    onChange(Math.max(0, totalStock));
+  };
+
+  const handleUnitChange = (unit: string) => {
+    setSelectedUnit(unit);
+    const newMultiplier = UNIT_MULTIPLIERS.find((u) => u.value === unit)?.multiplier || 1;
+    const num = parseInt(inputValue) || 0;
+    const totalStock = num * newMultiplier;
+    onChange(Math.max(0, totalStock));
+  };
+
+  const displayQuantity = parseInt(inputValue) || 0;
+  const totalStock = displayQuantity * currentMultiplier;
 
   return (
-    <div className="flex items-center border rounded-lg overflow-hidden w-40 flex-1">
-      <Button
-        type="button"
-        variant="ghost"
-        className="rounded-none border-r h-10 w-10 p-0"
-        onClick={decrease}
-      >
-        -
-      </Button>
-      <div className="text-center border-0 text-sm focus-visible:ring-0 bg-transparent focus-visible:ring-offset-0 flex-1 justify-center">
-        {value}
+    <div className="space-y-3">
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <Input
+            type="number"
+            min="0"
+            value={inputValue}
+            onChange={handleInputChange}
+            placeholder="Enter quantity"
+            className="w-full"
+          />
+        </div>
+        <div className="w-[180px]">
+          <Select value={selectedUnit} onValueChange={handleUnitChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select unit" />
+            </SelectTrigger>
+            <SelectContent>
+              {UNIT_MULTIPLIERS.map((unit) => (
+                <SelectItem key={unit.value} value={unit.value}>
+                  {unit.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        className="rounded-none border-l h-10 w-10 p-0"
-        onClick={increase}
-      >
-        +
-      </Button>
+      {selectedUnit !== "pieces" && totalStock > 0 && (
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          {displayQuantity} × {currentMultiplier} = <span className="font-semibold text-blue-600 dark:text-blue-400">{totalStock} pieces</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -224,7 +277,7 @@ export default function AddProducts() {
                     />
                   </FormControl>
                   <FormDescription>
-                    This is the available stock for the product.
+                    Enter quantity and select unit (e.g., "10 By 12s" = 120 pieces total stock).
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
