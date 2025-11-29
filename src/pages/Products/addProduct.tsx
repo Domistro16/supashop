@@ -1,5 +1,6 @@
 import ComponentCard from "@/components/common/ComponentCard2";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import PageMeta from "@/components/common/PageMeta";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -186,6 +187,7 @@ export default function AddProducts() {
   }
   return (
     <div className="container mx-auto py-10">
+      <PageMeta title="Add Product | Supashop" description="Add new products to your inventory" />
       <PageBreadcrumb pageTitle="Add Product" />
       <ComponentCard title={"Product Metadata"} className="text-[40px]">
         <Form {...form}>

@@ -3,6 +3,7 @@ import ComponentCard from "@/components/common/ComponentCard2";
 import { createColumns, Staff } from "./Columns";
 import { DataTable } from "./DataTable";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import PageMeta from "@/components/common/PageMeta";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -84,6 +85,7 @@ export default function Staffs() {
 
   return (
     <div className="container mx-auto py-10">
+      <PageMeta title="Staff | Supashop" description="Manage your store staff members" />
       <PageBreadcrumb pageTitle="Staffs" />
       <ComponentCard
         title="Staff List"
