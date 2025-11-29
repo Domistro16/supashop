@@ -18,6 +18,7 @@ import { addProduct } from "@/supabaseClient";
 import { useState } from "react";
 import { Supplier } from "@/lib/api";
 import SupplierSearchSelect from "@/components/suppliers/SupplierSearchSelect";
+import CategorySuggest from "@/components/products/CategorySuggest";
 
 interface QuantityInputProps {
   value: number;
@@ -136,14 +137,16 @@ export default function AddProducts() {
                   <FormItem className="flex-1">
                     <FormLabel>Category</FormLabel>
                     <FormControl>
-                      <Input
+                      <CategorySuggest
+                        productName={form.watch("product_name")}
+                        value={field.value}
+                        onChange={field.onChange}
                         placeholder="Enter Category"
-                        {...field}
-                        className="w-full"
+                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </FormControl>
                     <FormDescription>
-                      This is the category the product belongs to.
+                      Smart suggestions based on product name and existing categories.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
