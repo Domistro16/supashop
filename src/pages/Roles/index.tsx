@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import ComponentCard from "@/components/common/ComponentCard2";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import PageMeta from "@/components/common/PageMeta";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -210,6 +211,7 @@ export default function RolesManagement() {
 
   return (
     <div className="container mx-auto py-10">
+      <PageMeta title="Roles & Permissions | Supashop" description="Manage roles and permissions for your staff" />
       <PageBreadcrumb pageTitle="Roles & Permissions" />
 
       <ComponentCard

@@ -2,6 +2,7 @@ import ComponentCard from "@/components/common/ComponentCard";
 import { columns, Transaction } from "./Columns";
 import { DataTable } from "./DataTable";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import PageMeta from "@/components/common/PageMeta";
 import { Button } from "@/components/ui/button";
 import { FileText, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router";
@@ -30,6 +31,7 @@ export default function Transactions({sales} : {sales: Transaction[]}) {
 
   return (
     <div className="container mx-auto py-10">
+      <PageMeta title="Transactions | Supashop" description="View and manage all store transactions" />
       <PageBreadcrumb pageTitle="Transactions" />
 
       {/* Sales Report Button */}
