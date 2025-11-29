@@ -72,7 +72,7 @@ export async function createDefaultRoles(
   const allPermissions = await tx.permission.findMany();
   const permissionMap = new Map(allPermissions.map((p) => [p.name, p.id]));
 
-  const createdRoles = [];
+  const createdRoles: any[] = [];
 
   // Create each default role
   for (const [key, template] of Object.entries(DEFAULT_ROLE_TEMPLATES)) {
