@@ -72,8 +72,8 @@ export default function SupplierSearchSelect({
 
   return (
     <div className="relative" ref={wrapperRef}>
-      <div className="flex gap-2">
-        <div className="flex-1 relative">
+      <div className="flex gap-2 mt-3">
+        <div className="flex-1 relative flex items-center">
           <input
             type="text"
             value={selectedSupplier ? selectedSupplier.name : searchTerm}
@@ -126,7 +126,7 @@ export default function SupplierSearchSelect({
                   onClick={() => handleSelectSupplier(supplier)}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800 last:border-0"
                 >
-                  <div className="font-medium text-gray-900 dark:text-white/90">
+                  <div className="font-medium text-sm text-gray-900 dark:text-white/90">
                     {supplier.name}
                   </div>
                   {(supplier.contactPerson || supplier.phone) && (
