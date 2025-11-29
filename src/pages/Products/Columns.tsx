@@ -1,7 +1,8 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, ShoppingCart } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "../../components/ui/button.tsx";
 import {
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { QuantityInput } from "./addProduct.tsx";
+import QuickSell from "@/components/sales/QuickSell";
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -174,6 +176,40 @@ export const columns: ColumnDef<Product>[] = [
 
       console.log(formatted); // e.g. "Sep 4, 2025, 1:34:56 PM GMT+1"
       return <div className="font-medium">{formatted}</div>;
+    },
+  },
+  {
+    id: "quick-sell",
+    header: () => <div className="text-center">Quick Sell</div>,
+    cell: ({ row }) => {
+      const product = row.original;
+      const [showQuickSell, setShowQuickSell] = useState(false);
+
+      return (
+        <>
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowQuickSell(true)}
+              className="h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
+            >
+              <ShoppingCart className="h-4 w-4 mr-1" />
+              Sell
+            </Button>
+          </div>
+          {showQuickSell && (
+            <QuickSell
+              product={product}
+              onClose={() => setShowQuickSell(false)}
+              onSuccess={() => {
+                // Refresh the page or update the product list
+                window.location.reload();
+              }}
+            />
+          )}
+        </>
+      );
     },
   },
   {
