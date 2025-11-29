@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest, CreateSaleRequest } from '../types';
 import { PrismaClient } from '@prisma/client';
 import { updateCustomerFromSale } from './customers.controller';
+import { createNotification } from './notifications.controller';
 
 const prisma = new PrismaClient();
 
@@ -259,6 +260,46 @@ export async function createSale(req: AuthRequest, res: Response) {
       } catch (error) {
         console.error('Failed to update customer stats:', error);
         // Don't fail the sale if customer update fails
+      }
+    }
+
+    // Create notification for sale
+    if (req.user) {
+      await createNotification(
+        req.shopId,
+        req.user.id,
+        'sale',
+        'New Sale Recorded',
+        `Sale #${sale.orderId} completed for ${totalAmount.toLocaleString()} with ${items.length} item(s).`,
+        {
+          saleId: sale.id,
+          orderId: sale.orderId,
+          totalAmount,
+          itemCount: items.length,
+        }
+      );
+
+      // Check if any products went low on stock after the sale
+      for (const item of items) {
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
+        });
+
+        if (product && product.stock <= 10) {
+          await createNotification(
+            req.shopId,
+            req.user.id,
+            'low_stock',
+            'Low Stock Alert',
+            `Product "${product.name}" is running low on stock after recent sale. Current quantity: ${product.stock} units.`,
+            {
+              productId: product.id,
+              productName: product.name,
+              stock: product.stock,
+              saleId: sale.id,
+            }
+          );
+        }
       }
     }
 
