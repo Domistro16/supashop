@@ -6,6 +6,7 @@ import PageMeta from "../components/common/PageMeta";
 import { useUser } from "@/context/UserContext";
 import { useEffect, useState } from "react";
 import api, { Shop } from "@/lib/api";
+import ChangePassword from "../components/profile/ChangePassword";
 
 export default function UserProfiles() {
   const { user, currentShop, loading } = useUser();
@@ -81,6 +82,7 @@ export default function UserProfiles() {
               <p className="text-center text-gray-500">Shop information unavailable</p>
             </div>
           )}
+          <ChangePassword />
         </div>
       </div>
     </>
