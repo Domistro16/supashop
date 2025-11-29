@@ -168,7 +168,7 @@ export default function CategorySuggest({
                       key={category}
                       type="button"
                       onClick={() => handleSelectSuggestion(category)}
-                      className={`w-full text-left px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-b border-gray-100 dark:border-gray-800 last:border-0 ${
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 border-b border-gray-100 dark:border-gray-800 last:border-0 ${
                         isTopSuggestion ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
                       }`}
                     >
