@@ -1,10 +1,11 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { AuthRequest } from '../types';
 
 const prisma = new PrismaClient();
 
 // Get all suppliers for a shop
-export async function getSuppliers(req: Request, res: Response) {
+export async function getSuppliers(req: AuthRequest, res: Response) {
   try {
     const { search, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
 
@@ -42,7 +43,7 @@ export async function getSuppliers(req: Request, res: Response) {
 }
 
 // Get a single supplier by ID
-export async function getSupplierById(req: Request, res: Response) {
+export async function getSupplierById(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
 
@@ -74,7 +75,7 @@ export async function getSupplierById(req: Request, res: Response) {
 }
 
 // Create a new supplier
-export async function createSupplier(req: Request, res: Response) {
+export async function createSupplier(req: AuthRequest, res: Response) {
   try {
     const { name, contactPerson, email, phone, address, notes } = req.body;
 
@@ -118,7 +119,7 @@ export async function createSupplier(req: Request, res: Response) {
 }
 
 // Update a supplier
-export async function updateSupplier(req: Request, res: Response) {
+export async function updateSupplier(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
     const { name, contactPerson, email, phone, address, notes } = req.body;
@@ -173,7 +174,7 @@ export async function updateSupplier(req: Request, res: Response) {
 }
 
 // Delete a supplier
-export async function deleteSupplier(req: Request, res: Response) {
+export async function deleteSupplier(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
 
@@ -213,7 +214,7 @@ export async function deleteSupplier(req: Request, res: Response) {
 }
 
 // Get supplier statistics
-export async function getSupplierStats(req: Request, res: Response) {
+export async function getSupplierStats(req: AuthRequest, res: Response) {
   try {
     const totalSuppliers = await prisma.supplier.count({
       where: { shopId: req.shopId },
@@ -228,14 +229,14 @@ export async function getSupplierStats(req: Request, res: Response) {
       },
     });
 
-    const totalProducts = suppliers.reduce((sum, s) => sum + s._count.products, 0);
-    const activeSuppliers = suppliers.filter(s => s._count.products > 0).length;
+    const totalProducts = suppliers.reduce((sum: number, s: any) => sum + s._count.products, 0);
+    const activeSuppliers = suppliers.filter((s: any) => s._count.products > 0).length;
 
     // Get top suppliers by product count
     const topSuppliers = suppliers
-      .sort((a, b) => b._count.products - a._count.products)
+      .sort((a: any, b: any) => b._count.products - a._count.products)
       .slice(0, 5)
-      .map(s => ({
+      .map((s: any) => ({
         id: s.id,
         name: s.name,
         productCount: s._count.products,
