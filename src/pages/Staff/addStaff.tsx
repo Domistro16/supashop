@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import ComponentCard from "@/components/common/ComponentCard2";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import PageMeta from "@/components/common/PageMeta";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -127,6 +128,7 @@ export default function AddStaffs() {
   }
   return (
     <div className="container mx-auto py-10">
+      <PageMeta title="Add Staff | Supashop" description="Invite new staff members to your store" />
       <PageBreadcrumb pageTitle="Add Staff" />
       <ComponentCard title={"Staff Informaion"} className="text-[40px]">
         <Form {...form}>
