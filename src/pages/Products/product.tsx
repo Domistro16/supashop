@@ -3,7 +3,7 @@ import { columns, Product } from "./Columns";
 import { DataTable } from "./DataTable";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { Button } from "@/components/ui/button";
-import { DownloadIcon } from "lucide-react";
+import { DownloadIcon, RefreshCw } from "lucide-react";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import CustomerSearchSelect from "@/components/customers/CustomerSearchSelect";
 import { Customer } from "@/lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useDataRefresh } from "@/context/DataRefreshContext";
+import toast from "react-hot-toast";
 function getData(): Product[] {
   // Fetch data from your API here.
   return [
@@ -53,7 +55,22 @@ export default function Products({ products }: { products: Product[] }) {
   const [selected, setSelected] = useState<Product[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { refreshProducts, refreshSales } = useDataRefresh();
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshProducts();
+      toast.success("Products refreshed successfully!");
+    } catch (error) {
+      console.error("Error refreshing products:", error);
+      toast.error("Failed to refresh products");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleQuantityChange = (id: string, value: any) => {
     const num = Number(value);
@@ -167,6 +184,15 @@ export default function Products({ products }: { products: Product[] }) {
         desc="Track your store's progress to boost your sales."
         buttons={
           <div className="flex items-center justify-between gap-1 md:gap-5 mb-2 md:mb-0 md:mr-5">
+            <Button
+              variant="outline"
+              className="text-gray-400 flex-end md:py-6 text-[12px] md:text-[15px] flex items-center"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`mr-1 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
             <Button
               variant="outline"
               className="text-gray-400 flex-end md:py-6 text-[12px] md:text-[15px] flex items-center"
@@ -353,15 +379,31 @@ export default function Products({ products }: { products: Product[] }) {
             <Button
               variant="default"
               className="mt-10 text-white bg-blue-700 hover:bg-blue-800 flex-end md:py-6 text-[12px] md:text-[15px]"
-              onClick={() => {
+              onClick={async () => {
                 // Handle form submission here
                 console.log("Selected Products:", selectedProducts);
                 console.log("Selected Customer:", selectedCustomer);
-                record_sale(selectedProducts, selectedCustomer?.id);
-                setSelected([]);
-                setQuantities({});
-                setSelectedCustomer(null);
-                closeModal();
+
+                try {
+                  const success = await record_sale(selectedProducts, selectedCustomer?.id);
+
+                  if (success) {
+                    toast.success("Sale recorded successfully!");
+
+                    // Refresh sales and products data
+                    await Promise.all([refreshSales(), refreshProducts()]);
+
+                    setSelected([]);
+                    setQuantities({});
+                    setSelectedCustomer(null);
+                    closeModal();
+                  } else {
+                    toast.error("Failed to record sale");
+                  }
+                } catch (error) {
+                  console.error("Error recording sale:", error);
+                  toast.error("Failed to record sale");
+                }
               }}
             >
               Submit
