@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest, CreateProductRequest, UpdateProductRequest } from '../types';
 import { PrismaClient } from '@prisma/client';
+import { createNotification } from './notifications.controller';
 
 const prisma = new PrismaClient();
 
@@ -93,6 +94,37 @@ export async function createProduct(req: AuthRequest, res: Response) {
           },
         },
       });
+
+      // Create notification for product addition
+      await createNotification(
+        req.shopId,
+        req.user.id,
+        'staff_action',
+        'New Product Added',
+        `Product "${product.name}" has been added to inventory with ${product.stock} units at ${product.price.toLocaleString()} each.`,
+        {
+          productId: product.id,
+          productName: product.name,
+          stock: product.stock,
+          price: product.price,
+        }
+      );
+
+      // Check for low stock and create notification if needed
+      if (product.stock <= 10) {
+        await createNotification(
+          req.shopId,
+          req.user.id,
+          'low_stock',
+          'Low Stock Alert',
+          `Product "${product.name}" is running low on stock. Current quantity: ${product.stock} units.`,
+          {
+            productId: product.id,
+            productName: product.name,
+            stock: product.stock,
+          }
+        );
+      }
     }
 
     res.status(201).json(product);
@@ -145,6 +177,22 @@ export async function updateProduct(req: AuthRequest, res: Response) {
           },
         },
       });
+
+      // Check for low stock after update and create notification if needed
+      if (product.stock <= 10) {
+        await createNotification(
+          req.shopId,
+          req.user.id,
+          'low_stock',
+          'Low Stock Alert',
+          `Product "${product.name}" is running low on stock. Current quantity: ${product.stock} units.`,
+          {
+            productId: product.id,
+            productName: product.name,
+            stock: product.stock,
+          }
+        );
+      }
     }
 
     res.json(product);

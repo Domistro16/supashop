@@ -19,6 +19,8 @@ import { useState } from "react";
 import { Supplier } from "@/lib/api";
 import SupplierSearchSelect from "@/components/suppliers/SupplierSearchSelect";
 import CategorySuggest from "@/components/products/CategorySuggest";
+import toast from "react-hot-toast";
+import { useDataRefresh } from "@/context/DataRefreshContext";
 
 interface QuantityInputProps {
   value: number;
@@ -72,6 +74,7 @@ const formSchema = z.object({
 export default function AddProducts() {
   const [loading, setLoading] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const { refreshProducts } = useDataRefresh();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -89,19 +92,44 @@ export default function AddProducts() {
     // ✅ This will be type-safe and validated.
     setLoading(true);
     console.log(values);
-    const response = await addProduct(
-      values.product_name,
-      values.category,
-      values.stock,
-      parseFloat(values.price),
-      selectedSupplier?.id
-    );
-    if (response) {
+
+    try {
+      const response = await addProduct(
+        values.product_name,
+        values.category,
+        values.stock,
+        parseFloat(values.price),
+        selectedSupplier?.id
+      );
+
+      if (response) {
+        setLoading(false);
+        form.reset();
+        setSelectedSupplier(null);
+
+        // Show success toast
+        toast.success(`Product "${values.product_name}" added successfully!`, {
+          duration: 3000,
+        });
+
+        // Refresh products list
+        await refreshProducts();
+
+        // Show low stock warning if stock is 10 or below
+        if (values.stock <= 10) {
+          toast.error(`Warning: "${values.product_name}" has low stock (${values.stock} units)`, {
+            duration: 5000,
+          });
+        }
+      }
+      console.log("response from addProduct: ", response);
+    } catch (error) {
       setLoading(false);
-      form.reset();
-      setSelectedSupplier(null);
+      console.error("Error adding product:", error);
+      toast.error("Failed to add product. Please try again.", {
+        duration: 4000,
+      });
     }
-    console.log("response from addProduct: ", response);
   }
   return (
     <div className="container mx-auto py-10">
