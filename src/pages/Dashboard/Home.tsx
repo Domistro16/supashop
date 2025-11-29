@@ -130,8 +130,8 @@ export default function Home({
   return (
     <>
       <PageMeta
-        title="Supashop Dashboard | Admin Dashboard Template"
-        description="This is the Ecommerce Dashboard page for Supashop"
+        title="Supashop Dashboard"
+        description="This is the Ecommerce Dashboard page for your shop"
       />
       <div className="mb-6 flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
