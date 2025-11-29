@@ -7,7 +7,7 @@ import { DownloadIcon } from "lucide-react";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { set } from "zod";
 import { record_sale } from "@/supabaseClient";
 import CustomerSearchSelect from "@/components/customers/CustomerSearchSelect";
@@ -53,6 +53,7 @@ export default function Products({ products }: { products: Product[] }) {
   const [selected, setSelected] = useState<Product[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleQuantityChange = (id: string, value: any) => {
     const num = Number(value);
@@ -148,6 +149,15 @@ export default function Products({ products }: { products: Product[] }) {
 
   const { openModal, isOpen, closeModal } = useModal();
 
+  // Auto-focus search input when modal opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen]);
+
   return (
     <div className="container mx-auto py-10">
       <PageBreadcrumb pageTitle="Products" />
@@ -212,6 +222,7 @@ export default function Products({ products }: { products: Product[] }) {
           <div>
             <div className="flex-col relative ">
               <Input
+                ref={searchInputRef}
                 placeholder="Search products..."
                 className="max-w-sm dark:bg-gray-800 placeholder:text-gray-500 mt-10"
                 onChange={(e) => onChange(e.target.value)}
@@ -223,9 +234,11 @@ export default function Products({ products }: { products: Product[] }) {
                     onClick={() => {
                       const find = selected.find((e) => e.id == f.id);
                       if (find) {
-                        console.log("b");
+                        console.log("Product already added");
                       } else {
                         setSelected((prev) => [...prev, f]);
+                        // Set default quantity to 1
+                        setQuantities((prev) => ({ ...prev, [f.id]: 1 }));
                       }
                       setFiltered([]);
                     }}
@@ -254,9 +267,10 @@ export default function Products({ products }: { products: Product[] }) {
                   <div className="flex-1">Product</div>
                   <div className="mr-8">Cost</div>
                   <div className="mr-4">Quantity</div>
+                  <div className="w-10"></div>
                 </div>
                 {selected?.map((s, index) => {
-                  const quantity = quantities[s.id] ?? "";
+                  const quantity = quantities[s.id] ?? 1;
                   const cost = Number(s.price) * quantity;
                   return (
                     <div
@@ -295,6 +309,21 @@ export default function Products({ products }: { products: Product[] }) {
                           handleQuantityChange(s.id, num);
                         }}
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelected((prev) => prev.filter((p) => p.id !== s.id));
+                          setQuantities((prev) => {
+                            const newQty = { ...prev };
+                            delete newQty[s.id];
+                            return newQty;
+                          });
+                        }}
+                        className="text-red-400 hover:text-red-600 ml-2"
+                        title="Remove product"
+                      >
+                        ×
+                      </button>
                     </div>
                   );
                 })}
