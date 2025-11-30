@@ -47,8 +47,8 @@ export function useCommandPalette(query: string) {
     }
   };
 
-  // Navigation commands
-  const navigationCommands: CommandResult[] = [
+  // Navigation commands - memoized to prevent recreating on every render
+  const navigationCommands = useMemo<CommandResult[]>(() => [
     {
       id: "nav-dashboard",
       category: "Navigation",
@@ -121,10 +121,10 @@ export function useCommandPalette(query: string) {
       path: "/sales-report",
       keywords: ["reports", "analytics", "insights", "stats"],
     },
-  ];
+  ], []);
 
-  // Action commands
-  const actionCommands: CommandResult[] = [
+  // Action commands - memoized to prevent recreating on every render
+  const actionCommands = useMemo<CommandResult[]>(() => [
     {
       id: "action-add-product",
       category: "Actions",
@@ -177,7 +177,7 @@ export function useCommandPalette(query: string) {
       },
       keywords: ["create sale", "new sale", "record sale", "sell"],
     },
-  ];
+  ], [navigate]);
 
   // Search results
   const results = useMemo(() => {
@@ -303,7 +303,7 @@ export function useCommandPalette(query: string) {
 
     // Limit results to 20
     return allResults.slice(0, 20);
-  }, [query, products, customers, transactions, staff]);
+  }, [query, products, customers, transactions, staff, navigationCommands, actionCommands]);
 
   return { results, isLoading };
 }
