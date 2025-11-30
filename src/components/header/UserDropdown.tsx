@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router";
 import { useUser } from "@/context/UserContext";
 import { getRoleAvatar, getInitials } from "@/utils/avatarUtils";
 import { api } from "@/lib/api";
+import Spinner from "../ui/Spinner";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,9 +37,8 @@ export default function UserDropdown() {
       <div className="relative">
         <button className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400">
           <span className="mr-3 overflow-hidden rounded-full h-11 w-11 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-            <span className="text-gray-500">...</span>
+            <Spinner size="sm" />
           </span>
-          <span className="block mr-1 font-medium text-theme-sm">Loading...</span>
         </button>
       </div>
     );
