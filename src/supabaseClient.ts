@@ -152,6 +152,7 @@ export const getSaleItems = async (sale_id: string): Promise<Item[]> => {
       product: item.product?.name || 'Unknown',
       quantity: Number(item.quantity),
       unitCost: Number(item.price),
+      discountPercent: Number(item.discountPercent ?? 0),
     }));
 
     return items;
