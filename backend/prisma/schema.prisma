@@ -203,11 +203,12 @@ model Sale {
 }
 
 model SaleItem {
-  id        String  @id @default(uuid())
-  saleId    String  @map("sale_id")
-  productId String  @map("product_id")
-  quantity  Int
-  price     Decimal @db.Decimal(10, 2) // Price at time of sale
+  id              String  @id @default(uuid())
+  saleId          String  @map("sale_id")
+  productId       String  @map("product_id")
+  quantity        Int
+  price           Decimal @db.Decimal(10, 2) // Price at time of sale
+  discountPercent Decimal @default(0) @map("discount_percent") @db.Decimal(5, 2) // Discount percentage (e.g., 10.00 for 10%)
 
   // Relationships
   sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
