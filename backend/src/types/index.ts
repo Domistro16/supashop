@@ -70,11 +70,13 @@ export interface SaleItem {
   productId: string;
   quantity: number;
   price: number;
+  discountPercent?: number; // Optional discount percentage (e.g., 10 for 10% off)
 }
 
 export interface CreateSaleRequest {
   items: SaleItem[];
   totalAmount: number;
+  customerId?: string; // Optional customer ID
 }
 
 // Staff DTOs

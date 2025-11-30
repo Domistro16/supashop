@@ -31,6 +31,7 @@ type Item = {
   product: string;
   quantity: number;
   unitCost: number;
+  discountPercent?: number; // Optional discount percentage
 };
 
 // Legacy Supabase client (for components that still reference it)
@@ -232,16 +233,20 @@ export const record_sale = async (items: Item[], customerId?: string): Promise<b
       return false;
     }
 
-    // Calculate total
+    // Calculate total with discounts
     let totalAmount = 0;
     const saleItems = items.map(item => {
       const subtotal = item.unitCost * item.quantity;
-      totalAmount += subtotal;
+      const discountPercent = item.discountPercent ?? 0;
+      const discountAmount = (subtotal * discountPercent) / 100;
+      const itemTotal = subtotal - discountAmount;
+      totalAmount += itemTotal;
 
       return {
         productId: item.product,
         quantity: item.quantity,
         price: item.unitCost,
+        discountPercent: discountPercent,
       };
     });
 
