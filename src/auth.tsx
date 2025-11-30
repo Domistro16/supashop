@@ -1,5 +1,6 @@
 import { useEffect, useState, createContext, useContext } from "react";
 import api, { type User, type Shop } from "./lib/api";
+import Spinner from "./components/ui/Spinner";
 
 interface AuthContextType {
   user: User | null;
@@ -113,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!isLoading ? children : <div>Loading...</div>}
+      {!isLoading ? children : <Spinner />}
     </AuthContext.Provider>
   );
 }
