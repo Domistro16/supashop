@@ -55,6 +55,7 @@ export default function Products({ products }: { products: Product[] }) {
   const [filtered, setFiltered] = useState<Product[]>([]);
   const [selected, setSelected] = useState<Product[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [discounts, setDiscounts] = useState<Record<string, number>>({});
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -81,18 +82,31 @@ export default function Products({ products }: { products: Product[] }) {
     }
   };
 
+  const handleDiscountChange = (id: string, value: any) => {
+    const num = Number(value);
+
+    if (!isNaN(num) && num >= 0 && num <= 100) {
+      setDiscounts((prev) => ({ ...prev, [id]: num }));
+    }
+  };
+
   const selectedProducts = useMemo(
     () =>
       selected.map((s) => ({
         product: s.id, // assuming your product has an `id` field
         quantity: quantities[s.id] ?? 1,
         unitCost: Number(s.price),
+        discountPercent: discounts[s.id] ?? 0,
       })),
-    [selected, quantities]
+    [selected, quantities, discounts]
   );
 
   const total = selectedProducts.reduce(
-    (sum, item) => sum + item.unitCost * item.quantity,
+    (sum, item) => {
+      const itemTotal = item.unitCost * item.quantity;
+      const discountAmount = (itemTotal * item.discountPercent) / 100;
+      return sum + (itemTotal - discountAmount);
+    },
     0
   );
 
@@ -265,8 +279,9 @@ export default function Products({ products }: { products: Product[] }) {
                         console.log("Product already added");
                       } else {
                         setSelected((prev) => [...prev, f]);
-                        // Set default quantity to 1
+                        // Set default quantity to 1 and discount to 0
                         setQuantities((prev) => ({ ...prev, [f.id]: 1 }));
+                        setDiscounts((prev) => ({ ...prev, [f.id]: 0 }));
                       }
                       setFiltered([]);
                     }}
@@ -293,28 +308,32 @@ export default function Products({ products }: { products: Product[] }) {
               <div>
                 <div className="p-1 px-5 text-[14px] w-full flex items-center  mt-10 group font-medium text-gray-500 cursor-pointer">
                   <div className="flex-1">Product</div>
-                  <div className="mr-8">Cost</div>
-                  <div className="mr-4">Quantity</div>
+                  <div className="mr-6">Unit Price</div>
+                  <div className="mr-4">Qty</div>
+                  <div className="mr-4">Disc%</div>
+                  <div className="mr-6">Total</div>
                   <div className="w-10"></div>
                 </div>
                 {selected?.map((s, index) => {
                   const quantity = quantities[s.id] ?? 1;
-                  const cost = Number(s.price) * quantity;
+                  const discount = discounts[s.id] ?? 0;
+                  const subtotal = Number(s.price) * quantity;
+                  const discountAmount = (subtotal * discount) / 100;
+                  const total = subtotal - discountAmount;
                   return (
                     <div
                       key={index}
-                      className="p-1 px-5 text-[14px] w-full flex items-center  group font-medium text-gray-500 cursor-pointer"
+                      className="p-1 px-5 text-[14px] w-full flex items-center gap-2 group font-medium text-gray-500 cursor-pointer"
                     >
                       <div className="text-white flex-1">{s.name}</div>
-                      <div className="text-white mr-5">
-                        {" "}
+                      <div className="text-white text-sm mr-2">
                         {new Intl.NumberFormat("en-NG", {
                           style: "currency",
                           currency: "NGN",
-                        }).format(cost)}
+                        }).format(Number(s.price))}
                       </div>
                       <Input
-                        className="max-w-[70px] text-white no-spinner"
+                        className="max-w-[60px] text-white no-spinner"
                         type="number"
                         min={1}
                         max={s.stock}
@@ -322,21 +341,46 @@ export default function Products({ products }: { products: Product[] }) {
                         onChange={(e) => {
                           let val = e.target.value;
 
-                          // Allow clearing the field without forcing a number immediately
                           if (val === "") {
                             handleQuantityChange(s.id, "");
                             return;
                           }
 
                           let num = Number(val);
-
-                          // Clamp between 1 and s.stock
                           if (num < 1) num = 1;
                           if (num > s.stock) num = s.stock;
 
                           handleQuantityChange(s.id, num);
                         }}
                       />
+                      <Input
+                        className="max-w-[60px] text-white no-spinner"
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={discount}
+                        placeholder="0"
+                        onChange={(e) => {
+                          let val = e.target.value;
+
+                          if (val === "") {
+                            handleDiscountChange(s.id, 0);
+                            return;
+                          }
+
+                          let num = Number(val);
+                          if (num < 0) num = 0;
+                          if (num > 100) num = 100;
+
+                          handleDiscountChange(s.id, num);
+                        }}
+                      />
+                      <div className="text-white text-sm mr-2 min-w-[80px]">
+                        {new Intl.NumberFormat("en-NG", {
+                          style: "currency",
+                          currency: "NGN",
+                        }).format(total)}
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
@@ -345,6 +389,11 @@ export default function Products({ products }: { products: Product[] }) {
                             const newQty = { ...prev };
                             delete newQty[s.id];
                             return newQty;
+                          });
+                          setDiscounts((prev) => {
+                            const newDisc = { ...prev };
+                            delete newDisc[s.id];
+                            return newDisc;
                           });
                         }}
                         className="text-red-400 hover:text-red-600 ml-2"
@@ -373,6 +422,7 @@ export default function Products({ products }: { products: Product[] }) {
                 // Handle form submission here
                 setSelected([]);
                 setQuantities({});
+                setDiscounts({});
                 setSelectedCustomer(null);
               }}
             >
@@ -397,6 +447,7 @@ export default function Products({ products }: { products: Product[] }) {
 
                     setSelected([]);
                     setQuantities({});
+                    setDiscounts({});
                     setSelectedCustomer(null);
                     closeModal();
                   } else {

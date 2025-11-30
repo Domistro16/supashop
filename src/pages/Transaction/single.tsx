@@ -74,7 +74,10 @@ export default function Single({
       if (data.length > 0) {
         let totalAmount = 0;
         for (const item of data) {
-          totalAmount += item.unitCost * item.quantity;
+          const subtotal = item.unitCost * item.quantity;
+          const discount = item.discountPercent ?? 0;
+          const discountAmount = (subtotal * discount) / 100;
+          totalAmount += (subtotal - discountAmount);
         }
         setTotal(totalAmount);
       }
@@ -225,28 +228,36 @@ export default function Single({
                 <th>Product</th>
                 <th>Quantity</th>
                 <th>Unit Cost</th>
+                <th>Discount</th>
                 <th>Total</th>
               </tr>
             </thead>
             <tbody>
-              {items?.map((item, index) => (
-                <tr key={index}>
-                  <td>{item.product}</td>
-                  <td>{item.quantity}</td>
-                  <td>
-                    {new Intl.NumberFormat("en-NG", {
-                      style: "currency",
-                      currency: "NGN",
-                    }).format(item.unitCost)}
-                  </td>
-                  <td>
-                    {new Intl.NumberFormat("en-NG", {
-                      style: "currency",
-                      currency: "NGN",
-                    }).format(item.unitCost * item.quantity)}
-                  </td>
-                </tr>
-              ))}
+              {items?.map((item, index) => {
+                const discount = item.discountPercent ?? 0;
+                const subtotal = item.unitCost * item.quantity;
+                const discountAmount = (subtotal * discount) / 100;
+                const total = subtotal - discountAmount;
+                return (
+                  <tr key={index}>
+                    <td>{item.product}</td>
+                    <td>{item.quantity}</td>
+                    <td>
+                      {new Intl.NumberFormat("en-NG", {
+                        style: "currency",
+                        currency: "NGN",
+                      }).format(item.unitCost)}
+                    </td>
+                    <td>{discount > 0 ? `${discount}%` : '-'}</td>
+                    <td>
+                      {new Intl.NumberFormat("en-NG", {
+                        style: "currency",
+                        currency: "NGN",
+                      }).format(total)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 

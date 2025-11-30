@@ -221,6 +221,7 @@ export async function createSale(req: AuthRequest, res: Response) {
             productId: item.productId,
             quantity: item.quantity,
             price: item.price,
+            discountPercent: item.discountPercent || 0,
           },
         });
 
