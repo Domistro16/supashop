@@ -11,6 +11,7 @@ export type Item = {
   product: string;
   quantity: number;
   unitCost: number;
+  discountPercent?: number; // Optional discount percentage
 };
 
 export const columns: ColumnDef<Item>[] = [
@@ -48,6 +49,23 @@ export const columns: ColumnDef<Item>[] = [
     },
   },
   {
+    accessorKey: "discountPercent",
+    header: () => {
+      return <div>Discount</div>;
+    },
+    cell: ({ row }) => {
+      const discount = row.original.discountPercent ?? 0;
+      if (discount === 0) {
+        return <div className="text-gray-400">-</div>;
+      }
+      return (
+        <div className="font-medium text-green-600 dark:text-green-400">
+          {discount}%
+        </div>
+      );
+    },
+  },
+  {
     id: "total",
     header: () => {
       return <div>Total</div>;
@@ -56,7 +74,10 @@ export const columns: ColumnDef<Item>[] = [
     cell: ({ row }) => {
       const quantity = Number(row.getValue("quantity"));
       const unitCost = Number(row.getValue("unitCost"));
-      const total = quantity * unitCost;
+      const discount = row.original.discountPercent ?? 0;
+      const subtotal = quantity * unitCost;
+      const discountAmount = (subtotal * discount) / 100;
+      const total = subtotal - discountAmount;
       return (
         <div className="font-medium">
           {new Intl.NumberFormat("en-NG", {
