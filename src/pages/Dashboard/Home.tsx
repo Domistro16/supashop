@@ -133,20 +133,21 @@ export default function Home({
         title="Supashop Dashboard"
         description="This is the Ecommerce Dashboard page for your shop"
       />
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
+      <div className="mb-3 sm:mb-4 flex justify-between items-center">
+        <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
         <Button
           onClick={handleRefresh}
           disabled={isRefreshing}
           variant="outline"
-          className="flex items-center gap-2"
+          size="sm"
+          className="flex items-center gap-1.5 text-xs sm:text-sm"
         >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          Refresh Dashboard
+          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+          <span className="hidden sm:inline">Refresh</span>
         </Button>
       </div>
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        <div className="col-span-12 space-y-6 xl:col-span-7">
+      <div className="grid grid-cols-12 gap-3 sm:gap-4">
+        <div className="col-span-12 space-y-3 sm:space-y-4 xl:col-span-7">
           <EcommerceMetrics
             sales={todayCount}
             revenue={total}
