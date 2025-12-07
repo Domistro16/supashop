@@ -10,7 +10,7 @@ export default function MonthlySalesChart({ sales }: { sales: [] }) {
     chart: {
       fontFamily: "Outfit, sans-serif",
       type: "bar",
-      height: 180,
+      height: 140,
       toolbar: {
         show: false,
       },
@@ -18,8 +18,8 @@ export default function MonthlySalesChart({ sales }: { sales: [] }) {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "39%",
-        borderRadius: 5,
+        columnWidth: "50%",
+        borderRadius: 4,
         borderRadiusApplication: "end",
       },
     },
@@ -28,23 +28,23 @@ export default function MonthlySalesChart({ sales }: { sales: [] }) {
     },
     stroke: {
       show: true,
-      width: 4,
+      width: 2,
       colors: ["transparent"],
     },
     xaxis: {
       categories: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
+        "J",
+        "F",
+        "M",
+        "A",
+        "M",
+        "J",
+        "J",
+        "A",
+        "S",
+        "O",
+        "N",
+        "D",
       ],
       axisBorder: {
         show: false,
@@ -52,16 +52,23 @@ export default function MonthlySalesChart({ sales }: { sales: [] }) {
       axisTicks: {
         show: false,
       },
+      labels: {
+        style: {
+          fontSize: '10px',
+        },
+      },
     },
     legend: {
-      show: true,
-      position: "top",
-      horizontalAlign: "left",
-      fontFamily: "Outfit",
+      show: false,
     },
     yaxis: {
       title: {
         text: undefined,
+      },
+      labels: {
+        style: {
+          fontSize: '10px',
+        },
       },
     },
     grid: {
@@ -69,6 +76,10 @@ export default function MonthlySalesChart({ sales }: { sales: [] }) {
         lines: {
           show: true,
         },
+      },
+      padding: {
+        left: 0,
+        right: 0,
       },
     },
     fill: {
@@ -100,29 +111,29 @@ export default function MonthlySalesChart({ sales }: { sales: [] }) {
     setIsOpen(false);
   }
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white px-3 pt-3 pb-1 sm:px-4 sm:pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white/90">
           Monthly Sales
         </h3>
         <div className="relative inline-block">
           <button className="dropdown-toggle" onClick={toggleDropdown}>
-            <MoreDotIcon className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 size-6" />
+            <MoreDotIcon className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 size-5" />
           </button>
           <Dropdown
             isOpen={isOpen}
             onClose={closeDropdown}
-            className="w-40 p-2"
+            className="w-36 p-1.5"
           >
             <DropdownItem
               onItemClick={closeDropdown}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+              className="flex w-full text-sm font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
             >
               View More
             </DropdownItem>
             <DropdownItem
               onItemClick={closeDropdown}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+              className="flex w-full text-sm font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
             >
               Delete
             </DropdownItem>
@@ -130,10 +141,8 @@ export default function MonthlySalesChart({ sales }: { sales: [] }) {
         </div>
       </div>
 
-      <div className="max-w-full overflow-x-auto custom-scrollbar">
-        <div className="-ml-5 min-w-[650px] xl:min-w-full pl-2">
-          <Chart options={options} series={series} type="bar" height={180} />
-        </div>
+      <div className="-mx-2">
+        <Chart options={options} series={series} type="bar" height={140} />
       </div>
     </div>
   );

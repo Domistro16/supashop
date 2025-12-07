@@ -26,10 +26,10 @@ export default function AIRestockingAlert() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-full"></div>
+          <div className="h-5 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-3"></div>
+          <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-full"></div>
         </div>
       </div>
     );
@@ -43,20 +43,20 @@ export default function AIRestockingAlert() {
 
   return (
     <div
-      className={`rounded-2xl border ${
+      className={`rounded-xl border ${
         hasUrgentRestocks
           ? "border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/20"
           : "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
       } shadow-default`}
     >
       <div
-        className="px-6 py-4 cursor-pointer"
+        className="px-3 py-2.5 sm:px-4 sm:py-3 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div
-              className={`p-2 rounded-lg ${
+              className={`p-1.5 rounded-lg ${
                 hasUrgentRestocks
                   ? "bg-orange-100 dark:bg-orange-900/40"
                   : "bg-green-100 dark:bg-green-900/30"
@@ -64,7 +64,7 @@ export default function AIRestockingAlert() {
             >
               {hasUrgentRestocks ? (
                 <svg
-                  className="w-5 h-5 text-orange-600 dark:text-orange-400"
+                  className="w-4 h-4 text-orange-600 dark:text-orange-400"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -76,7 +76,7 @@ export default function AIRestockingAlert() {
                 </svg>
               ) : (
                 <svg
-                  className="w-5 h-5 text-green-600 dark:text-green-400"
+                  className="w-4 h-4 text-green-600 dark:text-green-400"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -89,10 +89,10 @@ export default function AIRestockingAlert() {
               )}
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white">
                 AI Inventory Insights
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                 {hasUrgentRestocks
                   ? `${suggestions.urgentRestocks.length} items need restocking`
                   : "Stock levels look good"}
@@ -100,7 +100,7 @@ export default function AIRestockingAlert() {
             </div>
           </div>
           <svg
-            className={`w-5 h-5 text-gray-500 transition-transform ${
+            className={`w-4 h-4 text-gray-500 transition-transform ${
               isExpanded ? "rotate-180" : ""
             }`}
             fill="none"
@@ -118,29 +118,29 @@ export default function AIRestockingAlert() {
       </div>
 
       {isExpanded && (
-        <div className="px-6 pb-6 space-y-6">
+        <div className="px-3 pb-3 sm:px-4 sm:pb-4 space-y-3 sm:space-y-4">
           {/* Urgent Restocks */}
           {hasUrgentRestocks && (
             <div>
-              <h4 className="text-sm font-semibold text-orange-700 dark:text-orange-300 mb-3">
-                ⚠️ Urgent Restocks Required
+              <h4 className="text-xs sm:text-sm font-semibold text-orange-700 dark:text-orange-300 mb-2">
+                Urgent Restocks Required
               </h4>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {suggestions.urgentRestocks.map((item, index) => (
                   <div
                     key={index}
-                    className="p-3 bg-white dark:bg-gray-800 border border-orange-200 dark:border-orange-800 rounded-lg"
+                    className="p-2 bg-white dark:bg-gray-800 border border-orange-200 dark:border-orange-800 rounded-lg"
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium text-gray-800 dark:text-white">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-white truncate">
                           {item.productName}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                           {item.reason}
                         </p>
                       </div>
-                      <span className="px-2 py-1 text-xs font-semibold text-orange-700 bg-orange-100 dark:text-orange-300 dark:bg-orange-900/40 rounded">
+                      <span className="px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold text-orange-700 bg-orange-100 dark:text-orange-300 dark:bg-orange-900/40 rounded whitespace-nowrap">
                         Stock: {item.currentStock}
                       </span>
                     </div>
@@ -153,17 +153,17 @@ export default function AIRestockingAlert() {
           {/* Recommendations */}
           {suggestions.recommendations.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              <h4 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                 AI Recommendations
               </h4>
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {suggestions.recommendations.map((rec, index) => (
                   <li
                     key={index}
-                    className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400"
+                    className="flex items-start gap-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400"
                   >
                     <svg
-                      className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5"
+                      className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -181,11 +181,11 @@ export default function AIRestockingAlert() {
           )}
 
           {/* Insights */}
-          <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <div className="border-t border-gray-200 dark:border-gray-800 pt-3">
+            <h4 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Inventory Insights
             </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
               {suggestions.insights}
             </p>
           </div>
