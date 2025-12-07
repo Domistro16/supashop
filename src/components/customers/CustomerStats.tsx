@@ -41,9 +41,9 @@ export default function CustomerStats() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
-        <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="bg-white dark:bg-white/[0.03] shadow rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+        <div className="flex items-center justify-center p-6">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
         </div>
       </div>
     );
@@ -54,18 +54,18 @@ export default function CustomerStats() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Customers</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white/90 mt-1">{stats.totalCustomers}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Customers</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white/90 mt-0.5">{stats.totalCustomers}</p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
               <svg
-                className="h-6 w-6 text-blue-600 dark:text-blue-300"
+                className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -81,17 +81,17 @@ export default function CustomerStats() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">New This Month</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white/90 mt-1">
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">New</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white/90 mt-0.5">
                 {stats.newCustomersThisMonth}
               </p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
               <svg
-                className="h-6 w-6 text-green-600 dark:text-green-300"
+                className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -107,17 +107,17 @@ export default function CustomerStats() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Avg. Customer Value</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white/90 mt-1">
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Avg. Value</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white/90 mt-0.5">
                 {formatCurrency(stats.avgCustomerValue)}
               </p>
             </div>
-            <div className="h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900 flex items-center justify-center">
+            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-yellow-100 dark:bg-yellow-900 flex items-center justify-center">
               <svg
-                className="h-6 w-6 text-yellow-600 dark:text-yellow-300"
+                className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 dark:text-yellow-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -134,46 +134,46 @@ export default function CustomerStats() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         {/* Top Customers */}
-        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white/90">Top Customers</h3>
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white/90">Top Customers</h3>
             <button
               onClick={() => navigate('/customers')}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+              className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
             >
               View All
             </button>
           </div>
           {stats.topCustomers.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No customers yet</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-3">No customers yet</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-1.5 sm:space-y-2">
               {stats.topCustomers.map((customer) => (
                 <div
                   key={customer.id}
                   onClick={() => navigate(`/customers/${customer.id}`)}
-                  className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer"
+                  className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer"
                 >
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                      <span className="text-blue-600 dark:text-blue-300 font-medium">
+                  <div className="flex items-center min-w-0">
+                    <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs sm:text-sm text-blue-600 dark:text-blue-300 font-medium">
                         {customer.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white/90">{customer.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{customer.visitCount} visits</p>
+                    <div className="ml-2 min-w-0">
+                      <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white/90 truncate">{customer.name}</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{customer.visitCount} visits</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white/90">
+                  <div className="text-right flex-shrink-0 ml-2">
+                    <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white/90">
                       {formatCurrency(customer.totalSpent)}
                     </p>
                     {customer.loyaltyPoint && (
                       <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${getTierBadgeColor(
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full ${getTierBadgeColor(
                           customer.loyaltyPoint.tier
                         )}`}
                       >
@@ -188,12 +188,12 @@ export default function CustomerStats() {
         </div>
 
         {/* Loyalty Tier Distribution */}
-        <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white/90 mb-4">Loyalty Tiers</h3>
+        <div className="bg-white dark:bg-white/[0.03] shadow rounded-xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white/90 mb-2 sm:mb-3">Loyalty Tiers</h3>
           {stats.loyaltyTierDistribution.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No loyalty data yet</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-3">No loyalty data yet</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2.5 sm:space-y-3">
               {stats.loyaltyTierDistribution.map((tier) => {
                 const percentage =
                   stats.totalCustomers > 0
@@ -204,19 +204,19 @@ export default function CustomerStats() {
                   <div key={tier.tier}>
                     <div className="flex items-center justify-between mb-1">
                       <span
-                        className={`text-sm font-medium px-3 py-1 rounded-full ${getTierBadgeColor(
+                        className={`text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full ${getTierBadgeColor(
                           tier.tier
                         )}`}
                       >
                         {tier.tier.toUpperCase()}
                       </span>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
                         {tier._count.tier} ({percentage}%)
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-1.5">
                       <div
-                        className={`h-2 rounded-full ${
+                        className={`h-1.5 rounded-full ${
                           tier.tier === 'platinum'
                             ? 'bg-purple-600'
                             : tier.tier === 'gold'
