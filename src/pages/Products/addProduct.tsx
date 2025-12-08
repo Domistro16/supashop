@@ -186,13 +186,13 @@ export default function AddProducts() {
     }
   }
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-3 sm:py-5">
       <PageMeta title="Add Product | Supashop" description="Add new products to your inventory" />
       <PageBreadcrumb pageTitle="Add Product" />
       <ComponentCard title={"Product Metadata"} className="text-[40px]">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="flex w-full gap-5">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-4">
               <FormField
                 control={form.control}
                 name="product_name"
@@ -236,7 +236,7 @@ export default function AddProducts() {
                 )}
               />
             </div>
-            <div className="flex w-full gap-5">
+            <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-4">
               <FormField
                 control={form.control}
                 name="price"
@@ -254,7 +254,7 @@ export default function AddProducts() {
                 )}
               />
             </div>
-            <div className="flex w-full gap-5">
+            <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-4">
               <div className="flex-1">
                 <FormLabel>Supplier (Optional)</FormLabel>
                 <SupplierSearchSelect

@@ -181,7 +181,7 @@ const AppSidebar: React.FC = () => {
   };
 
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
-    <ul className="flex flex-col gap-4">
+    <ul className="flex flex-col gap-1.5 sm:gap-2">
       {items.map((nav, index) => (
         <li key={nav.name}>
           {nav.subItems ? (
@@ -256,7 +256,7 @@ const AppSidebar: React.FC = () => {
                     : "0px",
               }}
             >
-              <ul className="mt-2 space-y-1 ml-9">
+              <ul className="mt-1.5 space-y-0.5 ml-7 sm:ml-9">
                 {nav.subItems.map((subItem) => (
                   <li key={subItem.name}>
                     <Link
@@ -319,29 +319,29 @@ const AppSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`py-8 flex ${
+        className={`py-4 sm:py-6 flex ${
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-1.5 sm:gap-2">
           {isExpanded || isHovered || isMobileOpen ? (
             <>
-              <ShoppingCart size={32} className="text-brand-500" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+              <ShoppingCart size={28} className="text-brand-500 sm:w-8 sm:h-8" />
+              <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                 Supashop
               </span>
             </>
           ) : (
-            <ShoppingCart size={32} className="text-brand-500" />
+            <ShoppingCart size={28} className="text-brand-500 sm:w-8 sm:h-8" />
           )}
         </Link>
       </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-        <nav className="mb-6">
-          <div className="flex flex-col gap-4">
+        <nav className="mb-4">
+          <div className="flex flex-col gap-3">
             <div>
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                className={`mb-2 sm:mb-3 text-[10px] sm:text-xs uppercase flex leading-[18px] text-gray-400 ${
                   !isExpanded && !isHovered
                     ? "lg:justify-center"
                     : "justify-start"

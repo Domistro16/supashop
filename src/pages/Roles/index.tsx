@@ -200,9 +200,9 @@ export default function RolesManagement() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-10">
+      <div className="container mx-auto py-3 sm:py-5">
         <PageBreadcrumb pageTitle="Roles & Permissions" />
-        <div className="flex items-center justify-center py-20">
+        <div className="flex items-center justify-center py-10 sm:py-16">
           <p className="text-gray-500">Loading roles...</p>
         </div>
       </div>
@@ -210,7 +210,7 @@ export default function RolesManagement() {
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-3 sm:py-5">
       <PageMeta title="Roles & Permissions | Supashop" description="Manage roles and permissions for your staff" />
       <PageBreadcrumb pageTitle="Roles & Permissions" />
 
@@ -221,23 +221,23 @@ export default function RolesManagement() {
         buttons={
           <Button
             onClick={openCreateDialog}
-            className="text-white bg-blue-700 hover:bg-blue-800"
+            className="text-white bg-blue-700 hover:bg-blue-800 text-xs sm:text-sm h-8 sm:h-9"
           >
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
             Create Role
           </Button>
         }
       >
-        <div className="space-y-4">
+        <div className="space-y-3">
           {roles.map((role) => (
             <div
               key={role.id}
-              className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+              className="border rounded-lg p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">{role.name}</h3>
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                    <h3 className="text-sm sm:text-base font-semibold">{role.name}</h3>
                     {role.isSystem && (
                       <Badge variant="secondary" className="text-xs">
                         <Shield className="mr-1 h-3 w-3" />
@@ -251,11 +251,11 @@ export default function RolesManagement() {
                     )}
                   </div>
                   {role.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">
                       {role.description}
                     </p>
                   )}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {role.permissions.map((permission) => (
                       <Badge
                         key={permission.id}

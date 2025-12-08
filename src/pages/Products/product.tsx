@@ -191,7 +191,7 @@ export default function Products({ products }: { products: Product[] }) {
   }, [isOpen]);
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-3 sm:py-5">
       <PageMeta title="Products | Supashop" description="Manage and track your store's products inventory" />
       <PageBreadcrumb pageTitle="Products" />
       <ComponentCard
@@ -199,33 +199,33 @@ export default function Products({ products }: { products: Product[] }) {
         className="text-[40px]"
         desc="Track your store's progress to boost your sales."
         buttons={
-          <div className="flex items-center justify-between gap-1 md:gap-5 mb-2 md:mb-0 md:mr-5">
+          <div className="flex items-center justify-between gap-1 md:gap-3 mb-2 md:mb-0 md:mr-3">
             <Button
               variant="outline"
-              className="text-gray-400 flex-end md:py-6 text-[12px] md:text-[15px] flex items-center"
+              className="text-gray-400 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] flex items-center h-8 md:h-9"
               onClick={handleRefresh}
               disabled={isRefreshing}
             >
-              <RefreshCw className={`mr-1 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+              <RefreshCw className={`mr-1 h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
               Refresh
             </Button>
             <Button
               variant="outline"
-              className="text-gray-400 flex-end md:py-6 text-[12px] md:text-[15px] flex items-center"
+              className="text-gray-400 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] flex items-center h-8 md:h-9"
               onClick={exportToPDF}
             >
-              Export <DownloadIcon className="ml-1 h-4 w-4" />
+              Export <DownloadIcon className="ml-1 h-3.5 w-3.5" />
             </Button>
             <Button
               variant="default"
-              className="text-white bg-blue-700 hover:bg-blue-800 flex-end md:py-6 text-[12px] md:text-[15px]"
+              className="text-white bg-blue-700 hover:bg-blue-800 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] h-8 md:h-9"
               onClick={() => openModal()}
             >
               Create Sale
             </Button>
             <Button
               variant="default"
-              className="text-white bg-blue-700 hover:bg-blue-800 flex-end md:py-6 text-[12px] md:text-[15px]"
+              className="text-white bg-blue-700 hover:bg-blue-800 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] h-8 md:h-9"
               onClick={() => (window.location.href = "/products/add")}
             >
               Add Product +
@@ -238,7 +238,7 @@ export default function Products({ products }: { products: Product[] }) {
       <Modal
         isOpen={isOpen}
         onClose={closeModal}
-        className="max-w-[700px] p-6 lg:p-10 max-h-[80%] overflow-y-auto"
+        className="max-w-[700px] p-4 sm:p-6 max-h-[85%] overflow-y-auto"
       >
         <div className="flex flex-col px-2 overflow-y-auto max-h-[80%] custom-scrollbar">
           <div>
