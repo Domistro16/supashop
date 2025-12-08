@@ -81,10 +81,10 @@ export function DataTable<TData, TValue>({
       className="text-[40px]"
       desc="Your most recent transactions list"
       buttons={
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 sm:mb-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto w-full sm:w-auto">
+              <Button variant="outline" className="ml-auto w-full sm:w-auto h-8 sm:h-9 text-xs sm:text-sm">
                 Columns
               </Button>
             </DropdownMenuTrigger>
@@ -116,7 +116,7 @@ export function DataTable<TData, TValue>({
             onChange={(event) =>
               table.getColumn("order_id")?.setFilterValue(event.target.value)
             }
-            className="max-w-xs dark:bg-gray-900 placeholder:text-gray-500 py-2 md:py-5 mr-2 md:mr-5"
+            className="max-w-xs dark:bg-gray-900 placeholder:text-gray-500 h-8 sm:h-9 text-sm mr-2"
           />
         </div>
       }
@@ -132,7 +132,7 @@ export function DataTable<TData, TValue>({
                       return (
                         <TableHead
                           key={header.id}
-                          className="px-2 py-3 font-medium text-gray-500 text-start dark:text-gray-400 text-md"
+                          className="px-2 py-2 sm:py-3 font-medium text-xs sm:text-sm text-gray-500 text-start dark:text-gray-400"
                         >
                           {header.isPlaceholder
                             ? null
@@ -156,7 +156,7 @@ export function DataTable<TData, TValue>({
                       {row.getVisibleCells().map((cell) => (
                         <TableCell
                           key={cell.id}
-                          className="px-5 py-4 sm:px-6 text-start text-gray-500 dark:text-gray-400"
+                          className="px-2 py-2 sm:px-4 sm:py-3 text-start text-xs sm:text-sm text-gray-500 dark:text-gray-400"
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
@@ -180,12 +180,13 @@ export function DataTable<TData, TValue>({
             </Table>
           </div>
         </div>
-        <div className="flex items-center justify-end space-x-2 py-4">
+        <div className="flex items-center justify-end space-x-2 py-2 sm:py-3">
           <Button
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
+            className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3"
           >
             Previous
           </Button>
@@ -194,6 +195,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
+            className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3"
           >
             Next
           </Button>

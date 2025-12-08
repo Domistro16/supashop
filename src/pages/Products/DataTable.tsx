@@ -67,18 +67,18 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      <div className="flex items-center py-4 gap-5">
+      <div className="flex items-center py-2 sm:py-3 gap-2 sm:gap-4">
         <Input
           placeholder="Search..."
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm dark:bg-gray-900 placeholder:text-gray-500 h-12"
+          className="max-w-sm dark:bg-gray-900 placeholder:text-gray-500 h-9 sm:h-10 text-sm"
         ></Input>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="ml-auto h-9 sm:h-10 text-xs sm:text-sm">
               Columns
             </Button>
           </DropdownMenuTrigger>
@@ -113,7 +113,7 @@ export function DataTable<TData, TValue>({
                     return (
                       <TableHead
                         key={header.id}
-                        className="py-3 font-medium text-gray-500 text-start dark:text-gray-400"
+                        className="py-2 sm:py-3 font-medium text-xs sm:text-sm text-gray-500 text-start dark:text-gray-400"
                       >
                         {header.isPlaceholder
                           ? null
@@ -137,7 +137,7 @@ export function DataTable<TData, TValue>({
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}
-                        className="px-3 py-4 sm:px-4 text-start text-gray-500 dark:text-gray-400"
+                        className="px-2 py-2 sm:px-4 sm:py-3 text-start text-xs sm:text-sm text-gray-500 dark:text-gray-400"
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -162,8 +162,8 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="text-muted-foreground flex-1 text-sm">
+      <div className="flex items-center justify-end space-x-2 py-2 sm:py-3">
+        <div className="text-muted-foreground flex-1 text-xs sm:text-sm">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} product(s) selected.
         </div>
@@ -172,6 +172,7 @@ export function DataTable<TData, TValue>({
           size="sm"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
+          className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3"
         >
           Previous
         </Button>
@@ -180,6 +181,7 @@ export function DataTable<TData, TValue>({
           size="sm"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
+          className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3"
         >
           Next
         </Button>
