@@ -59,11 +59,11 @@ export default function UserProfiles() {
         description="View and manage your profile information"
       />
       <PageBreadcrumb pageTitle="Profile" />
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-        <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">
+      <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+        <h3 className="mb-3 sm:mb-5 text-base sm:text-lg font-semibold text-gray-800 dark:text-white/90">
           Profile
         </h3>
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5">
           <UserMetaCard userName={userName} userRole={userRole} />
           <UserInfoCard userName={userName} userEmail={userEmail} userRole={userRole} />
           {loadingShop ? (

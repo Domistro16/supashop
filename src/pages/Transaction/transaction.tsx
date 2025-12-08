@@ -30,12 +30,12 @@ export default function Transactions({sales} : {sales: Transaction[]}) {
   };
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-3 sm:py-5">
       <PageMeta title="Transactions | Supashop" description="View and manage all store transactions" />
       <PageBreadcrumb pageTitle="Transactions" />
 
       {/* Sales Report Button */}
-      <div className="mb-6 flex justify-end gap-3">
+      <div className="mb-3 sm:mb-4 flex justify-end gap-2">
         <Button
           onClick={handleRefresh}
           disabled={isRefreshing}

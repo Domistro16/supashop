@@ -84,7 +84,7 @@ export default function Staffs() {
   const columns = createColumns(handleDeleteClick);
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-3 sm:py-5">
       <PageMeta title="Staff | Supashop" description="Manage your store staff members" />
       <PageBreadcrumb pageTitle="Staffs" />
       <ComponentCard
@@ -92,16 +92,16 @@ export default function Staffs() {
         className="text-[40px]"
         desc="View the staff in the store"
         buttons={
-          <div className="flex items-center justify-between gap-1 md:gap-5 mb-2 md:mb-0 md:mr-5">
+          <div className="flex items-center justify-between gap-1 md:gap-3 mb-2 md:mb-0 md:mr-3">
             <Button
               variant="outline"
-              className="text-gray-400 flex-end md:py-6 text-[12px] md:text-[15px] flex items-center"
+              className="text-gray-400 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] flex items-center h-8 md:h-9"
             >
-              Export <DownloadIcon className="ml-1 h-4 w-4" />
+              Export <DownloadIcon className="ml-1 h-3.5 w-3.5" />
             </Button>
             <Button
               variant="default"
-              className="text-white bg-blue-700 hover:bg-blue-800 flex-end md:py-6 text-[12px] md:text-[15px]"
+              className="text-white bg-blue-700 hover:bg-blue-800 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] h-8 md:h-9"
               onClick={() => (window.location.href = "/staff/add")}
             >
               Add Staff +

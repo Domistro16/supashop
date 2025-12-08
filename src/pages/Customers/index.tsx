@@ -12,15 +12,15 @@ export default function CustomersPage() {
         title="Customers | Supashop"
         description="Manage your customers"
       />
-      <div className="container mx-auto py-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="container mx-auto py-3 sm:py-5">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <PageBreadcrumb pageTitle="Customers" />
           <button
             onClick={() => navigate('/customers/new')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5"
           >
             <svg
-              className="w-5 h-5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
