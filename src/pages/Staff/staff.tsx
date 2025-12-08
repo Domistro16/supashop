@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ComponentCard from "@/components/common/ComponentCard2";
 import { createColumns, Staff } from "./Columns";
 import { DataTable } from "./DataTable";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import PageMeta from "@/components/common/PageMeta";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,10 +17,39 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DownloadIcon } from "lucide-react";
+import { DownloadIcon, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { getProfiles } from "@/supabaseClient";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import managerImg from "/images/user/manager.jpg";
+import ownerImg from "/images/user/owner.jpg";
+import cashierImg from "/images/user/cashier.jpg";
+import clerkImg from "/images/user/clerk.jpg";
+import defaultUserImg from "/images/user/user-01.jpg";
+
+type ViewMode = "cards" | "table";
+
+function getInitials(name?: string) {
+  if (!name) return "ST";
+  const pieces = name.trim().split(" ");
+  const first = pieces[0]?.[0];
+  const last = pieces[pieces.length - 1]?.[0];
+  return `${first ?? ""}${last ?? ""}`.toUpperCase() || "ST";
+}
+
+const roleImageMap: Record<string, string> = {
+  manager: managerImg,
+  admin: managerImg,
+  owner: ownerImg,
+  cashier: cashierImg,
+  clerk: clerkImg,
+};
+
+function getAvatarForStaff(role?: string) {
+  if (!role) return defaultUserImg;
+  const key = role.toLowerCase();
+  return roleImageMap[key] ?? defaultUserImg;
+}
 
 export default function Staffs() {
   const [data, setData] = useState<Staff[]>([]);
@@ -26,6 +57,8 @@ export default function Staffs() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     loadStaff();
@@ -83,6 +116,17 @@ export default function Staffs() {
 
   const columns = createColumns(handleDeleteClick);
 
+  const filteredStaff = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    if (!term) return data;
+    return data.filter(
+      (staff) =>
+        staff.name?.toLowerCase().includes(term) ||
+        staff.email?.toLowerCase().includes(term) ||
+        staff.role?.toLowerCase().includes(term)
+    );
+  }, [data, searchTerm]);
+
   return (
     <div className="container mx-auto py-3 sm:py-5">
       <PageMeta title="Staff | Supashop" description="Manage your store staff members" />
@@ -114,7 +158,90 @@ export default function Staffs() {
             <p className="text-gray-500">Loading staff...</p>
           </div>
         ) : (
-          <DataTable columns={columns} data={data} />
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+              <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-900/50 rounded-lg p-1 w-full md:w-auto">
+                <Button
+                  variant={viewMode === "cards" ? "default" : "ghost"}
+                  className="flex-1 md:flex-none text-xs sm:text-sm"
+                  onClick={() => setViewMode("cards")}
+                >
+                  <LayoutGrid className="h-4 w-4 mr-2" />
+                  People view
+                </Button>
+                <Button
+                  variant={viewMode === "table" ? "default" : "ghost"}
+                  className="flex-1 md:flex-none text-xs sm:text-sm"
+                  onClick={() => setViewMode("table")}
+                >
+                  <TableIcon className="h-4 w-4 mr-2" />
+                  Table
+                </Button>
+              </div>
+              {viewMode === "cards" && (
+                <Input
+                  placeholder="Search by name, email or role"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full md:w-72 h-9 text-sm dark:bg-gray-900"
+                />
+              )}
+            </div>
+
+            {viewMode === "table" ? (
+              <DataTable columns={columns} data={data} />
+            ) : filteredStaff.length === 0 ? (
+              <div className="flex items-center justify-center py-10 text-gray-500 dark:text-gray-400">
+                No staff match your search yet.
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredStaff.map((staff) => (
+                  <div
+                    key={staff.id}
+                    className="rounded-xl border border-gray-200 dark:border-white/[0.05] bg-white dark:bg-white/[0.03] p-4 flex flex-col gap-3 shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-11 w-11 overflow-hidden rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-100 flex items-center justify-center font-semibold">
+                        <img
+                          src={getAvatarForStaff(staff.role)}
+                          alt={`${staff.role || "Staff"} avatar`}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = defaultUserImg;
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{staff.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{staff.email}</p>
+                        <Badge variant="secondary" className="text-[11px]">{staff.role || "Staff"}</Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm"
+                        onClick={() => navigator.clipboard.writeText(staff.email)}
+                      >
+                        Copy contact
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteClick(staff)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </ComponentCard>
 
