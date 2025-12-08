@@ -148,7 +148,7 @@ const Calendar: React.FC = () => {
         <Modal
           isOpen={isOpen}
           onClose={closeModal}
-          className="max-w-[700px] p-6 lg:p-10"
+          className="max-w-[700px] p-4 sm:p-6"
         >
           <div className="flex flex-col px-2 overflow-y-auto custom-scrollbar">
             <div>
@@ -160,7 +160,7 @@ const Calendar: React.FC = () => {
                 track
               </p>
             </div>
-            <div className="mt-8">
+            <div className="mt-5 sm:mt-6">
               <div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -175,8 +175,8 @@ const Calendar: React.FC = () => {
                   />
                 </div>
               </div>
-              <div className="mt-6">
-                <label className="block mb-4 text-sm font-medium text-gray-700 dark:text-gray-400">
+              <div className="mt-4">
+                <label className="block mb-2 sm:mb-3 text-sm font-medium text-gray-700 dark:text-gray-400">
                   Event Color
                 </label>
                 <div className="flex flex-wrap items-center gap-4 sm:gap-5">
@@ -215,8 +215,8 @@ const Calendar: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-6">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+              <div className="mt-4">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">
                   Enter Start Date
                 </label>
                 <div className="relative">
@@ -230,8 +230,8 @@ const Calendar: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-6">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+              <div className="mt-4">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">
                   Enter End Date
                 </label>
                 <div className="relative">
@@ -245,7 +245,7 @@ const Calendar: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3 mt-6 modal-footer sm:justify-end">
+            <div className="flex items-center gap-2 sm:gap-3 mt-4 sm:mt-5 modal-footer sm:justify-end">
               <button
                 onClick={closeModal}
                 type="button"
