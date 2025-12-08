@@ -107,8 +107,6 @@ export default function CommandPalette({ isOpen, onClose, inputRef }: CommandPal
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   // Group results by category
   const groupedResults = useMemo(() => {
     const groups: Record<string, any[]> = {};
@@ -120,6 +118,10 @@ export default function CommandPalette({ isOpen, onClose, inputRef }: CommandPal
     });
     return groups;
   }, [results]);
+
+  if (!isOpen) return null;
+
+
 
   const categoryIcons: Record<string, string> = {
     Navigation: "🧭",
