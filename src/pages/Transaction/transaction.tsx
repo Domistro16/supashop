@@ -146,8 +146,6 @@ export default function Transactions({ sales }: { sales: Transaction[] }) {
     [filteredSales]
   );
 
-  let lastDateLabel = "";
-
   return (
     <div className="container mx-auto py-3 sm:py-5">
       <PageMeta title="Transactions | Supashop" description="View and manage all store transactions" />
@@ -227,10 +225,11 @@ export default function Transactions({ sales }: { sales: Transaction[] }) {
                 No transactions match your search yet.
               </div>
             ) : (
-              sortedSales.map((tx) => {
+              sortedSales.map((tx, index) => {
                 const dateLabel = formatDateLabel(tx.created_at);
-                const showDivider = dateLabel !== lastDateLabel;
-                lastDateLabel = dateLabel;
+                const previousDateLabel =
+                  index > 0 ? formatDateLabel(sortedSales[index - 1].created_at) : null;
+                const showDivider = dateLabel !== previousDateLabel;
                 return (
                   <div key={tx.id} className="space-y-2">
                     {showDivider && (
