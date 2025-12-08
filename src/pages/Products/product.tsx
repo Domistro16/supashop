@@ -4,7 +4,7 @@ import { DataTable } from "./DataTable";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import PageMeta from "@/components/common/PageMeta";
 import { Button } from "@/components/ui/button";
-import { DownloadIcon, RefreshCw } from "lucide-react";
+import { DownloadIcon, RefreshCw, LayoutGrid, List, Search } from "lucide-react";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useDataRefresh } from "@/context/DataRefreshContext";
 import toast from "react-hot-toast";
+import ProductCard from "@/components/products/ProductCard";
 function getData(): Product[] {
   // Fetch data from your API here.
   return [
@@ -51,6 +52,8 @@ function getData(): Product[] {
   ];
 }
 
+type ViewMode = "table" | "grid";
+
 export default function Products({ products }: { products: Product[] }) {
   const [filtered, setFiltered] = useState<Product[]>([]);
   const [selected, setSelected] = useState<Product[]>([]);
@@ -60,6 +63,38 @@ export default function Products({ products }: { products: Product[] }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { refreshProducts, refreshSales } = useDataRefresh();
+
+  // View mode state with localStorage persistence
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("productsViewMode");
+      // Default to grid on mobile
+      if (!saved) {
+        return window.innerWidth < 768 ? "grid" : "table";
+      }
+      return (saved as ViewMode) || "table";
+    }
+    return "table";
+  });
+
+  // Grid view search
+  const [gridSearch, setGridSearch] = useState("");
+
+  // Save view preference
+  useEffect(() => {
+    localStorage.setItem("productsViewMode", viewMode);
+  }, [viewMode]);
+
+  // Filter products for grid view
+  const filteredProducts = useMemo(() => {
+    if (!gridSearch.trim()) return products;
+    const search = gridSearch.toLowerCase();
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(search) ||
+        p.category.toLowerCase().includes(search)
+    );
+  }, [products, gridSearch]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -199,7 +234,29 @@ export default function Products({ products }: { products: Product[] }) {
         className="text-[40px]"
         desc="Track your store's progress to boost your sales."
         buttons={
-          <div className="flex items-center justify-between gap-1 md:gap-3 mb-2 md:mb-0 md:mr-3">
+          <div className="flex flex-wrap items-center justify-between gap-1.5 md:gap-3 mb-2 md:mb-0 md:mr-3">
+            {/* View Toggle */}
+            <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-lg p-0.5">
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="sm"
+                className={`h-7 px-2 ${viewMode === "grid" ? "bg-blue-600 text-white" : "text-gray-500"}`}
+                onClick={() => setViewMode("grid")}
+                title="Grid view"
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant={viewMode === "table" ? "default" : "ghost"}
+                size="sm"
+                className={`h-7 px-2 ${viewMode === "table" ? "bg-blue-600 text-white" : "text-gray-500"}`}
+                onClick={() => setViewMode("table")}
+                title="Table view"
+              >
+                <List className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+
             <Button
               variant="outline"
               className="text-gray-400 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] flex items-center h-8 md:h-9"
@@ -207,33 +264,68 @@ export default function Products({ products }: { products: Product[] }) {
               disabled={isRefreshing}
             >
               <RefreshCw className={`mr-1 h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
             <Button
               variant="outline"
               className="text-gray-400 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] flex items-center h-8 md:h-9"
               onClick={exportToPDF}
             >
-              Export <DownloadIcon className="ml-1 h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Export</span> <DownloadIcon className="sm:ml-1 h-3.5 w-3.5" />
             </Button>
             <Button
               variant="default"
               className="text-white bg-blue-700 hover:bg-blue-800 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] h-8 md:h-9"
               onClick={() => openModal()}
             >
-              Create Sale
+              <span className="hidden sm:inline">Create</span> Sale
             </Button>
             <Button
               variant="default"
               className="text-white bg-blue-700 hover:bg-blue-800 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] h-8 md:h-9"
               onClick={() => (window.location.href = "/products/add")}
             >
-              Add Product +
+              Add <span className="hidden sm:inline">Product</span> +
             </Button>
           </div>
         }
       >
-        <DataTable columns={columns} data={products} />
+        {viewMode === "table" ? (
+          <DataTable columns={columns} data={products} />
+        ) : (
+          <div>
+            {/* Grid View Search */}
+            <div className="mb-4">
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search products..."
+                  value={gridSearch}
+                  onChange={(e) => setGridSearch(e.target.value)}
+                  className="pl-9 h-9 sm:h-10 dark:bg-gray-900"
+                />
+              </div>
+            </div>
+
+            {/* Product Grid */}
+            {filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <p>No products found{gridSearch && ` matching "${gridSearch}"`}</p>
+              </div>
+            )}
+
+            {/* Product count */}
+            <div className="mt-4 text-xs sm:text-sm text-gray-500">
+              Showing {filteredProducts.length} of {products.length} product(s)
+            </div>
+          </div>
+        )}
       </ComponentCard>
       <Modal
         isOpen={isOpen}
