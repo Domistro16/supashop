@@ -51,7 +51,8 @@ import {
 } from "./supabaseClient";
 import { Product } from "./pages/Products/Columns";
 import { Transaction } from "./pages/Transaction/Columns";
-const ProtectedPage = ({}) => {
+
+const ProtectedPage = ({ }) => {
   const { user } = useAuth();
   console.log("user at ProtectedPage: ", user);
 
@@ -62,6 +63,189 @@ const ProtectedPage = ({}) => {
   return <AppLayout />;
 };
 
+// Inner component that has access to auth context for data fetching
+function AppContent({
+  products,
+  setProducts,
+  sales,
+  setSales,
+  shop,
+  setShop,
+  recent,
+  setRecent,
+  setStaffs,
+  setUser,
+}: {
+  products: Product[] | undefined;
+  setProducts: React.Dispatch<React.SetStateAction<Product[] | undefined>>;
+  sales: Transaction[] | undefined;
+  setSales: React.Dispatch<React.SetStateAction<Transaction[] | undefined>>;
+  shop: any;
+  setShop: React.Dispatch<React.SetStateAction<any>>;
+  recent: any[] | undefined;
+  setRecent: React.Dispatch<React.SetStateAction<any[] | undefined>>;
+  setStaffs: React.Dispatch<React.SetStateAction<any[] | undefined>>;
+  setUser: React.Dispatch<React.SetStateAction<any[] | undefined>>;
+}) {
+  const { isAuthenticated, currentShop } = useAuth();
+
+  // Fetch data when authenticated and shop changes
+  useEffect(() => {
+    if (!isAuthenticated) {
+      // Clear data when not authenticated
+      setProducts(undefined);
+      setSales(undefined);
+      setShop(undefined);
+      setRecent(undefined);
+      setStaffs(undefined);
+      setUser(undefined);
+      return;
+    }
+
+    async function fetchAllData() {
+      console.log("Fetching data after authentication...");
+      const [productsData, salesData, shopData, recentData, profilesResult] = await Promise.all([
+        getProducts(),
+        getSales(),
+        getShop(),
+        getRecentItems(),
+        getProfiles(),
+      ]);
+
+      setProducts(productsData);
+      setSales(salesData);
+      setShop(shopData);
+      setRecent(recentData);
+
+      if (profilesResult) {
+        const { profiles, userProf } = profilesResult;
+        if (profiles) {
+          setStaffs(profiles);
+        }
+        if (userProf) {
+          setUser([userProf]);
+        }
+      }
+    }
+
+    fetchAllData();
+  }, [isAuthenticated, currentShop?.id]); // Re-fetch when auth state or shop changes
+
+  return (
+    <DataRefreshProvider
+      setProducts={setProducts}
+      setSales={setSales}
+      setShop={setShop}
+      setRecent={setRecent}
+    >
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: "#333",
+            color: "#fff",
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: "#10b981",
+              secondary: "#fff",
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: "#ef4444",
+              secondary: "#fff",
+            },
+          },
+        }}
+      />
+      <Router>
+        <ScrollToTop />
+        <Routes>
+          {/* Dashboard Layout */}
+          <Route path="/" element={<ProtectedPage />}>
+            <Route
+              index
+              path="/"
+              element={
+                <Home
+                  sales={sales ? sales : []}
+                  shop={
+                    shop
+                      ? shop
+                      : {
+                        target: 0,
+                      }
+                  }
+                  items={recent ? recent : []}
+                />
+              }
+            />
+
+            {/* Others Page */}
+            <Route path="/profile" element={<UserProfiles />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route
+              path="/products"
+              element={<Products products={products ? products : []} />}
+            />
+            <Route path="/products/add" element={<AddProducts />} />
+            <Route
+              path="/transactions"
+              element={<Transactions sales={sales ? sales : []} />}
+            />
+            <Route
+              path="/transaction/:orderId"
+              element={<Single transactions={sales ? sales : []} />}
+            />
+            <Route path="/staff" element={<Staffs />} />
+            <Route path="/staff/add" element={<AddStaffs />} />
+            <Route path="/staff/invites" element={<Invite />} />
+            <Route path="/roles" element={<RolesManagement />} />
+            <Route path="/customers" element={<CustomersPage />} />
+            <Route path="/customers/:id" element={<CustomerProfilePage />} />
+            <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
+            <Route path="/suppliers" element={<SuppliersPage />} />
+            <Route path="/suppliers/:id" element={<SupplierProfilePage />} />
+            <Route path="/suppliers/:id/edit" element={<SupplierFormPage />} />
+            <Route path="/reports/sales" element={<SalesReport />} />
+            <Route path="/blank" element={<Blank />} />
+
+            {/* Forms */}
+            <Route path="/form-elements" element={<FormElements />} />
+
+            {/* Tables */}
+            <Route path="/basic-tables" element={<BasicTables />} />
+
+            {/* Ui Elements */}
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/avatars" element={<Avatars />} />
+            <Route path="/badge" element={<Badges />} />
+            <Route path="/buttons" element={<Buttons />} />
+            <Route path="/images" element={<Images />} />
+            <Route path="/videos" element={<Videos />} />
+
+            {/* Charts */}
+            <Route path="/line-chart" element={<LineChart />} />
+            <Route path="/bar-chart" element={<BarChart />} />
+          </Route>
+
+          {/* Auth Layout */}
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/auth" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+
+          {/* Fallback Route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+    </DataRefreshProvider>
+  );
+}
+
 export default function App() {
   const [products, setProducts] = useState<Product[]>();
   const [sales, setSales] = useState<Transaction[]>();
@@ -69,158 +253,24 @@ export default function App() {
   const [recent, setRecent] = useState<any[]>();
   const [staffs, setStaffs] = useState<any[]>();
   const [user, setUser] = useState<any[]>();
-  useEffect(() => {
-    async function callProducts() {
-      const data = await getProducts();
-      setProducts(data);
-    }
-    async function callSales() {
-      const data = await getSales();
-      setSales(data);
-    }
-    async function callShop() {
-      const data = await getShop();
-      setShop(data);
-    }
-    async function callItems() {
-      const data = await getRecentItems();
-      setRecent(data);
-    }
-    async function callProfiles() {
-      const result = await getProfiles();
-      if (result) {
-        const { profiles, userProf } = result;
-        // now both exist
-        if (profiles || userProf) {
-          setStaffs(profiles!);
-          setUser(userProf);
-        }
-      }
-    }
-    callProfiles();
-    callItems();
-    callShop();
-    callSales();
-    callProducts();
-  }, []);
 
   return (
-    <>
-      <AuthProvider>
-        <UserProvider>
-          <DataRefreshProvider
-            setProducts={setProducts}
-            setSales={setSales}
-            setShop={setShop}
-            setRecent={setRecent}
-          >
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: "#333",
-                  color: "#fff",
-                },
-                success: {
-                  duration: 3000,
-                  iconTheme: {
-                    primary: "#10b981",
-                    secondary: "#fff",
-                  },
-                },
-                error: {
-                  duration: 4000,
-                  iconTheme: {
-                    primary: "#ef4444",
-                    secondary: "#fff",
-                  },
-                },
-              }}
-            />
-            <Router>
-              <ScrollToTop />
-              <Routes>
-              {/* Dashboard Layout */}
-              <Route path="/" element={<ProtectedPage />}>
-                <Route
-                  index
-                  path="/"
-                  element={
-                    <Home
-                      sales={sales ? sales : []}
-                      shop={
-                        shop
-                          ? shop
-                          : {
-                              target: 0,
-                            }
-                      }
-                      items={recent ? recent : []}
-                    />
-                  }
-                />
-
-                {/* Others Page */}
-                <Route path="/profile" element={<UserProfiles />} />
-                <Route path="/calendar" element={<Calendar />} />
-                <Route
-                  path="/products"
-                  element={<Products products={products ? products : []} />}
-                />
-                <Route path="/products/add" element={<AddProducts />} />
-                <Route
-                  path="/transactions"
-                  element={<Transactions sales={sales ? sales : []} />}
-                />
-                <Route
-                  path="/transaction/:orderId"
-                  element={<Single transactions={sales ? sales : []} />}
-                />
-                <Route path="/staff" element={<Staffs />} />
-                <Route path="/staff/add" element={<AddStaffs />} />
-                <Route path="/staff/invites" element={<Invite />} />
-                <Route path="/roles" element={<RolesManagement />} />
-                <Route path="/customers" element={<CustomersPage />} />
-                <Route path="/customers/:id" element={<CustomerProfilePage />} />
-                <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
-                <Route path="/suppliers" element={<SuppliersPage />} />
-                <Route path="/suppliers/:id" element={<SupplierProfilePage />} />
-                <Route path="/suppliers/:id/edit" element={<SupplierFormPage />} />
-                <Route path="/reports/sales" element={<SalesReport />} />
-                <Route path="/blank" element={<Blank />} />
-
-                {/* Forms */}
-                <Route path="/form-elements" element={<FormElements />} />
-
-                {/* Tables */}
-                <Route path="/basic-tables" element={<BasicTables />} />
-
-                {/* Ui Elements */}
-                <Route path="/alerts" element={<Alerts />} />
-                <Route path="/avatars" element={<Avatars />} />
-                <Route path="/badge" element={<Badges />} />
-                <Route path="/buttons" element={<Buttons />} />
-                <Route path="/images" element={<Images />} />
-                <Route path="/videos" element={<Videos />} />
-
-                {/* Charts */}
-                <Route path="/line-chart" element={<LineChart />} />
-                <Route path="/bar-chart" element={<BarChart />} />
-              </Route>
-
-              {/* Auth Layout */}
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/auth" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
-
-              {/* Fallback Route */}
-              <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Router>
-          </DataRefreshProvider>
-        </UserProvider>
-      </AuthProvider>
-    </>
+    <AuthProvider>
+      <UserProvider>
+        <AppContent
+          products={products}
+          setProducts={setProducts}
+          sales={sales}
+          setSales={setSales}
+          shop={shop}
+          setShop={setShop}
+          recent={recent}
+          setRecent={setRecent}
+          setStaffs={setStaffs}
+          setUser={setUser}
+        />
+      </UserProvider>
+    </AuthProvider>
   );
 }
+

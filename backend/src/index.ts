@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 
 // Load environment variables
 dotenv.config();
@@ -16,6 +17,8 @@ import aiRoutes from './routes/ai.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import customersRoutes from './routes/customers.routes';
 import suppliersRoutes from './routes/suppliers.routes';
+import posRoutes from './routes/pos.routes';
+import purchaseOrdersRoutes from './routes/purchaseOrders.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,6 +28,7 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true,
 }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -50,6 +54,8 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/customers', customersRoutes);
 app.use('/api/suppliers', suppliersRoutes);
+app.use('/api/pos', posRoutes);
+app.use('/api/purchase-orders', purchaseOrdersRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

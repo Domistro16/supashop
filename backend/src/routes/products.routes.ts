@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import * as productsController from '../controllers/products.controller';
-import { authenticate, setShopContext } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
+import ensureShopAccess from '../middleware/ensureShopAccess';
 import { requirePermission } from '../middleware/rbac';
 
 const router = Router();
 
-// All product routes require authentication and shop context
-router.use(authenticate, setShopContext);
+// All product routes require authentication and shop access
+router.use(authenticate, ensureShopAccess);
 
 // Get unique categories
 router.get('/categories', requirePermission('products:read'), productsController.getCategories);

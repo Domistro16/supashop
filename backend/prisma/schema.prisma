@@ -28,8 +28,24 @@ model User {
   sales         Sale[]
   activityLogs  ActivityLog[]
   notifications Notification[]
+  refreshTokens RefreshToken[]
 
   @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  revoked   Boolean  @default(false)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
 
 // ============================================
@@ -46,15 +62,17 @@ model Shop {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relationships
-  owner         User            @relation("ShopOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  staff         StaffShop[]
-  products      Product[]
-  sales         Sale[]
-  roles         Role[]
-  activityLogs  ActivityLog[]
-  notifications Notification[]
-  customers     Customer[]
-  suppliers     Supplier[]
+  owner            User              @relation("ShopOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  staff            StaffShop[]
+  products         Product[]
+  sales            Sale[]
+  roles            Role[]
+  activityLogs     ActivityLog[]
+  notifications    Notification[]
+  customers        Customer[]
+  suppliers        Supplier[]
+  offlineSaleSyncs OfflineSaleSync[]
+  purchaseOrders   PurchaseOrder[]
 
   @@map("shops")
 }
@@ -148,8 +166,9 @@ model Supplier {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relationships
-  shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  products Product[]
+  shop           Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products       Product[]
+  purchaseOrders PurchaseOrder[]
 
   @@index([shopId, name])
   @@index([shopId, phone])
@@ -173,9 +192,10 @@ model Product {
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
   // Relationships
-  shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  supplier  Supplier?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  saleItems SaleItem[]
+  shop               Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  saleItems          SaleItem[]
+  purchaseOrderItems PurchaseOrderItem[]
 
   @@map("products")
 }
@@ -194,10 +214,11 @@ model Sale {
   createdAt   DateTime @default(now()) @map("created_at")
 
   // Relationships
-  shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  staff     User       @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  customer  Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  saleItems SaleItem[]
+  shop       Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  staff      User              @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  customer   Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  saleItems  SaleItem[]
+  offlineSync OfflineSaleSync?
 
   @@map("sales")
 }
@@ -301,4 +322,64 @@ model LoyaltyPoint {
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@map("loyalty_points")
+}
+
+// ============================================
+// OFFLINE SALE SYNC (for POS offline support)
+// ============================================
+
+model OfflineSaleSync {
+  id           String   @id @default(uuid())
+  shopId       String   @map("shop_id")
+  clientTempId String   @map("client_temp_id")
+  saleId       String   @unique @map("sale_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, clientTempId])
+  @@map("offline_sale_syncs")
+}
+
+// ============================================
+// PURCHASE ORDERS
+// ============================================
+
+model PurchaseOrder {
+  id          String    @id @default(uuid())
+  poNumber    String    @unique @map("po_number")
+  shopId      String    @map("shop_id")
+  supplierId  String    @map("supplier_id")
+  status      String    @default("draft") // draft, sent, partial, received, cancelled
+  totalAmount Decimal   @default(0) @map("total_amount") @db.Decimal(10, 2)
+  notes       String?
+  sentAt      DateTime? @map("sent_at")
+  receivedAt  DateTime? @map("received_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relationships
+  shop     Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  supplier Supplier            @relation(fields: [supplierId], references: [id])
+  items    PurchaseOrderItem[]
+
+  @@index([shopId, status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id               String  @id @default(uuid())
+  purchaseOrderId  String  @map("purchase_order_id")
+  productId        String  @map("product_id")
+  quantityOrdered  Int     @map("quantity_ordered")
+  quantityReceived Int     @default(0) @map("quantity_received")
+  unitCost         Decimal @map("unit_cost") @db.Decimal(10, 2)
+
+  // Relationships
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id])
+
+  @@map("purchase_order_items")
 }
