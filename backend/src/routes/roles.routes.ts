@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import * as rolesController from '../controllers/roles.controller';
-import { authenticate, setShopContext } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
+import ensureShopAccess from '../middleware/ensureShopAccess';
 import { requirePermission } from '../middleware/rbac';
 
 const router = Router();
 
-// All role routes require authentication and shop context
-router.use(authenticate, setShopContext);
+// All role routes require authentication and shop access
+router.use(authenticate, ensureShopAccess);
 
 // Permissions endpoint (read-only)
 router.get('/permissions', requirePermission('roles:read'), rolesController.getPermissions);

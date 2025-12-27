@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth';
 import { getUserPermissions } from '../middleware/rbac';
 import { createDefaultRoles } from '../utils/defaultRoles';
+import { createRefreshToken, verifyRefreshToken, rotateRefreshToken, revokeRefreshToken } from '../lib/token';
 
 
 const prisma = new PrismaClient();
@@ -177,6 +178,19 @@ export async function signIn(req: AuthRequest, res: Response) {
       name: user.name,
     });
 
+    // Create refresh token
+    const { token: refreshToken, expiresAt } = await createRefreshToken(user.id);
+
+    // Set refresh token cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: isProduction,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
+      path: '/',
+    });
+
     // Format shops with roles and permissions
     const shops = staffShops.map((staffShop) => ({
       id: staffShop.shop.id,
@@ -291,5 +305,93 @@ export async function updateProfile(req: AuthRequest, res: Response) {
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Failed to update profile' });
+  }
+}
+
+/**
+ * Refresh access token using refresh token cookie
+ */
+export async function refreshToken(req: AuthRequest, res: Response) {
+  try {
+    // Read refresh token from cookie
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({ error: 'Refresh token not provided' });
+    }
+
+    // Verify refresh token
+    const tokenRecord = await verifyRefreshToken(refreshToken);
+
+    if (!tokenRecord) {
+      return res.status(401).json({ error: 'Invalid or expired refresh token' });
+    }
+
+    // Get user
+    const user = await prisma.user.findUnique({
+      where: { id: tokenRecord.userId },
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    // Rotate refresh token (revoke old, create new)
+    const { token: newRefreshToken, expiresAt } = await rotateRefreshToken(
+      refreshToken,
+      user.id
+    );
+
+    // Set new refresh token cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: isProduction,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
+      path: '/',
+    });
+
+    // Generate new access token
+    const accessToken = generateToken({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+    });
+
+    res.json({
+      token: accessToken,
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    res.status(500).json({ error: 'Failed to refresh token' });
+  }
+}
+
+/**
+ * Logout: revoke refresh token and clear cookie
+ */
+export async function logout(req: AuthRequest, res: Response) {
+  try {
+    // Read refresh token from cookie
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (refreshToken) {
+      // Revoke the token
+      await revokeRefreshToken(refreshToken);
+    }
+
+    // Clear refresh token cookie
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ error: 'Failed to logout' });
   }
 }

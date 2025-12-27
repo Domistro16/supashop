@@ -7,12 +7,13 @@ import {
   deleteSupplier,
   getSupplierStats,
 } from '../controllers/suppliers.controller';
-import { authenticate, setShopContext } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
+import ensureShopAccess from '../middleware/ensureShopAccess';
 
 const router = Router();
 
-// All routes require authentication and shop context
-router.use(authenticate, setShopContext);
+// All routes require authentication and shop access
+router.use(authenticate, ensureShopAccess);
 
 // Supplier routes
 router.get('/', getSuppliers);

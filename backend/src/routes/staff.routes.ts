@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import * as staffController from '../controllers/staff.controller';
-import { authenticate, setShopContext } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
+import ensureShopAccess from '../middleware/ensureShopAccess';
 import { requirePermission } from '../middleware/rbac';
 
 const router = Router();
 
-// All staff routes require authentication and shop context
-router.use(authenticate, setShopContext);
+// All staff routes require authentication and shop access
+router.use(authenticate, ensureShopAccess);
 
 router.get('/', requirePermission('staff:read'), staffController.getStaff);
 router.get('/invites', requirePermission('staff:read'), staffController.getStaffInvites);

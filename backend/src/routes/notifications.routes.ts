@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { authenticate, setShopContext } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
+import ensureShopAccess from '../middleware/ensureShopAccess';
 import {
   getNotifications,
   markAsRead,
@@ -8,8 +9,8 @@ import {
 
 const router = Router();
 
-// All notification routes require authentication
-router.use(authenticate, setShopContext);
+// All notification routes require authentication and shop access
+router.use(authenticate, ensureShopAccess);
 
 /**
  * @route   GET /api/notifications

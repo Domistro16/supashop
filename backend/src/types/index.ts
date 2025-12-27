@@ -6,6 +6,7 @@ export interface AuthRequest extends Request {
     id: string;
     email: string;
     name: string;
+    shopIds?: string[]; // Array of shop IDs the user has access to
   };
   shopId?: string; // Current shop context
 }

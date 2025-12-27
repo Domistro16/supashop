@@ -7,12 +7,13 @@ import {
   deleteCustomer,
   getCustomerStats,
 } from '../controllers/customers.controller';
-import { authenticate, setShopContext } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
+import ensureShopAccess from '../middleware/ensureShopAccess';
 
 const router = Router();
 
-// Apply authentication and shop context to all routes
-router.use(authenticate, setShopContext);
+// Apply authentication and shop access to all routes
+router.use(authenticate, ensureShopAccess);
 
 // Customer CRUD routes
 router.get('/', getAllCustomers);
