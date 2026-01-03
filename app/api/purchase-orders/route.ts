@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { verifyAuth, getShopId } from '@/lib/middleware/auth';
+import { prisma } from '@server/prisma';
+import { verifyAuth, getShopId } from '@server/middleware/auth';
 
 function generatePONumber(): string {
   const timestamp = Date.now().toString(36);

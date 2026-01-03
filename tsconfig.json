@@ -21,7 +21,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/app/*": ["./app/*"],
-      "@/lib/*": ["./lib/*"]
+      "@server/*": ["./lib/*"]
     }
   },
   "include": [
@@ -35,11 +35,6 @@
   ],
   "exclude": [
     "node_modules",
-    "backend",
-    "src/pages",
-    "src/components",
-    "src/auth.tsx",
-    "src/main.tsx",
-    "src/App.tsx"
+    "backend"
   ]
 }
