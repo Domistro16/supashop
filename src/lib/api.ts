@@ -105,8 +105,14 @@ export interface Permission {
 }
 
 // Storage for auth token and current shop
-let authToken: string | null = localStorage.getItem('auth_token');
-let currentShopId: string | null = localStorage.getItem('current_shop_id');
+let authToken: string | null = null;
+let currentShopId: string | null = null;
+
+// Initialize from localStorage if available (client-side only)
+if (typeof window !== 'undefined') {
+  authToken = localStorage.getItem('auth_token');
+  currentShopId = localStorage.getItem('current_shop_id');
+}
 
 // Helper function to get headers
 function getHeaders(includeShopId = false): HeadersInit {
@@ -447,24 +453,28 @@ export const roles = {
 // Export current shop and permissions helpers
 export const permissions = {
   check: (permission: string): boolean => {
+    if (typeof window === 'undefined') return false;
     const shops = JSON.parse(localStorage.getItem('user_shops') || '[]') as Shop[];
     const currentShop = shops.find(s => s.id === currentShopId);
     return currentShop?.permissions?.includes(permission) || false;
   },
 
   checkAny: (permissionsList: string[]): boolean => {
+    if (typeof window === 'undefined') return false;
     const shops = JSON.parse(localStorage.getItem('user_shops') || '[]') as Shop[];
     const currentShop = shops.find(s => s.id === currentShopId);
     return permissionsList.some(p => currentShop?.permissions?.includes(p)) || false;
   },
 
   getCurrentPermissions: (): string[] => {
+    if (typeof window === 'undefined') return [];
     const shops = JSON.parse(localStorage.getItem('user_shops') || '[]') as Shop[];
     const currentShop = shops.find(s => s.id === currentShopId);
     return currentShop?.permissions || [];
   },
 
   isOwner: (): boolean => {
+    if (typeof window === 'undefined') return false;
     const shops = JSON.parse(localStorage.getItem('user_shops') || '[]') as Shop[];
     const currentShop = shops.find(s => s.id === currentShopId);
     return currentShop?.role === 'owner';
