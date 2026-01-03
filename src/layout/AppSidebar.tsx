@@ -37,7 +37,7 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Home", path: "/", pro: false, hidden: false }],
+    subItems: [{ name: "Home", path: "/dashboard", pro: false, hidden: false }],
   },
   {
     icon: <CalenderIcon />,
@@ -50,7 +50,7 @@ const navItems: NavItem[] = [
     path: "/e-commerce",
     subItems: [
       { name: "Products", path: "/products", pro: false, hidden: false },
-      { name: "Transaction", path: "/transactions", pro: false, hidden: false },
+      { name: "Transaction", path: "/sales", pro: false, hidden: false },
       { name: "Add Product", path: "/products/add", pro: false, hidden: false },
     ],
   },
@@ -68,6 +68,16 @@ const navItems: NavItem[] = [
       },
       { name: "Add Staff", path: "/staff/add", pro: false, hidden: false },
     ],
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "Customers",
+    path: "/customers",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Suppliers",
+    path: "/suppliers",
   },
   {
     icon: <Shield />,

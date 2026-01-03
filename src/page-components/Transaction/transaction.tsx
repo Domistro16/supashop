@@ -239,7 +239,7 @@ export default function Transactions({ sales }: { sales: Transaction[] }) {
                         <span className="h-px flex-1 bg-gray-200 dark:bg-white/[0.08]" />
                       </div>
                     )}
-                    <TransactionCard tx={tx} onOpen={(orderId) => navigate(`/transaction/${orderId}`)} />
+                    <TransactionCard tx={tx} onOpen={(orderId) => navigate(`/sales/${orderId}`)} />
                   </div>
                 );
               })
