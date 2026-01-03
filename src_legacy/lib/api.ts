@@ -3,9 +3,7 @@
  * Replaces Supabase client with REST API calls
  */
 
-const API_BASE_URL = typeof window !== 'undefined'
-  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000') + '/api'
-  : 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
 // Types
 export interface User {
