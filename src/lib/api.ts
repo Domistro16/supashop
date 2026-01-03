@@ -388,7 +388,7 @@ export const staff = {
     tempPassword: string | null;
     isNewUser: boolean;
   }> => {
-    return apiCall('/staff/invite', {
+    return apiCall('/staff/invites', {
       method: 'POST',
       body: JSON.stringify(data),
     }, true);
