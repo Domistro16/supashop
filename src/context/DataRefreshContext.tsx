@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useCallback } from "react";
 import { getProducts, getSales, getShop, getRecentItems } from "@/supabaseClient";
-import { Product } from "@/pages/Products/Columns";
-import { Transaction } from "@/pages/Transaction/Columns";
+import { Product } from "@/page-components/Products/Columns";
+import { Transaction } from "@/page-components/Transaction/Columns";
 
 interface DataRefreshContextType {
   refreshProducts: () => Promise<Product[] | undefined>;

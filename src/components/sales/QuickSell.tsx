@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Product } from '@/pages/Products/Columns';
+import { Product } from '@/page-components/Products/Columns';
 import { Customer } from '@/lib/api';
 import CustomerSearchSelect from '@/components/customers/CustomerSearchSelect';
 import { record_sale } from '@/supabaseClient';
