@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { getSales } from '@/supabaseClient'
-import { Transaction } from '@/pages/Transaction/Columns'
-import Single from '@/pages/Transaction/single'
+import { Transaction } from '@/page-components/Transaction/Columns'
+import Single from '@/page-components/Transaction/single'
 import Spinner from '@/components/ui/Spinner'
 
 export default function TransactionDetailPage() {

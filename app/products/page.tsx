@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import ProductsPage from '@/pages/Products/product'
+import ProductsPage from '@/page-components/Products/product'
 import { getProducts } from '@/supabaseClient'
-import { Product } from '@/pages/Products/Columns'
+import { Product } from '@/page-components/Products/Columns'
 import Spinner from '@/components/ui/Spinner'
 import { DataRefreshProvider } from '@/context/DataRefreshContext'
 
