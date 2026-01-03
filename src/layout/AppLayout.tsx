@@ -1,10 +1,14 @@
 import { SidebarProvider, useSidebar } from "../context/SidebarContext";
-import { Outlet } from "@/lib/react-router-compat";
+// Outlet not needed in Next.js - children passed as props
 import AppHeader from "./AppHeader";
 import Backdrop from "./Backdrop";
 import AppSidebar from "./AppSidebar";
 
-const LayoutContent: React.FC = () => {
+interface LayoutContentProps {
+  children: React.ReactNode;
+}
+
+const LayoutContent: React.FC<LayoutContentProps> = ({ children }) => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
 
   return (
@@ -20,17 +24,21 @@ const LayoutContent: React.FC = () => {
       >
         <AppHeader />
         <div className="p-2 sm:p-4 mx-auto max-w-(--breakpoint-2xl) md:p-5">
-          <Outlet />
+          {children}
         </div>
       </div>
     </div>
   );
 };
 
-const AppLayout: React.FC = () => {
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
+
+const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <SidebarProvider>
-      <LayoutContent />
+      <LayoutContent>{children}</LayoutContent>
     </SidebarProvider>
   );
 };

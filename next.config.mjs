@@ -10,7 +10,23 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  pageExtensions: ['page.tsx', 'page.ts', 'page.jsx', 'page.js', 'route.ts', 'route.js'],
+  webpack(config) {
+    // Handle SVG imports with ?react suffix as React components
+    config.module.rules.push({
+      test: /\.svg$/i,
+      resourceQuery: /react/, // Match *.svg?react
+      use: ['@svgr/webpack'],
+    })
+
+    // Handle regular SVG imports as files
+    config.module.rules.push({
+      test: /\.svg$/i,
+      resourceQuery: { not: [/react/] }, // Exclude *.svg?react
+      type: 'asset/resource',
+    })
+
+    return config
+  },
 }
 
 export default nextConfig
