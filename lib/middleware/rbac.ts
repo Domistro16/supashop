@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../types';
 import { PrismaClient } from '@prisma/client';
-import { can, User as PermissionUser, Role } from '@/lib/backend/permissions';
+import { can, User as PermissionUser, Role } from '@server/backend/permissions';
 
 const prisma = new PrismaClient();
 

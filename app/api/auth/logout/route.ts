@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revokeRefreshToken } from '@/lib/backend/token';
+import { revokeRefreshToken } from '@server/backend/token';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
