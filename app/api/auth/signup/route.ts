@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { hashPassword, generateToken } from '@/lib/utils/auth';
-import { getUserPermissions } from '@/lib/middleware/rbac';
-import { createDefaultRoles } from '@/lib/utils/defaultRoles';
+import { prisma } from '@server/prisma';
+import { hashPassword, generateToken } from '@server/utils/auth';
+import { getUserPermissions } from '@server/middleware/rbac';
+import { createDefaultRoles } from '@server/utils/defaultRoles';
 
 export async function POST(request: NextRequest) {
   try {
