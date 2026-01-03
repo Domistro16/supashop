@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { verifyAuth } from '@/lib/middleware/auth';
+import { prisma } from '@server/prisma';
+import { verifyAuth } from '@server/middleware/auth';
 
 export async function PUT(
   request: NextRequest,

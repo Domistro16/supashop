@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAuth, getShopId } from '@/lib/middleware/auth';
-import { generateRestockingSuggestions } from '@/lib/services/ai.service';
+import { verifyAuth, getShopId } from '@server/middleware/auth';
+import { generateRestockingSuggestions } from '@server/services/ai.service';
 
 export async function GET(request: NextRequest) {
   try {
