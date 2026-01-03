@@ -1,7 +1,7 @@
 'use client'
 
 // Compatibility shim for react-router to Next.js migration
-import { useRouter as useNextRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useRouter as useNextRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { ComponentProps } from 'react'
 
@@ -23,10 +23,9 @@ export function useNavigate() {
 
 export function useLocation() {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   return {
     pathname,
-    search: searchParams?.toString() ? `?${searchParams.toString()}` : '',
+    search: typeof window !== 'undefined' ? window.location.search : '',
     hash: typeof window !== 'undefined' ? window.location.hash : '',
   }
 }

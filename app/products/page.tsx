@@ -1,6 +1,6 @@
 'use client'
 
-import ProductsPage from '@/pages/Products/product'
+import ProductsPage from '@/page-components/Products/product'
 
 export default function Products() {
   return <ProductsPage />

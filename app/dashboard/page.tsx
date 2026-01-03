@@ -1,6 +1,6 @@
 'use client'
 
-import Home from '@/pages/Dashboard/Home'
+import Home from '@/page-components/Dashboard/Home'
 
 export default function DashboardPage() {
   return <Home />
