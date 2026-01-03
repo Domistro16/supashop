@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import TransactionPage from '@/pages/Transaction/transaction'
+import TransactionPage from '@/page-components/Transaction/transaction'
 import { getSales } from '@/supabaseClient'
-import { Transaction } from '@/pages/Transaction/Columns'
+import { Transaction } from '@/page-components/Transaction/Columns'
 import Spinner from '@/components/ui/Spinner'
 import { DataRefreshProvider } from '@/context/DataRefreshContext'
 

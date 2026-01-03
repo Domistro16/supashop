@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Home from '@/pages/Dashboard/Home'
+import Home from '@/page-components/Dashboard/Home'
 import { getSales, getShop, getRecentItems } from '@/supabaseClient'
-import { Transaction } from '@/pages/Transaction/Columns'
+import { Transaction } from '@/page-components/Transaction/Columns'
 import Spinner from '@/components/ui/Spinner'
 import { DataRefreshProvider } from '@/context/DataRefreshContext'
 
