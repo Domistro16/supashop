@@ -100,8 +100,9 @@ export const getProduct = async (id: string) => {
   try {
     const product = await api.products.getById(id);
     return {
-      ...product,
+      name: product.name,
       category_name: product.categoryName,
+      ...product,
     };
   } catch (error) {
     console.error('Failed to get product:', error);
