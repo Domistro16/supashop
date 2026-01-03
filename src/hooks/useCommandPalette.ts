@@ -269,7 +269,7 @@ export function useCommandPalette(query: string) {
           title: `Transaction #${transaction.id.slice(0, 8)}`,
           subtitle: `₦${Number(transaction.total_amount).toLocaleString()} • ${date}`,
           icon: "💳",
-          path: `/transaction/${transaction.id}`,
+          path: `/sales/${transaction.order_id}`,
           matchScore: id.startsWith(searchQuery) ? 3 : 1,
         } as any);
       }
