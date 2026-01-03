@@ -70,7 +70,7 @@ export const columns: ColumnDef<Transaction>[] = [
       return (
         <div
           className="font-medium hover:underline cursor-pointer"
-          onClick={() => navigate(`/transaction/${row.getValue("order_id")}`)}
+          onClick={() => navigate(`/sales/${row.getValue("order_id")}`)}
         >
           #{row.getValue("order_id")}
         </div>
