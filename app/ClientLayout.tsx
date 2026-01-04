@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { HelmetProvider } from 'react-helmet-async'
 import { SidebarProvider } from '@/context/SidebarContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { UserProvider } from '@/context/UserContext'
@@ -42,37 +43,19 @@ export default function ClientLayout({
   // Show loading spinner while checking auth
   if (isLoading && !isAuthPage) {
     return (
-      <ThemeProvider>
-        <Spinner size="lg" />
-      </ThemeProvider>
+      <HelmetProvider>
+        <ThemeProvider>
+          <Spinner size="lg" />
+        </ThemeProvider>
+      </HelmetProvider>
     )
   }
 
   if (isAuthPage) {
     return (
-      <ThemeProvider>
-        <AuthProvider>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: { background: '#333', color: '#fff' },
-              success: { duration: 3000, iconTheme: { primary: '#10b981', secondary: '#fff' } },
-              error: { duration: 4000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
-            }}
-          />
-          <SonnerToaster position="top-right" />
-          {children}
-        </AuthProvider>
-      </ThemeProvider>
-    )
-  }
-
-  return (
-    <ThemeProvider>
-      <AuthProvider>
-        <UserProvider>
-          <SidebarProvider>
+      <HelmetProvider>
+        <ThemeProvider>
+          <AuthProvider>
             <Toaster
               position="top-right"
               toastOptions={{
@@ -83,10 +66,34 @@ export default function ClientLayout({
               }}
             />
             <SonnerToaster position="top-right" />
-            <AppLayout>{children}</AppLayout>
-          </SidebarProvider>
-        </UserProvider>
-      </AuthProvider>
-    </ThemeProvider>
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
+      </HelmetProvider>
+    )
+  }
+
+  return (
+    <HelmetProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <UserProvider>
+            <SidebarProvider>
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: { background: '#333', color: '#fff' },
+                  success: { duration: 3000, iconTheme: { primary: '#10b981', secondary: '#fff' } },
+                  error: { duration: 4000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+                }}
+              />
+              <SonnerToaster position="top-right" />
+              <AppLayout>{children}</AppLayout>
+            </SidebarProvider>
+          </UserProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </HelmetProvider>
   )
 }
