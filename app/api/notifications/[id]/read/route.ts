@@ -4,7 +4,7 @@ import { verifyAuth } from '@server/middleware/auth';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ notificationId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(request);
@@ -12,11 +12,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { notificationId } = await params;
+    const { id } = await params;
 
     // Mark specific notification as read
     const notification = await prisma.notification.findUnique({
-      where: { id: notificationId },
+      where: { id },
     });
 
     if (!notification || notification.userId !== authResult.user.id) {
@@ -24,7 +24,7 @@ export async function PUT(
     }
 
     await prisma.notification.update({
-      where: { id: notificationId },
+      where: { id },
       data: { isRead: true },
     });
 
