@@ -4,7 +4,7 @@ import { verifyAuth, getShopId } from '@server/middleware/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ saleId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(request);
@@ -17,7 +17,7 @@ export async function GET(
       return NextResponse.json({ error: 'Shop context required' }, { status: 400 });
     }
 
-    const { saleId } = await params;
+    const { id: saleId } = await params;
 
     // Verify sale belongs to shop
     const sale = await prisma.sale.findFirst({
