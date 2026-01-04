@@ -9,6 +9,7 @@ import { AuthProvider } from '@/auth'
 import AppLayout from '@/layout/AppLayout'
 import Spinner from '@/components/ui/Spinner'
 import { Toaster } from 'react-hot-toast'
+import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 
 export default function ClientLayout({
   children,
@@ -60,6 +61,7 @@ export default function ClientLayout({
               error: { duration: 4000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
             }}
           />
+          <SonnerToaster position="top-right" />
           {children}
         </AuthProvider>
       </ThemeProvider>
@@ -80,6 +82,7 @@ export default function ClientLayout({
                 error: { duration: 4000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
               }}
             />
+            <SonnerToaster position="top-right" />
             <AppLayout>{children}</AppLayout>
           </SidebarProvider>
         </UserProvider>
