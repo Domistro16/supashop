@@ -6,6 +6,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import { SidebarProvider } from '@/context/SidebarContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { UserProvider } from '@/context/UserContext'
+import { DataRefreshProvider } from '@/context/DataRefreshContext'
 import { AuthProvider } from '@/auth'
 import AppLayout from '@/layout/AppLayout'
 import Spinner from '@/components/ui/Spinner'
@@ -22,6 +23,22 @@ export default function ClientLayout({
   const [isAuthPage, setIsAuthPage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const authPages = ['/auth/signin', '/auth/signup', '/']
@@ -79,17 +96,19 @@ export default function ClientLayout({
         <AuthProvider>
           <UserProvider>
             <SidebarProvider>
-              <Toaster
-                position="top-right"
-                toastOptions={{
-                  duration: 4000,
-                  style: { background: '#333', color: '#fff' },
-                  success: { duration: 3000, iconTheme: { primary: '#10b981', secondary: '#fff' } },
-                  error: { duration: 4000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
-                }}
-              />
-              <SonnerToaster position="top-right" />
-              <AppLayout>{children}</AppLayout>
+              <DataRefreshProvider>
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: { background: '#333', color: '#fff' },
+                    success: { duration: 3000, iconTheme: { primary: '#10b981', secondary: '#fff' } },
+                    error: { duration: 4000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+                  }}
+                />
+                <SonnerToaster position="top-right" />
+                <AppLayout>{children}</AppLayout>
+              </DataRefreshProvider>
             </SidebarProvider>
           </UserProvider>
         </AuthProvider>

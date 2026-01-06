@@ -1,8 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Get all shop IDs that a user has access to (owned shops + staff shops)

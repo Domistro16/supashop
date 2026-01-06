@@ -40,6 +40,7 @@ export interface Product {
   name: string;
   stock: number;
   price: string | number;
+  costPrice?: string | number;
   categoryName?: string;
   supplierId?: string | null;
   supplier?: {
@@ -65,6 +66,18 @@ export interface Sale {
     name: string;
     phone?: string;
   } | null;
+  saleItems?: {
+    id: string;
+    saleId: string;
+    productId: string;
+    quantity: number;
+    price: string | number;
+    product?: {
+      id: string;
+      name: string;
+      costPrice?: string | number | null;
+    };
+  }[];
 }
 
 export interface SaleItem {
@@ -76,6 +89,7 @@ export interface SaleItem {
   product?: {
     id: string;
     name: string;
+    costPrice?: string | number | null;
   };
 }
 
@@ -292,8 +306,9 @@ export const products = {
     name: string;
     stock: number;
     price: number;
+    costPrice?: number;
     categoryName?: string;
-
+    supplierId?: string;
   }): Promise<Product> => {
     return apiCall('/products', {
       method: 'POST',
@@ -305,8 +320,9 @@ export const products = {
     name?: string;
     stock?: number;
     price?: number;
+    costPrice?: number;
     categoryName?: string;
-
+    supplierId?: string;
   }): Promise<Product> => {
     return apiCall(`/products/${id}`, {
       method: 'PUT',
@@ -507,7 +523,82 @@ export interface AIRestockingSuggestions {
   insights: string;
 }
 
+// New AI Types
+export interface AIRiskReport {
+  staffRisks: Array<{
+    staffId: string;
+    staffName: string;
+    riskScore: number;
+    reasons: string[];
+  }>;
+  suspiciousTransactions: Array<{
+    saleId: string;
+    orderId: string;
+    type: string;
+    amount: number;
+    staffName: string;
+    reason: string;
+  }>;
+  inventoryWarnings: Array<{
+    productId: string;
+    productName: string;
+    type: string;
+    currentStock: number;
+    details: string;
+  }>;
+  overallRiskLevel: 'low' | 'medium' | 'high';
+  summary: string;
+  analyzedPeriod: string;
+  generatedAt: string;
+}
+
+export interface AIMarketingMessage {
+  whatsappPromo: string;
+  recommendedDiscount: string;
+  suggestedBundle: string;
+  marketingActions: string[];
+  slowMovingItems: Array<{
+    name: string;
+    stock: number;
+    suggestion: string;
+  }>;
+  topPerformers: Array<{
+    name: string;
+    soldCount: number;
+  }>;
+  generatedAt: string;
+}
+
+export interface AIDailyBriefing {
+  headline: string;
+  briefingText: string;
+  riskAlerts: string[];
+  recommendedActions: string[];
+  whatsappPromo: string;
+  metrics: {
+    totalSales: number;
+    totalRevenue: number;
+    avgOrderValue: number;
+    topProduct: string | null;
+    lowStockCount: number;
+  };
+  comparison: {
+    vsYesterday: string;
+    trend: 'up' | 'down' | 'stable';
+  };
+  generatedAt: string;
+}
+
+// Unified AI Insights (combines predictions, summary, restocking)
+export interface AIUnifiedInsights {
+  predictions: AIPredictions;
+  summary: AIBusinessSummary;
+  restocking: AIRestockingSuggestions;
+  generatedAt: string;
+}
+
 export const ai = {
+  // Existing endpoints (now unified on backend)
   getSalesPredictions: async (): Promise<AIPredictions> => {
     return apiCall('/ai/predictions', {}, true);
   },
@@ -518,6 +609,43 @@ export const ai = {
 
   getRestockingSuggestions: async (): Promise<AIRestockingSuggestions> => {
     return apiCall('/ai/restocking', {}, true);
+  },
+
+  // NEW: Get all insights in one call (unified endpoint for efficiency)
+  getUnifiedInsights: async (): Promise<AIUnifiedInsights> => {
+    // Fetch all three in parallel - backend now uses shared cache
+    const [predictions, summary, restocking] = await Promise.all([
+      apiCall<AIPredictions>('/ai/predictions', {}, true),
+      apiCall<AIBusinessSummary>('/ai/summary?period=daily', {}, true),
+      apiCall<AIRestockingSuggestions>('/ai/restocking', {}, true),
+    ]);
+    return {
+      predictions,
+      summary,
+      restocking,
+      generatedAt: new Date().toISOString(),
+    };
+  },
+
+  // NEW: Risk Report
+  getRiskReport: async (shopId?: string): Promise<AIRiskReport> => {
+    const id = shopId || currentShopId;
+    const response = await apiCall<{ success: boolean; data: AIRiskReport }>(`/shops/${id}/risk-report`, {}, true);
+    return response.data;
+  },
+
+  // NEW: Marketing Message
+  getMarketingMessage: async (shopId?: string): Promise<AIMarketingMessage> => {
+    const id = shopId || currentShopId;
+    const response = await apiCall<{ success: boolean; data: AIMarketingMessage }>(`/shops/${id}/marketing-message`, { method: 'POST' }, true);
+    return response.data;
+  },
+
+  // NEW: Daily Briefing
+  getDailyBriefing: async (shopId?: string): Promise<AIDailyBriefing> => {
+    const id = shopId || currentShopId;
+    const response = await apiCall<{ success: boolean; data: AIDailyBriefing }>(`/shops/${id}/briefing`, { method: 'POST' }, true);
+    return response.data;
   },
 };
 

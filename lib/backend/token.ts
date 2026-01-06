@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 
-const prisma = new PrismaClient();
+
 
 // Refresh token expiry: 30 days
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;

@@ -1,7 +1,10 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { PrismaClient } from '@prisma/client';
+/**
+ * AI Service - Unified Insights
+ * Combines predictions, summary, and restocking into a single LLM call for efficiency
+ */
 
-const prisma = new PrismaClient();
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { prisma } from '@server/prisma';
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -31,43 +34,73 @@ function setCache(key: string, data: any, ttlMinutes: number): void {
   });
 }
 
+// ============================================
+// UNIFIED INSIGHTS - Single LLM Call
+// ============================================
+
+interface UnifiedInsights {
+  predictions: {
+    predictions: string;
+    trends: string;
+    recommendations: string[];
+  };
+  summary: {
+    summary: string;
+    highlights: string[];
+    insights: string;
+  };
+  restocking: {
+    urgentRestocks: Array<{ productName: string; currentStock: number; reason: string }>;
+    recommendations: string[];
+    insights: string;
+  };
+}
+
 /**
- * Generate AI-powered sales trend predictions
+ * Generate all insights in a single LLM call to save tokens
+ * This is the core unified function that other functions extract from
  */
-export async function generateSalesPredictions(shopId: string): Promise<{
-  predictions: string;
-  trends: string;
-  recommendations: string[];
-}> {
-  const cacheKey = `predictions_${shopId}`;
+async function generateUnifiedInsights(shopId: string): Promise<UnifiedInsights> {
+  const cacheKey = `unified_insights_${shopId}_${new Date().toDateString()}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  // Get last 30 days of sales data
+  // Get date ranges
+  const now = new Date();
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
-  const sales = await prisma.sale.findMany({
-    where: {
-      shopId,
-      createdAt: { gte: thirtyDaysAgo },
-    },
-    orderBy: { createdAt: 'asc' },
-    select: {
-      totalAmount: true,
-      createdAt: true,
-    },
-  });
+  // Fetch all required data in parallel
+  const [sales, products, activities] = await Promise.all([
+    // Sales data (last 30 days)
+    prisma.sale.findMany({
+      where: { shopId, createdAt: { gte: thirtyDaysAgo } },
+      include: {
+        staff: { select: { name: true } },
+        saleItems: { include: { product: { select: { name: true } } } },
+      },
+      orderBy: { createdAt: 'asc' },
+    }),
+    // Products with sales history
+    prisma.product.findMany({
+      where: { shopId },
+      include: {
+        saleItems: {
+          where: { sale: { createdAt: { gte: thirtyDaysAgo } } },
+        },
+      },
+    }),
+    // Recent activities
+    prisma.activityLog.findMany({
+      where: { shopId, createdAt: { gte: todayStart } },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    }),
+  ]);
 
-  if (sales.length === 0) {
-    return {
-      predictions: 'Not enough data to make predictions. Start recording sales to get AI insights.',
-      trends: 'N/A',
-      recommendations: ['Record more sales to enable AI predictions'],
-    };
-  }
-
-  // Prepare sales data summary
+  // Calculate metrics for prompt
   const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.totalAmount), 0);
   const avgDailyRevenue = totalRevenue / 30;
   const salesByDay = sales.reduce((acc, sale) => {
@@ -76,44 +109,183 @@ export async function generateSalesPredictions(shopId: string): Promise<{
     return acc;
   }, {} as Record<string, number>);
 
-  const prompt = `You are a business analytics AI. Analyze this sales data and provide insights:
+  // Product stats
+  const productStats = products.map(p => {
+    const totalSold = p.saleItems.reduce((sum, item) => sum + item.quantity, 0);
+    const salesVelocity = totalSold / 30;
+    const daysUntilStockout = salesVelocity > 0 ? p.stock / salesVelocity : 999;
+    return {
+      name: p.name,
+      stock: p.stock,
+      totalSold,
+      salesVelocity: salesVelocity.toFixed(2),
+      daysUntilStockout: Math.floor(daysUntilStockout),
+    };
+  });
 
-Sales Data (Last 30 days):
+  const lowStockProducts = productStats.filter(p => p.daysUntilStockout < 7);
+  const todaySales = sales.filter(s => s.createdAt >= todayStart);
+  const todayRevenue = todaySales.reduce((sum, s) => sum + Number(s.totalAmount), 0);
+  const productsSold = todaySales.reduce((sum, s) => sum + s.saleItems.length, 0);
+
+  // Activity counts
+  const actionCounts = activities.reduce((acc, act) => {
+    acc[act.action] = (acc[act.action] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Handle empty data case
+  if (sales.length === 0 && products.length === 0) {
+    const emptyResult: UnifiedInsights = {
+      predictions: {
+        predictions: 'Not enough data to make predictions. Start recording sales to get AI insights.',
+        trends: 'N/A',
+        recommendations: ['Record more sales to enable AI predictions'],
+      },
+      summary: {
+        summary: 'No activity recorded today.',
+        highlights: [],
+        insights: 'Start recording sales and activities to get AI-powered insights.',
+      },
+      restocking: {
+        urgentRestocks: [],
+        recommendations: ['Add products to your inventory to get restocking suggestions'],
+        insights: 'No products found in inventory.',
+      },
+    };
+    setCache(cacheKey, emptyResult, 60);
+    return emptyResult;
+  }
+
+  // Build unified prompt - ONE call for all three insights
+  const prompt = `You are a business intelligence AI. Analyze this shop data and provide THREE types of insights in a SINGLE response:
+
+=== SHOP DATA ===
+Sales (Last 30 days):
 - Total Sales: ${sales.length}
-- Total Revenue: ₦${totalRevenue.toFixed(2)}
-- Average Daily Revenue: ₦${avgDailyRevenue.toFixed(2)}
+- Total Revenue: ₦${totalRevenue.toFixed(0)}
+- Average Daily Revenue: ₦${avgDailyRevenue.toFixed(0)}
 - Days with Sales: ${Object.keys(salesByDay).length}
 
-Provide a concise analysis (max 150 words) covering:
-1. Key trends observed
-2. Predicted sales for next 7 days (high/medium/low)
-3. 3 specific actionable recommendations
+Today's Performance:
+- Sales Today: ${todaySales.length}
+- Revenue Today: ₦${todayRevenue.toFixed(0)}
+- Products Sold: ${productsSold}
+- Activities: ${Object.entries(actionCounts).map(([k, v]) => `${k}: ${v}`).join(', ') || 'None'}
 
-Format as JSON:
+Inventory Status:
+- Total Products: ${products.length}
+- Low Stock Items: ${lowStockProducts.length}
+- Top 5 Products: ${productStats.slice(0, 5).map(p => `${p.name}(Stock:${p.stock}, Sold:${p.totalSold})`).join(', ')}
+
+=== REQUIRED OUTPUT (JSON) ===
 {
-  "predictions": "Brief prediction for next week",
-  "trends": "Key trends observed",
-  "recommendations": ["rec1", "rec2", "rec3"]
-}`;
+  "predictions": {
+    "predictions": "Brief prediction for next 7 days (1-2 sentences)",
+    "trends": "Key trends observed (1 sentence)",
+    "recommendations": ["action1", "action2", "action3"]
+  },
+  "summary": {
+    "summary": "Executive summary of today's performance (2-3 sentences)",
+    "highlights": ["highlight1", "highlight2", "highlight3"],
+    "insights": "Key business insights (1-2 sentences)"
+  },
+  "restocking": {
+    "urgentRestocks": [{"productName": "name", "currentStock": 0, "reason": "why urgent"}],
+    "recommendations": ["restock recommendation 1", "restock recommendation 2"],
+    "insights": "Overall inventory insight (1 sentence)"
+  }
+}
 
-  const result = await model.generateContent(prompt);
-  const response = result.response.text();
+Keep responses concise. Max 250 words total.`;
 
-  // Parse JSON response
-  const jsonMatch = response.match(/\{[\s\S]*\}/);
-  const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {
-    predictions: 'Unable to generate predictions at this time.',
-    trends: 'Insufficient data',
-    recommendations: ['Continue recording sales'],
+  try {
+    const result = await model.generateContent(prompt);
+    const response = result.response.text();
+
+    // Parse JSON response
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      // Validate and ensure structure
+      const insights: UnifiedInsights = {
+        predictions: {
+          predictions: parsed.predictions?.predictions || 'Prediction unavailable',
+          trends: parsed.predictions?.trends || 'Trend analysis unavailable',
+          recommendations: parsed.predictions?.recommendations || ['Continue monitoring'],
+        },
+        summary: {
+          summary: parsed.summary?.summary || 'Summary unavailable',
+          highlights: parsed.summary?.highlights || [],
+          insights: parsed.summary?.insights || 'Insights unavailable',
+        },
+        restocking: {
+          urgentRestocks: parsed.restocking?.urgentRestocks || [],
+          recommendations: parsed.restocking?.recommendations || [],
+          insights: parsed.restocking?.insights || 'Inventory insights unavailable',
+        },
+      };
+
+      // Cache for 2 hours
+      setCache(cacheKey, insights, 120);
+      return insights;
+    }
+  } catch (error) {
+    console.error('LLM error in unified insights:', error);
+  }
+
+  // Fallback response
+  const fallback: UnifiedInsights = {
+    predictions: {
+      predictions: `Based on ${sales.length} sales over 30 days, expect stable performance.`,
+      trends: avgDailyRevenue > 0 ? `Average ₦${avgDailyRevenue.toFixed(0)}/day` : 'Building sales history',
+      recommendations: ['Maintain current strategies', 'Monitor daily sales', 'Review inventory weekly'],
+    },
+    summary: {
+      summary: `${todaySales.length} sales today generating ₦${todayRevenue.toFixed(0)}.`,
+      highlights: [
+        `${sales.length} total sales this month`,
+        `${products.length} products in inventory`,
+        `${lowStockProducts.length} items need restocking`,
+      ],
+      insights: 'Continue tracking to improve predictions.',
+    },
+    restocking: {
+      urgentRestocks: lowStockProducts.slice(0, 5).map(p => ({
+        productName: p.name,
+        currentStock: p.stock,
+        reason: `Only ${p.daysUntilStockout} days of stock remaining`,
+      })),
+      recommendations: ['Review low stock items', 'Check supplier lead times'],
+      insights: `${lowStockProducts.length} products running low on stock.`,
+    },
   };
 
-  // Cache for 2 hours
-  setCache(cacheKey, parsed, 120);
-  return parsed;
+  setCache(cacheKey, fallback, 60);
+  return fallback;
+}
+
+// ============================================
+// PUBLIC API - Extract from Unified Cache
+// ============================================
+
+/**
+ * Generate AI-powered sales trend predictions
+ * Extracts from unified insights to save tokens
+ */
+export async function generateSalesPredictions(shopId: string): Promise<{
+  predictions: string;
+  trends: string;
+  recommendations: string[];
+}> {
+  const unified = await generateUnifiedInsights(shopId);
+  return unified.predictions;
 }
 
 /**
  * Generate daily/monthly summary
+ * Extracts from unified insights for daily, makes separate call for monthly
  */
 export async function generateBusinessSummary(
   shopId: string,
@@ -123,185 +295,80 @@ export async function generateBusinessSummary(
   highlights: string[];
   insights: string;
 }> {
-  const cacheKey = `summary_${shopId}_${period}_${new Date().toDateString()}`;
+  if (period === 'daily') {
+    const unified = await generateUnifiedInsights(shopId);
+    return unified.summary;
+  }
+
+  // Monthly still needs separate call due to different data scope
+  const cacheKey = `summary_${shopId}_monthly_${new Date().toDateString()}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  const now = new Date();
   const startDate = new Date();
+  startDate.setDate(1);
+  startDate.setHours(0, 0, 0, 0);
 
-  if (period === 'daily') {
-    startDate.setHours(0, 0, 0, 0);
-  } else {
-    startDate.setDate(1);
-    startDate.setHours(0, 0, 0, 0);
-  }
-
-  // Fetch sales data
   const sales = await prisma.sale.findMany({
-    where: {
-      shopId,
-      createdAt: { gte: startDate },
-    },
+    where: { shopId, createdAt: { gte: startDate } },
     include: {
       staff: { select: { name: true } },
-      saleItems: {
-        include: {
-          product: { select: { name: true } },
-        },
-      },
+      saleItems: { include: { product: { select: { name: true } } } },
     },
   });
-
-  // Fetch recent activity logs
-  const activities = await prisma.activityLog.findMany({
-    where: {
-      shopId,
-      createdAt: { gte: startDate },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-  });
-
-  if (sales.length === 0 && activities.length === 0) {
-    return {
-      summary: `No activity recorded ${period === 'daily' ? 'today' : 'this month'}.`,
-      highlights: [],
-      insights: 'Start recording sales and activities to get AI-powered insights.',
-    };
-  }
 
   const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.totalAmount), 0);
   const productsSold = sales.reduce((sum, sale) => sum + sale.saleItems.length, 0);
 
-  // Count actions by type
-  const actionCounts = activities.reduce((acc, act) => {
-    acc[act.action] = (acc[act.action] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  if (sales.length === 0) {
+    return {
+      summary: 'No activity recorded this month.',
+      highlights: [],
+      insights: 'Start recording sales to get monthly insights.',
+    };
+  }
 
-  const prompt = `You are a business intelligence AI. Create a ${period} summary for a shop:
+  const prompt = `Business intelligence AI: Create monthly summary.
 
-Performance Metrics:
+Monthly Performance:
 - Total Sales: ${sales.length}
-- Revenue: ₦${totalRevenue.toFixed(2)}
+- Revenue: ₦${totalRevenue.toFixed(0)}
 - Products Sold: ${productsSold}
-- Activities: ${Object.entries(actionCounts).map(([k, v]) => `${k}: ${v}`).join(', ')}
 
-Provide (max 200 words):
-1. Executive summary
-2. 3-4 key highlights
-3. Business insights
+Provide JSON: {"summary":"2-3 sentence executive summary","highlights":["h1","h2","h3"],"insights":"key insight"}`;
 
-Format as JSON:
-{
-  "summary": "Executive summary paragraph",
-  "highlights": ["highlight1", "highlight2", "highlight3"],
-  "insights": "Key insights paragraph"
-}`;
+  try {
+    const result = await model.generateContent(prompt);
+    const response = result.response.text();
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
 
-  const result = await model.generateContent(prompt);
-  const response = result.response.text();
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      setCache(cacheKey, parsed, 1440); // 24 hours
+      return parsed;
+    }
+  } catch (error) {
+    console.error('Monthly summary error:', error);
+  }
 
-  const jsonMatch = response.match(/\{[\s\S]*\}/);
-  const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {
-    summary: 'Summary unavailable at this time.',
-    highlights: [],
-    insights: 'Continue recording activities for better insights.',
+  const fallback = {
+    summary: `This month: ${sales.length} sales totaling ₦${totalRevenue.toFixed(0)}.`,
+    highlights: [`${sales.length} orders processed`, `${productsSold} items sold`],
+    insights: 'Continue tracking for deeper insights.',
   };
-
-  // Cache daily for 6 hours, monthly for 24 hours
-  setCache(cacheKey, parsed, period === 'daily' ? 360 : 1440);
-  return parsed;
+  setCache(cacheKey, fallback, 1440);
+  return fallback;
 }
 
 /**
  * Generate inventory restocking suggestions
+ * Extracts from unified insights to save tokens
  */
 export async function generateRestockingSuggestions(shopId: string): Promise<{
   urgentRestocks: Array<{ productName: string; currentStock: number; reason: string }>;
   recommendations: string[];
   insights: string;
 }> {
-  const cacheKey = `restock_${shopId}`;
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  // Get products with their sales history
-  const products = await prisma.product.findMany({
-    where: { shopId },
-    include: {
-      saleItems: {
-        where: {
-          sale: {
-            createdAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (products.length === 0) {
-    return {
-      urgentRestocks: [],
-      recommendations: ['Add products to your inventory to get restocking suggestions'],
-      insights: 'No products found in inventory.',
-    };
-  }
-
-  // Calculate sales velocity for each product
-  const productStats = products.map(p => {
-    const totalSold = p.saleItems.reduce((sum, item) => sum + item.quantity, 0);
-    const salesVelocity = totalSold / 30; // Average daily sales
-    const daysUntilStockout = salesVelocity > 0 ? p.stock / salesVelocity : 999;
-
-    return {
-      name: p.name,
-      stock: p.stock,
-      totalSold,
-      salesVelocity: salesVelocity.toFixed(2),
-      daysUntilStockout: Math.floor(daysUntilStockout),
-      price: Number(p.price),
-    };
-  });
-
-  const lowStockProducts = productStats.filter(p => p.daysUntilStockout < 7);
-
-  const prompt = `You are an inventory management AI. Analyze this product data:
-
-Products Analyzed: ${products.length}
-Low Stock Items: ${lowStockProducts.length}
-
-Top 5 Products by Sales:
-${productStats.slice(0, 5).map(p =>
-  `- ${p.name}: Stock=${p.stock}, Sold=${p.totalSold}, Velocity=${p.salesVelocity}/day, Days Until Stockout=${p.daysUntilStockout}`
-).join('\n')}
-
-Identify urgent restocks (items running out in <7 days) and provide:
-1. Restocking priorities
-2. Inventory management recommendations
-3. Insights on stock patterns
-
-Format as JSON:
-{
-  "urgentRestocks": [{"productName": "name", "currentStock": 0, "reason": "why urgent"}],
-  "recommendations": ["rec1", "rec2", "rec3"],
-  "insights": "Overall inventory insights"
-}`;
-
-  const result = await model.generateContent(prompt);
-  const response = result.response.text();
-
-  const jsonMatch = response.match(/\{[\s\S]*\}/);
-  const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {
-    urgentRestocks: [],
-    recommendations: ['Monitor stock levels regularly'],
-    insights: 'Continue tracking sales to improve predictions.',
-  };
-
-  // Cache for 4 hours
-  setCache(cacheKey, parsed, 240);
-  return parsed;
+  const unified = await generateUnifiedInsights(shopId);
+  return unified.restocking;
 }

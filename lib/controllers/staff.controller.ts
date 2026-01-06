@@ -1,9 +1,9 @@
 import { Response } from 'express';
 import { AuthRequest, InviteStaffRequest, UpdateStaffRoleRequest } from '../types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 import { hashPassword } from '../utils/auth';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Get all staff for the current shop

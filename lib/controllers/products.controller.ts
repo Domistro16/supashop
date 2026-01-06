@@ -1,9 +1,9 @@
 import { Response } from 'express';
 import { AuthRequest, CreateProductRequest, UpdateProductRequest } from '../types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 import { createNotification } from './notifications.controller';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Get all products for the current shop
@@ -60,7 +60,7 @@ export async function getProduct(req: AuthRequest, res: Response) {
  */
 export async function createProduct(req: AuthRequest, res: Response) {
   try {
-    const { name, stock, price, categoryName, supplierId }: CreateProductRequest = req.body;
+    const { name, stock, price, costPrice, categoryName, supplierId }: CreateProductRequest = req.body;
 
     if (!req.shopId) {
       return res.status(400).json({ error: 'Shop context required' });
@@ -76,6 +76,7 @@ export async function createProduct(req: AuthRequest, res: Response) {
         name,
         stock,
         price,
+        costPrice: costPrice !== undefined ? costPrice : null,
         categoryName,
         supplierId: supplierId || null,
       },
@@ -99,15 +100,10 @@ export async function createProduct(req: AuthRequest, res: Response) {
       await createNotification(
         req.shopId,
         req.user.id,
-        'staff_action',
+        'product_alert',
         'New Product Added',
-        `Product "${product.name}" has been added to inventory with ${product.stock} units at ${product.price.toLocaleString()} each.`,
-        {
-          productId: product.id,
-          productName: product.name,
-          stock: product.stock,
-          price: product.price,
-        }
+        `${name} has been added to inventory.`,
+        { productId: product.id }
       );
 
       // Check for low stock and create notification if needed
@@ -140,48 +136,53 @@ export async function createProduct(req: AuthRequest, res: Response) {
 export async function updateProduct(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
-    const updates: UpdateProductRequest = req.body;
+    const { name, stock, price, costPrice, categoryName, supplierId }: UpdateProductRequest = req.body;
 
     if (!req.shopId) {
       return res.status(400).json({ error: 'Shop context required' });
     }
 
-    // Check if product exists and belongs to shop
+    // Check if product exists
     const existingProduct = await prisma.product.findFirst({
-      where: {
-        id,
-        shopId: req.shopId,
-      },
+      where: { id, shopId: req.shopId },
     });
 
     if (!existingProduct) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (stock !== undefined) updateData.stock = stock;
+    if (price !== undefined) updateData.price = price;
+    if (costPrice !== undefined) updateData.costPrice = costPrice;
+    if (categoryName !== undefined) updateData.categoryName = categoryName;
+    if (supplierId !== undefined) updateData.supplierId = supplierId;
+
     const product = await prisma.product.update({
       where: { id },
-      data: updates,
+      data: updateData,
     });
 
     // Log activity
     if (req.user) {
       await prisma.activityLog.create({
         data: {
-          shopId: req.shopId,
+          shopId: req.shopId!,
           staffId: req.user.id,
           action: 'update_product',
           details: {
             productId: product.id,
             productName: product.name,
-            updates,
+            changes: Object.keys(updateData),
           },
         },
       });
 
       // Check for low stock after update and create notification if needed
-      if (product.stock <= 10) {
+      if ((stock !== undefined && stock <= 10) || product.stock <= 10) {
         await createNotification(
-          req.shopId,
+          req.shopId!,
           req.user.id,
           'low_stock',
           'Low Stock Alert',

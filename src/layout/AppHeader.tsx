@@ -88,13 +88,8 @@ const AppHeader: React.FC = () => {
 
           <Link href="/" className="lg:hidden">
             <img
-              className="dark:hidden"
-              src="./images/logo/logo.svg"
-              alt="Logo"
-            />
-            <img
-              className="hidden dark:block"
-              src="./images/logo/logo-dark.svg"
+              className="w-8 h-8 rounded-lg"
+              src="/logo.png"
               alt="Logo"
             />
           </Link>
@@ -156,9 +151,8 @@ const AppHeader: React.FC = () => {
           </div>
         </div>
         <div
-          className={`${
-            isApplicationMenuOpen ? "flex" : "hidden"
-          } items-center justify-between w-full gap-3 px-3 py-2.5 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
+          className={`${isApplicationMenuOpen ? "flex" : "hidden"
+            } items-center justify-between w-full gap-3 px-3 py-2.5 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
         >
           <div className="flex items-center gap-1.5 2xsm:gap-2">
             {/* <!-- Dark Mode Toggler --> */}

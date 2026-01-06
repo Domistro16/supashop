@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { getSales } from '@/supabaseClient'
 import { Transaction } from '@/page-components/Transaction/Columns'
 import Single from '@/page-components/Transaction/single'
 import Spinner from '@/components/ui/Spinner'
 
 export default function TransactionDetailPage() {
+  const params = useParams()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -28,5 +30,5 @@ export default function TransactionDetailPage() {
     return <Spinner size="lg" />
   }
 
-  return <Single transactions={transactions} />
+  return <Single transactions={transactions} orderId={params?.orderId as string} />
 }

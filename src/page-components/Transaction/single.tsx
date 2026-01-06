@@ -6,53 +6,94 @@ import { DataTable } from "./DataTable2";
 import { columns, Item } from "./Columns2";
 import Badge from "@/components/ui/badge/Badge";
 import { Transaction } from "./Columns";
-import { getSaleItems, getStaff } from "@/supabaseClient";
-import { useEffect, useState, useRef } from "react";
+import { getSaleItems, getSale, getShop } from "@/supabaseClient";
+import { useEffect, useState, useRef, useMemo } from "react";
+import Spinner from "@/components/ui/Spinner";
 
-function getData(): Item[] {
-  // Fetch data from your API here.
-  return [
-    {
-      product: "Cups",
-      quantity: 100,
-      unitCost: 100,
-    },
-    {
-      product: "Cups",
-      quantity: 100,
-      unitCost: 100,
-    },
-    {
-      product: "Cups",
-      quantity: 100,
-      unitCost: 100,
-    },
-  ];
-}
+// ... (existing code)
 
 export default function Single({
   transactions,
+  orderId: propOrderId,
 }: {
   transactions: Transaction[];
+  orderId?: string;
 }) {
-  const { orderId } = useParams<string>();
-  const printRef = useRef<HTMLDivElement>(null);
+  const params = useParams();
+  const orderId = propOrderId || params?.orderId;
 
-  const sale = transactions.filter((t) => t.order_id == orderId);
+  // Try to find in props (support both order_id and UUID)
+  const safeTransactions = transactions || [];
+  const saleFromProps = safeTransactions.find((t) =>
+    String(t.order_id) === String(orderId) || String(t.id) === String(orderId)
+  );
+
+  const [fetchedSale, setFetchedSale] = useState<Transaction | null>(null);
+  const [loadingSale, setLoadingSale] = useState(false);
+  const hasAttemptedFetch = useRef(false);
+
+  useEffect(() => {
+    if (!saleFromProps && orderId && !fetchedSale && !loadingSale && !hasAttemptedFetch.current) {
+      hasAttemptedFetch.current = true;
+      setLoadingSale(true);
+      getSale(orderId).then(data => {
+        if (data) setFetchedSale(data);
+        setLoadingSale(false);
+      });
+    }
+  }, [saleFromProps, orderId, fetchedSale, loadingSale]);
+
+  const activeSale = saleFromProps || fetchedSale;
+  const sale = useMemo(() => activeSale ? [activeSale] : [], [activeSale]);
 
   const [items, setItems] = useState<Item[]>();
   const [total, setTotal] = useState(0);
   const [formatted, setFormatted] = useState("");
   const [staff, setStaff] = useState("");
+  const [shopInfo, setShopInfo] = useState<{ name: string, address: string, phone: string } | null>(null);
+
+  useEffect(() => {
+    const fetchShopInfo = async () => {
+      // Try local storage first for immediate render
+      const savedShop = localStorage.getItem('current_shop')
+        ? JSON.parse(localStorage.getItem('current_shop') || '{}')
+        : null;
+
+      if (savedShop) {
+        setShopInfo(savedShop);
+      }
+
+      // Then fetch fresh data
+      try {
+        const shop = await getShop();
+        if (shop) {
+          const info = {
+            name: shop.name,
+            address: shop.address || '',
+            phone: (shop as any).phone || ''
+          };
+          setShopInfo(info);
+          // Update local storage
+          localStorage.setItem('current_shop', JSON.stringify({ ...savedShop, ...info }));
+        } else if (!savedShop) {
+          setShopInfo({ name: 'SUPASHOP', address: 'Store Address', phone: '' });
+        }
+      } catch (e) {
+        console.error("Failed to fetch shop info:", e);
+      }
+    };
+
+    fetchShopInfo();
+  }, []);
 
   useEffect(() => {
     if (sale.length == 0) return;
     function getStaffName() {
       setStaff(sale[0].staff_id);
     }
-
     getStaffName();
-  });
+  }, [sale]);
+
   useEffect(() => {
     if (sale.length == 0) return;
 
@@ -60,10 +101,13 @@ export default function Single({
       year: "numeric",
       month: "short",
       day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
     }).format(new Date(sale[0].created_at));
 
     setFormatted(date);
   }, [sale]);
+
   useEffect(() => {
     async function callItems() {
       if (sale.length == 0 || items) return;
@@ -83,11 +127,19 @@ export default function Single({
       }
     }
     callItems();
-  }, [sale]);
+  }, [sale, items]); // Added items dependency to satisfy hook rules or remove it if intended to run once per sale
 
   const handlePrint = () => {
     window.print();
   };
+
+  if (!activeSale && loadingSale) {
+    return <div className="flex justify-center items-center py-20"><Spinner size="lg" /></div>;
+  }
+
+  if (!activeSale && !loadingSale) {
+    return <div className="p-10 text-center text-gray-500">Transaction not found.</div>;
+  }
 
   const currentCustomer = sale.length > 0 ? sale[0].customer : null;
 
@@ -99,45 +151,44 @@ export default function Single({
       />
       <PageBreadcrumb pageTitle="Single Transaction" />
 
-      {/* Print-only styles */}
+      {/* Print Styles */}
       <style>{`
         @media print {
           body * {
             visibility: hidden;
+            height: 0; 
+            overflow: hidden;
           }
-          .print-content, .print-content * {
-            visibility: visible;
+          .print-content {
+            visibility: visible !important;
+            display: block !important;
+            height: auto !important;
+            overflow: visible !important;
+            color: black !important;
+          }
+          .print-content * {
+            visibility: visible !important;
+            height: auto !important;
+            overflow: visible !important;
+            color: black !important; 
           }
           .print-content {
             position: absolute;
             left: 0;
             top: 0;
-            width: 100%;
+            width: 100%; /* Or fixed 80mm width if enforcing thermal paper size strictly */
+            max-width: 300px; /* Standard thermal receipt width */
+            margin: 0 auto;
+            right: 0;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 10px;
           }
           .no-print {
             display: none !important;
           }
-          .print-header {
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #000;
-          }
-          .print-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-          }
-          .print-table th,
-          .print-table td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: left;
-          }
-          .print-total {
-            margin-top: 20px;
-            text-align: right;
-            font-weight: bold;
-            font-size: 18px;
+          @page {
+            margin: 0;
+            size: auto;
           }
         }
       `}</style>
@@ -192,97 +243,100 @@ export default function Single({
         </div>
       </div>
 
-      {/* Print content */}
-      <div className="print-content">
-        <div className="print-header" style={{ display: 'none' }}>
-          <h1 style={{ fontSize: '24px', marginBottom: '10px' }}>SUPASHOP</h1>
-          <div style={{ fontSize: '14px', marginBottom: '5px' }}>
-            <strong>Order ID:</strong> #{orderId}
+      {/* Screen Table (Hidden on Print) */}
+      <div className="mt-5 no-print">
+        <div className="rounded-2xl border border-gray-200 bg-white py-4 px-5 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-6 items-center">
+          <div className="w-full mb-5">
+            <h5 className="px-3 text-[20px] font-medium text-gray-800 dark:text-white/90">Order Details</h5>
           </div>
-          <div style={{ fontSize: '14px', marginBottom: '5px' }}>
-            <strong>Date:</strong> {formatted}
-          </div>
-          <div style={{ fontSize: '14px', marginBottom: '5px' }}>
-            <strong>Sold By:</strong> {staff}
-          </div>
-          {currentCustomer && (
-            <div style={{ fontSize: '14px', marginBottom: '5px' }}>
-              <strong>Sold To:</strong> {currentCustomer.name}
-              {currentCustomer.phone && ` (${currentCustomer.phone})`}
+          <DataTable columns={columns} data={items ? items : []} />
+          <div className="flex justify-end mt-5">
+            <div className="flex gap-10">
+              <h5 className="text-gray-400 dark:text-gray-400 font-medium text-lg">Total</h5>
+              <h5 className="text-gray-900 dark:text-white text-xl font-bold">
+                {new Intl.NumberFormat("en-NG", {
+                  style: "currency",
+                  currency: "NGN",
+                }).format(total)}
+              </h5>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Thermal Receipt Print Content */}
+      <div className="print-content hidden">
+        <div className="text-center mb-4">
+          <h2 className="font-bold text-xl uppercase mb-1">{shopInfo?.name || 'Supashop'}</h2>
+          <p className="text-xs">{shopInfo?.address}</p>
+          {shopInfo?.phone && <p className="text-xs">Tel: {shopInfo?.phone}</p>}
+        </div>
+
+        <div className="border-b border-dashed border-black my-2"></div>
+
+        <div className="text-xs space-y-1 mb-2">
+          <div className="flex justify-between">
+            <span>Ord #: {orderId}</span>
+            <span>{new Date().toLocaleDateString()}</span>
+          </div>
+          <div>Cashier: {staff}</div>
+          {currentCustomer && (
+            <div>Cust: {currentCustomer.name}</div>
           )}
         </div>
 
-        <div className="rounded-2xl border border-gray-200 mt-7 bg-white py-4 px-5 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-6 items-center">
-          <div className="w-full">
-            <h5 className="px-3 text-[20px] font-medium text-gray-800 dark:text-white/90">Order Details</h5>
-          </div>
-          <div className="mt-5">
-            <DataTable columns={columns} data={items ? items : []} />
-          </div>
+        <div className="border-b border-dashed border-black my-2"></div>
 
-          {/* Print-friendly table */}
-          <table className="print-table" style={{ display: 'none' }}>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Unit Cost</th>
-                <th>Discount</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items?.map((item, index) => {
-                const discount = item.discountPercent ?? 0;
-                const subtotal = item.unitCost * item.quantity;
-                const discountAmount = (subtotal * discount) / 100;
-                const total = subtotal - discountAmount;
-                return (
-                  <tr key={index}>
-                    <td>{item.product}</td>
-                    <td>{item.quantity}</td>
-                    <td>
-                      {new Intl.NumberFormat("en-NG", {
-                        style: "currency",
-                        currency: "NGN",
-                      }).format(item.unitCost)}
-                    </td>
-                    <td>{discount > 0 ? `${discount}%` : '-'}</td>
-                    <td>
-                      {new Intl.NumberFormat("en-NG", {
-                        style: "currency",
-                        currency: "NGN",
-                      }).format(total)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <table className="w-full text-xs text-left mb-2">
+          <thead>
+            <tr className="border-b border-dashed border-black">
+              <th className="py-1 w-[45%]">Item</th>
+              <th className="py-1 w-[15%] text-center">Qty</th>
+              <th className="py-1 w-[20%] text-right">Price</th>
+              <th className="py-1 w-[20%] text-right">Amt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items?.map((item, index) => {
+              const discount = item.discountPercent ?? 0;
+              const subtotal = item.unitCost * item.quantity;
+              const discountAmount = (subtotal * discount) / 100;
+              const totalLine = subtotal - discountAmount;
 
-          <div className="flex justify-end">
-            <div className="mt-5">
-              <h5 className="text-gray-800 dark:text-white/90">Order Summary</h5>
-              <div className="flex gap-30 mt-3">
-                <h5 className="text-gray-400 dark:text-gray-400 font-medium text-lg">Total</h5>
-                <h5 className="text-gray-900 dark:text-white text-xl font-bold ml-8">
-                  {new Intl.NumberFormat("en-NG", {
-                    style: "currency",
-                    currency: "NGN",
-                  }).format(total)}
-                </h5>
-              </div>
-            </div>
-          </div>
+              return (
+                <tr key={index} className="">
+                  <td className="py-1">
+                    <div className="font-bold">{item.product}</div>
+                    {discount > 0 && <div className="text-[10px] italic">Disc: {discount}%</div>}
+                  </td>
+                  <td className="py-1 text-center align-top">{item.quantity}</td>
+                  <td className="py-1 text-right align-top">{item.unitCost.toLocaleString()}</td>
+                  <td className="py-1 text-right align-top font-bold">{totalLine.toLocaleString()}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
 
-          {/* Print-friendly total */}
-          <div className="print-total" style={{ display: 'none' }}>
-            Total: {new Intl.NumberFormat("en-NG", {
-              style: "currency",
-              currency: "NGN",
-            }).format(total)}
+        <div className="border-b border-dashed border-black my-2"></div>
+
+        <div className="space-y-1 text-sm font-bold">
+          <div className="flex justify-between">
+            <span>TOTAL</span>
+            <span className="text-lg">
+              {new Intl.NumberFormat("en-NG", {
+                style: "currency",
+                currency: "NGN",
+              }).format(total)}
+            </span>
           </div>
+        </div>
+
+        <div className="border-b border-dashed border-black my-4"></div>
+
+        <div className="text-center text-xs">
+          <p>Thank you for shopping!</p>
+          <p className="mt-1">Powered by Supashop</p>
         </div>
       </div>
     </div>

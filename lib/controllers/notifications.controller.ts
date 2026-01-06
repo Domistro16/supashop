@@ -1,8 +1,8 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Get notifications for the current user in the current shop

@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { useNavigate } from "@/lib/react-router-compat";
-import { Button } from "../../components/ui/button.tsx";
+import { Button } from "../../components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +22,7 @@ export type Transaction = {
   total_amount: string;
   created_at: string;
   staff_id: string;
+  profit?: number; // Calculated profit for this transaction
   customer?: {
     id: string;
     name: string;

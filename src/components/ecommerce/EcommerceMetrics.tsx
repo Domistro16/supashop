@@ -12,14 +12,18 @@ export default function EcommerceMetrics({
   revenue,
   revenueChange,
   salesChange,
+  profit,
+  profitChange,
 }: {
   sales: number;
   revenue: number;
   revenueChange: number;
   salesChange: number;
+  profit?: number;
+  profitChange?: number;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
       {/* <!-- Metric Item Start --> */}
       <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex items-center justify-between">
@@ -61,6 +65,31 @@ export default function EcommerceMetrics({
           </span>
           <h4 className="mt-1 font-bold text-gray-800 text-xl sm:text-2xl dark:text-white/90">
             {formatCurrency(revenue)}
+          </h4>
+        </div>
+      </div>
+      {/* <!-- Metric Item End --> */}
+
+      {/* <!-- Metric Item Start --> */}
+      <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-green-100 rounded-lg dark:bg-green-900/20">
+            <span className="text-green-600 size-4 sm:size-5 flex items-center justify-center font-bold text-lg">₦</span>
+          </div>
+          {profitChange !== undefined && (
+            <Badge color={profitChange > 0 ? "success" : "error"} className="text-xs">
+              {profitChange > 0 ? <ArrowUpIcon /> : <ArrowDownIcon />}
+              {formatPercentage(profitChange)}
+            </Badge>
+          )}
+        </div>
+
+        <div className="mt-3">
+          <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+            Today's Profit
+          </span>
+          <h4 className="mt-1 font-bold text-gray-800 text-xl sm:text-2xl dark:text-white/90">
+            {formatCurrency(profit || 0)}
           </h4>
         </div>
       </div>

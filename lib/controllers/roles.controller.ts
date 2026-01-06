@@ -1,8 +1,8 @@
 import { Response } from 'express';
 import { AuthRequest, CreateRoleRequest, UpdateRoleRequest } from '../types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Get all roles for the current shop

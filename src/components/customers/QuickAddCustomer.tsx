@@ -6,12 +6,13 @@ import { toast } from 'react-hot-toast';
 interface QuickAddCustomerProps {
   onSuccess: (customer: Customer) => void;
   onCancel: () => void;
+  initialName?: string;
 }
 
-export default function QuickAddCustomer({ onSuccess, onCancel }: QuickAddCustomerProps) {
+export default function QuickAddCustomer({ onSuccess, onCancel, initialName = '' }: QuickAddCustomerProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    name: initialName,
     phone: '',
   });
 

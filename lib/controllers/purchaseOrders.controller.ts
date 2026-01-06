@@ -1,9 +1,9 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 import { sendPurchaseOrderToSupplier } from '../services/supplierNotification.service';
 
-const prisma = new PrismaClient();
+
 
 // Valid PO statuses
 const PO_STATUSES = ['draft', 'sent', 'partial', 'received', 'cancelled'] as const;

@@ -53,6 +53,7 @@ export interface CreateProductRequest {
   name: string;
   stock: number;
   price: number;
+  costPrice?: number;
   categoryName?: string;
   supplierId?: string;
 }
@@ -61,6 +62,7 @@ export interface UpdateProductRequest {
   name?: string;
   stock?: number;
   price?: number;
+  costPrice?: number;
   categoryName?: string;
   supplierId?: string;
   [key: string]: any;

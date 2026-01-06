@@ -174,6 +174,7 @@ export default function CustomerSearchSelect({
         <QuickAddCustomer
           onSuccess={handleQuickAddSuccess}
           onCancel={() => setShowQuickAdd(false)}
+          initialName={searchTerm}
         />
       )}
     </div>

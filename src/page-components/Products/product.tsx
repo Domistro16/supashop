@@ -160,19 +160,36 @@ export default function Products({ products }: { products: Product[] }) {
   const exportToPDF = () => {
     const doc = new jsPDF();
 
-    // Add title
-    doc.setFontSize(18);
-    doc.text("Product List", 14, 22);
+    // Get shop details
+    const savedShop = typeof window !== 'undefined' && localStorage.getItem('current_shop')
+      ? JSON.parse(localStorage.getItem('current_shop') || '{}')
+      : { name: "Supashop" };
 
-    // Add date
-    doc.setFontSize(11);
+    // Shop Header
+    doc.setFontSize(22);
+    doc.setTextColor(40, 40, 40);
+    doc.text(savedShop.name || "Supashop", 14, 20);
+
+    if (savedShop.address) {
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(savedShop.address, 14, 26);
+    }
+
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Product Inventory List", 14, 35);
+
+    doc.setFontSize(10);
     doc.setTextColor(100);
     const exportDate = new Date().toLocaleDateString("en-NG", {
       year: "numeric",
       month: "long",
       day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
-    doc.text(`Exported on: ${exportDate}`, 14, 30);
+    doc.text(`Generated on: ${exportDate}`, 14, 41);
 
     // Prepare table data
     const tableData = products.map((product) => [
@@ -194,24 +211,36 @@ export default function Products({ products }: { products: Product[] }) {
     autoTable(doc, {
       head: [["Product Name", "Category", "Price", "Stock", "Created At"]],
       body: tableData,
-      startY: 35,
+      startY: 45,
       theme: "grid",
       headStyles: {
-        fillColor: [37, 99, 235], // Blue color
+        fillColor: [66, 66, 66], // Darker professional gray/black
         textColor: [255, 255, 255],
         fontStyle: "bold",
+        halign: "left"
       },
       styles: {
-        fontSize: 10,
+        fontSize: 9,
         cellPadding: 3,
+        overflow: 'linebreak'
+      },
+      columnStyles: {
+        2: { halign: 'right' }, // Price
+        3: { halign: 'center' }, // Stock
       },
       alternateRowStyles: {
         fillColor: [245, 247, 250],
       },
+      foot: [["", "", "Total Items:", products.length.toString(), ""]],
+      footStyles: {
+        fillColor: [240, 240, 240],
+        textColor: [0, 0, 0],
+        fontStyle: "bold"
+      }
     });
 
     // Save the PDF
-    doc.save(`products-${new Date().toISOString().split("T")[0]}.pdf`);
+    doc.save(`products-inventory-${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   const { openModal, isOpen, closeModal } = useModal();

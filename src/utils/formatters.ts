@@ -4,7 +4,8 @@
  * @param decimals Number of decimal places (default: 1)
  * @returns Formatted string (e.g., "1.5K", "2.3M")
  */
-export function formatNumber(num: number, decimals: number = 1): string {
+export function formatNumber(num: number | null | undefined, decimals: number = 1): string {
+  if (num === null || num === undefined) return '0';
   if (num === 0) return '0';
 
   const absNum = Math.abs(num);

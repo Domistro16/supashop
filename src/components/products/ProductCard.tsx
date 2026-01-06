@@ -63,19 +63,18 @@ export default function ProductCard({ product, onSelect, isSelected }: ProductCa
   const stockStatus = product.stock <= 0
     ? { label: "Out of Stock", color: "text-red-500 bg-red-50 dark:bg-red-900/20" }
     : product.stock <= 10
-    ? { label: `${product.stock} left`, color: "text-orange-500 bg-orange-50 dark:bg-orange-900/20" }
-    : { label: `${product.stock} in stock`, color: "text-green-600 bg-green-50 dark:bg-green-900/20" };
+      ? { label: `${product.stock} left`, color: "text-orange-500 bg-orange-50 dark:bg-orange-900/20" }
+      : { label: `${product.stock} in stock`, color: "text-green-600 bg-green-50 dark:bg-green-900/20" };
 
   const categoryColor = getCategoryColor(product.category);
 
   return (
     <>
       <div
-        className={`relative bg-white dark:bg-white/[0.03] rounded-xl border transition-all duration-200 hover:shadow-md ${
-          isSelected
-            ? "border-blue-500 ring-2 ring-blue-500/20"
-            : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
-        }`}
+        className={`relative bg-white dark:bg-white/[0.03] rounded-xl border transition-all duration-200 hover:shadow-md ${isSelected
+          ? "border-blue-500 ring-2 ring-blue-500/20"
+          : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
+          }`}
         onClick={() => onSelect?.(product)}
       >
         {/* Product Visual Placeholder */}
@@ -162,7 +161,7 @@ export default function ProductCard({ product, onSelect, isSelected }: ProductCa
           product={product}
           onClose={() => setShowQuickSell(false)}
           onSuccess={() => {
-            window.location.reload();
+            // Data is refreshed via context in QuickSell
           }}
         />
       )}
