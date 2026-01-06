@@ -3,8 +3,10 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal, ShoppingCart } from "lucide-react";
 import { useState } from "react";
+import { products } from "@/lib/api";
+import toast from "react-hot-toast";
 
-import { Button } from "../../components/ui/button.tsx";
+import { Button } from "../../components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,8 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useModal } from "@/hooks/useModal.ts";
-import { Modal } from "@/components/ui/modal/index.tsx";
+import { useModal } from "@/hooks/useModal";
+import { Modal } from "@/components/ui/modal/index";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -29,7 +31,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { QuantityInput } from "./addProduct.tsx";
+import { QuantityInput } from "./addProduct";
 import QuickSell from "@/components/sales/QuickSell";
 
 // This type is used to define the shape of our data.
@@ -39,8 +41,10 @@ export type Product = {
   name: string;
   stock: number;
   price: string;
+  costPrice?: string;
   created_at: string;
   category: string;
+  dealer?: string;
 };
 
 const formSchema = z.object({
@@ -56,9 +60,11 @@ const formSchema = z.object({
   price: z.string().min(2, {
     error: "Price must be at least 2 characters.",
   }),
+  cost_price: z.string().optional(),
 });
 
 export const columns: ColumnDef<Product>[] = [
+  // ... existing check box column ...
   {
     id: "select",
     header: ({ table }) => (
@@ -152,6 +158,33 @@ export const columns: ColumnDef<Product>[] = [
 
   },
   {
+    accessorKey: "costPrice",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="text-theme-xs text-gray-500"
+        >
+          Cost (Hidden)
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const amount = parseFloat(row.getValue("costPrice") || "0");
+      if (!amount) return <div className="text-left font-medium text-gray-400">-</div>;
+
+      const formatted = new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+      }).format(amount);
+
+      return <div className="text-left font-medium text-gray-500">{formatted}</div>;
+    },
+  },
+  // ... rest of columns ...
+  {
     accessorKey: "created_at",
     header: ({ column }) => {
       return (
@@ -203,8 +236,7 @@ export const columns: ColumnDef<Product>[] = [
               product={product}
               onClose={() => setShowQuickSell(false)}
               onSuccess={() => {
-                // Refresh the page or update the product list
-                window.location.reload();
+                // Data refreshed via context in QuickSell
               }}
             />
           )}
@@ -224,12 +256,27 @@ export const columns: ColumnDef<Product>[] = [
           category: product.category,
           stock: product.stock,
           price: product.price,
+          cost_price: product.costPrice || "",
         },
       });
-      function onSubmit(values: z.infer<typeof formSchema>) {
-        // Do something with the form values.
-        // ✅ This will be type-safe and validated.
-        console.log(values);
+      async function onSubmit(values: z.infer<typeof formSchema>) {
+        try {
+          await products.update(product.id, {
+            name: values.product_name,
+            categoryName: values.category,
+            stock: values.stock,
+            price: parseFloat(values.price),
+            costPrice: values.cost_price ? parseFloat(values.cost_price) : undefined,
+          });
+          toast.success("Product updated successfully");
+          closeModal();
+          // Optional: Refresh data logic here if creating a context or prop
+          // Optional: Refresh data logic here if creating a context or prop
+          // window.location.reload();
+        } catch (error) {
+          console.error(error);
+          toast.error("Failed to update product");
+        }
       }
 
       return (
@@ -307,6 +354,40 @@ export const columns: ColumnDef<Product>[] = [
                             </FormControl>
                             <FormDescription>
                               This is the category the product belongs to.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="flex w-full gap-5">
+                      <FormField
+                        control={form.control}
+                        name="price"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>Price</FormLabel>
+                            <FormControl>
+                              <Input placeholder="₦" {...field} className="w-full" />
+                            </FormControl>
+                            <FormDescription>
+                              The selling price.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="cost_price"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>Cost Price (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="₦" {...field} className="w-full" />
+                            </FormControl>
+                            <FormDescription>
+                              Used for profit calculation.
                             </FormDescription>
                             <FormMessage />
                           </FormItem>

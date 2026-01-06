@@ -123,6 +123,7 @@ const formSchema = z.object({
   price: z.string().min(2, {
     error: "Price must be at least 2 characters.",
   }),
+  cost_price: z.string().optional(),
 });
 
 export default function AddProducts() {
@@ -137,6 +138,7 @@ export default function AddProducts() {
       category: "",
       stock: 0,
       price: "",
+      cost_price: "",
     },
   });
 
@@ -153,6 +155,7 @@ export default function AddProducts() {
         values.category,
         values.stock,
         parseFloat(values.price),
+        values.cost_price ? parseFloat(values.cost_price) : undefined,
         selectedSupplier?.id
       );
 
@@ -242,12 +245,28 @@ export default function AddProducts() {
                 name="price"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel>Price</FormLabel>
+                    <FormLabel>Selling Price</FormLabel>
                     <FormControl>
                       <Input placeholder="₦" {...field} className="w-full" />
                     </FormControl>
                     <FormDescription>
-                      This is the Price of the Product.
+                      The price customers will pay.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="cost_price"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Cost Price (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="₦" {...field} className="w-full" />
+                    </FormControl>
+                    <FormDescription>
+                      Used for profit calculation.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

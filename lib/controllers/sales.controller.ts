@@ -1,10 +1,10 @@
 import { Response } from 'express';
 import { AuthRequest, CreateSaleRequest } from '../types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 import { updateCustomerFromSale } from './customers.controller';
 import { createNotification } from './notifications.controller';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Generate a unique order ID
@@ -41,6 +41,17 @@ export async function getSales(req: AuthRequest, res: Response) {
             phone: true,
           },
         },
+        saleItems: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                costPrice: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -65,8 +76,11 @@ export async function getSale(req: AuthRequest, res: Response) {
 
     const sale = await prisma.sale.findFirst({
       where: {
-        id,
         shopId: req.shopId,
+        OR: [
+          { id },
+          { orderId: id }
+        ]
       },
       include: {
         staff: {

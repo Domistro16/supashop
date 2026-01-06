@@ -22,7 +22,7 @@ export default function AuthLayout({
               <Link href="/" className="block mb-4">
                 <div className="text-5xl font-bold flex items-center gap-3">
                   {" "}
-                  <ShoppingCartIcon size={'40px'}/>
+                  <img src="/logo.png" alt="Supashop" className="w-10 h-10 rounded-lg" />
                   Supashop
                 </div>
               </Link>

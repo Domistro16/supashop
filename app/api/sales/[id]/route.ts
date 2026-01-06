@@ -21,8 +21,11 @@ export async function GET(
 
     const sale = await prisma.sale.findFirst({
       where: {
-        id,
         shopId,
+        OR: [
+          { id },
+          { orderId: id }
+        ]
       },
       include: {
         staff: {

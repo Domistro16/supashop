@@ -147,8 +147,8 @@ export default function MonthlyTarget({
             </Dropdown>
           </div>
         </div>
-        <div className="relative">
-          <div className="max-h-[200px] -mb-8" id="chartDarkStyle">
+        <div className="relative mb-2">
+          <div className="max-h-[200px] -mb-6" id="chartDarkStyle">
             <Chart
               options={options}
               series={series}
@@ -157,7 +157,7 @@ export default function MonthlyTarget({
             />
           </div>
         </div>
-        <p className="mx-auto w-full text-center text-xs sm:text-sm text-gray-500 mt-2">
+        <p className="mx-auto w-full text-center text-xs sm:text-sm font-medium text-gray-500 mb-2">
           {target !== 0 ? (
             `You earn ${formatCurrency(today)} today`
           ) : (
@@ -172,34 +172,34 @@ export default function MonthlyTarget({
         </p>
       </div>
 
-      <div className="flex items-center justify-center gap-4 px-3 py-2.5 sm:gap-6 sm:py-3">
-        <div className="text-center">
-          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+      <div className="flex items-center justify-between gap-4 px-4 py-4 sm:gap-8 sm:py-6 border-t border-gray-100 dark:border-gray-800/50 mt-2">
+        <div className="text-center w-1/3">
+          <p className="text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">
             Target
           </p>
-          <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-white/90">
+          <p className="text-sm sm:text-base font-bold text-gray-800 dark:text-white/90">
             {formatCurrency(target)}
           </p>
         </div>
 
-        <div className="w-px bg-gray-200 h-6 dark:bg-gray-800"></div>
+        <div className="w-px bg-gray-200 h-8 dark:bg-gray-800 hidden sm:block"></div>
 
-        <div className="text-center">
-          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+        <div className="text-center w-1/3">
+          <p className="text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">
             Revenue
           </p>
-          <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-white/90">
+          <p className="text-sm sm:text-base font-bold text-gray-800 dark:text-white/90">
             {formatCurrency(revenue)}
           </p>
         </div>
 
-        <div className="w-px bg-gray-200 h-6 dark:bg-gray-800"></div>
+        <div className="w-px bg-gray-200 h-8 dark:bg-gray-800 hidden sm:block"></div>
 
-        <div className="text-center">
-          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+        <div className="text-center w-1/3">
+          <p className="text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">
             Today
           </p>
-          <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-white/90">
+          <p className="text-sm sm:text-base font-bold text-gray-800 dark:text-white/90">
             {formatCurrency(today)}
           </p>
         </div>

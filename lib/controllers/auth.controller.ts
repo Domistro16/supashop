@@ -1,13 +1,13 @@
 import { Response } from 'express';
 import { AuthRequest, SignUpRequest, SignInRequest, AuthResponse } from '../types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth';
 import { getUserPermissions } from '../middleware/rbac';
 import { createDefaultRoles } from '../utils/defaultRoles';
-import { createRefreshToken, verifyRefreshToken, rotateRefreshToken, revokeRefreshToken } from '@/lib/backend/token';
+import { createRefreshToken, verifyRefreshToken, rotateRefreshToken, revokeRefreshToken } from '@server/backend/token';
 
 
-const prisma = new PrismaClient();
+
 
 /**
  * Sign up a new user and create their shop

@@ -187,6 +187,7 @@ model Product {
   name         String
   stock        Int        @default(0)
   price        Decimal    @db.Decimal(10, 2)
+  costPrice    Decimal?   @db.Decimal(10, 2) @map("cost_price") // Purchase cost for profit calculation
   categoryName String?    @map("category_name")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")

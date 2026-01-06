@@ -25,48 +25,23 @@ type Transaction = {
   total_amount: string;
   created_at: string;
   staff_id: string;
+  profit?: number;
+  customer?: {
+    id: string;
+    name: string;
+  } | null;
 };
 
 type Item = {
   product: string;
   quantity: number;
   unitCost: number;
-  discountPercent?: number; // Optional discount percentage
+  discountPercent?: number;
 };
 
-// Legacy Supabase client (for components that still reference it)
-// Note: This is a dummy object to prevent errors. New code should use api.auth.*
-export const supabase = {
-  auth: {
-    getSession: async () => ({ data: { session: null }, error: null }),
-    getUser: async () => ({ data: { user: null }, error: null }),
-    signInWithPassword: async () => ({ data: null, error: new Error('Use api.auth.signIn instead') }),
-    signUp: async () => ({ data: null, error: new Error('Use api.auth.signUp instead') }),
-    signOut: async () => ({ error: null }),
-    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-  },
-  from: () => ({
-    select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
-    insert: () => ({ select: () => ({ single: async () => ({ data: null, error: null }) }) }),
-    update: () => ({ eq: async () => ({ data: null, error: null }) }),
-  }),
-  rpc: async () => ({ data: null, error: null }),
-  functions: {
-    invoke: async () => ({ data: null, error: new Error('Use api endpoints instead') }),
-  },
-};
+// ... other types if any
 
-// Wrapper functions that use the new API
-export const getCategories = async () => {
-  try {
-    const categories = await api.products.getCategories();
-    return new Response(JSON.stringify({ categories }), { status: 200 });
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
-};
-
-
+// ... types ...
 
 export const getProducts = async (): Promise<Product[]> => {
   try {
@@ -76,9 +51,9 @@ export const getProducts = async (): Promise<Product[]> => {
       name: item.name,
       stock: item.stock,
       price: item.price.toString(),
+      costPrice: item.costPrice?.toString(),
       created_at: item.createdAt,
       category: item.categoryName || '',
-
     }));
   } catch (error) {
     console.error('Failed to get products:', error);
@@ -86,34 +61,9 @@ export const getProducts = async (): Promise<Product[]> => {
   }
 };
 
-export const getStaff = async (id: string): Promise<string | undefined> => {
-  try {
-    const staff = await api.staff.getById(id);
-    return staff.name;
-  } catch (error) {
-    console.error('Failed to get staff:', error);
-    return undefined;
-  }
-};
-
-export const getProduct = async (id: string) => {
-  try {
-    const product = await api.products.getById(id);
-    return {
-      name: product.name,
-      category_name: product.categoryName,
-      ...product,
-    };
-  } catch (error) {
-    console.error('Failed to get product:', error);
-    return null;
-  }
-};
-
 export const getShop = async () => {
   try {
-    const shop = await api.shops.getCurrent();
-    return shop;
+    return await api.shops.getCurrent();
   } catch (error) {
     console.error('Failed to get shop:', error);
     return null;
@@ -127,12 +77,29 @@ export const getSales = async (): Promise<Transaction[]> => {
     const transactions: Transaction[] = [];
     for (const item of sales) {
       const staffName = item.staff?.name || 'Unknown';
+
+      // Calculate profit
+      let totalCost = 0;
+      if (item.saleItems) {
+        totalCost = item.saleItems.reduce((acc: number, saleItem: any) => {
+          const cost = Number(saleItem.product?.costPrice || 0);
+          return acc + (saleItem.quantity * cost);
+        }, 0);
+      }
+
+      const revenue = Number(item.totalAmount);
+      // Only calculate profit if we have cost data (totalCost > 0 or explicit 0 cost)
+      // If totalCost is 0, it might mean no cost data, so profit = revenue (100% margin) or 0? 
+      // For now, assume 0 cost if not provided.
+      const profit = revenue - totalCost;
+
       transactions.push({
         id: item.id,
         order_id: item.orderId,
         total_amount: item.totalAmount.toString(),
         created_at: item.createdAt,
         staff_id: staffName,
+        profit,
         customer: item.customer || null,
       });
     }
@@ -141,6 +108,35 @@ export const getSales = async (): Promise<Transaction[]> => {
   } catch (error) {
     console.error('Failed to get sales:', error);
     return [];
+  }
+};
+
+export const getSale = async (id: string): Promise<Transaction | null> => {
+  try {
+    const sale = await api.sales.getById(id);
+    if (!sale) return null;
+
+    // Calculate profit
+    let totalCost = 0;
+    if (sale.saleItems) {
+      totalCost = sale.saleItems.reduce((acc: number, saleItem: any) => {
+        const cost = Number(saleItem.product?.costPrice || 0);
+        return acc + (saleItem.quantity * cost);
+      }, 0);
+    }
+
+    return {
+      id: sale.id,
+      order_id: sale.orderId,
+      total_amount: sale.totalAmount.toString(),
+      created_at: sale.createdAt,
+      staff_id: sale.staff?.name || 'Unknown',
+      profit: Number(sale.totalAmount) - totalCost,
+      customer: sale.customer || null,
+    };
+  } catch (error) {
+    console.log('Failed to fetch individual sale', error);
+    return null;
   }
 };
 
@@ -168,10 +164,12 @@ export async function getRecentItems() {
 
     const items = [];
     for (const item of recentItems) {
+      if (!item.product) continue;
+      const product = item.product as any; // Cast to access potential categoryName not in type definition yet
       items.push({
         id: item.id,
-        name: item.product.name,
-        category: item.product.categoryName || '',
+        name: product.name,
+        category: product.categoryName || product.category || '',
         variants: `${item.quantity} Variants`,
         price: Number(item.price),
       });
@@ -189,6 +187,7 @@ export const addProduct = async (
   category: string,
   stock: number,
   price: number,
+  costPrice?: number,
   supplierId?: string
 ) => {
   try {
@@ -197,6 +196,7 @@ export const addProduct = async (
       categoryName: category,
       stock,
       price,
+      costPrice,
       supplierId: supplierId || undefined,
     } as any);
 

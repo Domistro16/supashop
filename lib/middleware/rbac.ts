@@ -1,9 +1,9 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 import { can, User as PermissionUser, Role } from '@server/backend/permissions';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Get user permissions for a specific shop

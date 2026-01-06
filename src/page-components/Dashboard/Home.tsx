@@ -1,14 +1,10 @@
 import EcommerceMetrics from "../../components/ecommerce/EcommerceMetrics";
 import MonthlySalesChart from "../../components/ecommerce/MonthlySalesChart";
-import StatisticsChart from "../../components/ecommerce/StatisticsChart";
 import MonthlyTarget from "../../components/ecommerce/MonthlyTarget";
 import RecentOrders from "../../components/ecommerce/RecentOrders";
-import DemographicCard from "../../components/ecommerce/DemographicCard";
 import PageMeta from "../../components/common/PageMeta";
 import { Transaction } from "../Transaction/Columns";
-import AIBusinessSummary from "../../components/ai/AIBusinessSummary";
-import AISalesPredictions from "../../components/ai/AISalesPredictions";
-import AIRestockingAlert from "../../components/ai/AIRestockingAlert";
+import AIInsightsDashboard from "../../components/ai/AIInsightsDashboard";
 import CustomerStats from "../../components/customers/CustomerStats";
 import { useDataRefresh } from "../../context/DataRefreshContext";
 import { useState } from "react";
@@ -118,6 +114,15 @@ export default function Home({
       ? 100 // or handle differently if you want
       : ((todayCount - yesterdayCount) / yesterdayCount) * 100;
 
+  // Profit Calculations
+  const todayProfit = todaySales.reduce((sum, sale) => sum + (sale.profit || 0), 0);
+  const yesterdayProfit = yesterdaySales.reduce((sum, sale) => sum + (sale.profit || 0), 0);
+
+  const profitChange =
+    yesterdayProfit === 0
+      ? 100
+      : ((todayProfit - yesterdayProfit) / yesterdayProfit) * 100;
+
   const salesPerMonth = sales.reduce((acc, sale) => {
     const date = new Date(sale.created_at);
     const month = date.getMonth(); // 0 = Jan, 1 = Feb...
@@ -153,6 +158,8 @@ export default function Home({
             revenue={total}
             revenueChange={revenueChange}
             salesChange={salesChange}
+            profit={todayProfit}
+            profitChange={profitChange}
           />
 
           <MonthlySalesChart sales={salesPerMonth as []} />
@@ -162,17 +169,9 @@ export default function Home({
           <MonthlyTarget revenue={rev} target={shop.target} today={total} />
         </div>
 
-        {/* AI-Powered Insights Section */}
+        {/* Unified AI-Powered Insights Section */}
         <div className="col-span-12">
-          <AIBusinessSummary period="daily" />
-        </div>
-
-        <div className="col-span-12 lg:col-span-6">
-          <AISalesPredictions />
-        </div>
-
-        <div className="col-span-12 lg:col-span-6">
-          <AIRestockingAlert />
+          <AIInsightsDashboard />
         </div>
 
         {/* Customer Management Section */}

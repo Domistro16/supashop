@@ -5,9 +5,9 @@
  * In production, integrate with email service (SendGrid, SES, etc.) or webhook system.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 
-const prisma = new PrismaClient();
+
 
 interface PurchaseOrderWithDetails {
     id: string;

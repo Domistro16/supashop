@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 import { AuthRequest } from '../types';
 
-const prisma = new PrismaClient();
+
 
 // Get all suppliers for a shop
 export async function getSuppliers(req: AuthRequest, res: Response) {

@@ -1,10 +1,10 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@server/prisma';
 import { updateCustomerFromSale } from './customers.controller';
 import { createNotification } from './notifications.controller';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Offline Sale Payload Format

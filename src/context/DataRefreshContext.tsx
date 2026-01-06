@@ -1,9 +1,20 @@
-import React, { createContext, useContext, useCallback } from "react";
+import React, { createContext, useContext, useCallback, useState } from "react";
 import { getProducts, getSales, getShop, getRecentItems } from "@/supabaseClient";
 import { Product } from "@/page-components/Products/Columns";
 import { Transaction } from "@/page-components/Transaction/Columns";
 
 interface DataRefreshContextType {
+  // Data
+  products: Product[];
+  sales: Transaction[];
+  shop: any;
+  recentItems: any[];
+  // Setters (for external updates)
+  setProducts: (products: Product[]) => void;
+  setSales: (sales: Transaction[]) => void;
+  setShop: (shop: any) => void;
+  setRecentItems: (recent: any[]) => void;
+  // Refresh functions
   refreshProducts: () => Promise<Product[] | undefined>;
   refreshSales: () => Promise<Transaction[] | undefined>;
   refreshShop: () => Promise<any>;
@@ -23,26 +34,21 @@ export function useDataRefresh() {
 
 interface DataRefreshProviderProps {
   children: React.ReactNode;
-  setProducts: (products: Product[]) => void;
-  setSales: (sales: Transaction[]) => void;
-  setShop: (shop: any) => void;
-  setRecent: (recent: any[]) => void;
 }
 
-export function DataRefreshProvider({
-  children,
-  setProducts,
-  setSales,
-  setShop,
-  setRecent,
-}: DataRefreshProviderProps) {
+export function DataRefreshProvider({ children }: DataRefreshProviderProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [sales, setSales] = useState<Transaction[]>([]);
+  const [shop, setShop] = useState<any>(null);
+  const [recentItems, setRecentItems] = useState<any[]>([]);
+
   const refreshProducts = useCallback(async () => {
     const data = await getProducts();
     if (data) {
       setProducts(data);
     }
     return data;
-  }, [setProducts]);
+  }, []);
 
   const refreshSales = useCallback(async () => {
     const data = await getSales();
@@ -50,7 +56,7 @@ export function DataRefreshProvider({
       setSales(data);
     }
     return data;
-  }, [setSales]);
+  }, []);
 
   const refreshShop = useCallback(async () => {
     const data = await getShop();
@@ -58,15 +64,15 @@ export function DataRefreshProvider({
       setShop(data);
     }
     return data;
-  }, [setShop]);
+  }, []);
 
   const refreshRecentItems = useCallback(async () => {
     const data = await getRecentItems();
     if (data) {
-      setRecent(data);
+      setRecentItems(data);
     }
     return data;
-  }, [setRecent]);
+  }, []);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([
@@ -80,6 +86,14 @@ export function DataRefreshProvider({
   return (
     <DataRefreshContext.Provider
       value={{
+        products,
+        sales,
+        shop,
+        recentItems,
+        setProducts,
+        setSales,
+        setShop,
+        setRecentItems,
         refreshProducts,
         refreshSales,
         refreshShop,
