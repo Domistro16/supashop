@@ -86,7 +86,7 @@ function TransactionCard({
       </div>
       <div className="flex items-start sm:items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto">
         <div className="text-right">
-          <p className="text-lg sm:text-xl font-semibold text-emerald-600 dark:text-emerald-400">
+          <p className={`text-lg sm:text-xl font-semibold ${tx.payment_status === 'pending' ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
             {currencyFormatter.format(Number(tx.total_amount || 0))}
           </p>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">

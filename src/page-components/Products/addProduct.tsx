@@ -17,7 +17,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { addProduct } from "@/supabaseClient";
 import { useState } from "react";
-import { Supplier } from "@/lib/api";
+import { Supplier, Product, products as productsApi } from "@/lib/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import SupplierSearchSelect from "@/components/suppliers/SupplierSearchSelect";
 import CategorySuggest from "@/components/products/CategorySuggest";
 import toast from "react-hot-toast";
@@ -123,13 +133,20 @@ const formSchema = z.object({
   price: z.string().min(2, {
     error: "Price must be at least 2 characters.",
   }),
-  cost_price: z.string().optional(),
+  cost_price: z.string().min(1, {
+    error: "Cost price is required.",
+  }),
 });
 
 export default function AddProducts() {
   const [loading, setLoading] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const { refreshProducts } = useDataRefresh();
+
+  // Duplicate product modal state
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [existingProduct, setExistingProduct] = useState<Product | null>(null);
+  const [pendingFormValues, setPendingFormValues] = useState<z.infer<typeof formSchema> | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -142,13 +159,8 @@ export default function AddProducts() {
     },
   });
 
-  // 2. Define a submit handler.
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    setLoading(true);
-    console.log(values);
-
+  // Function to actually create the product (called after duplicate check)
+  async function createProduct(values: z.infer<typeof formSchema>) {
     try {
       const response = await addProduct(
         values.product_name,
@@ -184,6 +196,83 @@ export default function AddProducts() {
       setLoading(false);
       console.error("Error adding product:", error);
       toast.error("Failed to add product. Please try again.", {
+        duration: 4000,
+      });
+    }
+  }
+
+  // Handle updating existing product when duplicate is confirmed
+  async function handleUpdateExisting() {
+    if (!existingProduct || !pendingFormValues) return;
+
+    setLoading(true);
+    setShowDuplicateModal(false);
+
+    try {
+      await productsApi.update(existingProduct.id, {
+        name: pendingFormValues.product_name,
+        categoryName: pendingFormValues.category,
+        stock: pendingFormValues.stock,
+        price: parseFloat(pendingFormValues.price),
+        costPrice: pendingFormValues.cost_price ? parseFloat(pendingFormValues.cost_price) : undefined,
+        supplierId: selectedSupplier?.id,
+      });
+
+      setLoading(false);
+      form.reset();
+      setSelectedSupplier(null);
+      setExistingProduct(null);
+      setPendingFormValues(null);
+
+      toast.success(`Product "${pendingFormValues.product_name}" updated successfully!`, {
+        duration: 3000,
+      });
+
+      await refreshProducts();
+    } catch (error) {
+      setLoading(false);
+      console.error("Error updating product:", error);
+      toast.error("Failed to update product. Please try again.", {
+        duration: 4000,
+      });
+    }
+  }
+
+  // Handle canceling duplicate modal
+  function handleCancelDuplicate() {
+    setShowDuplicateModal(false);
+    setExistingProduct(null);
+    setPendingFormValues(null);
+    setLoading(false);
+  }
+
+  // Main submit handler - checks for duplicates first
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setLoading(true);
+    console.log(values);
+
+    try {
+      // Check for existing product with the same name
+      const allProducts = await productsApi.getAll();
+      const duplicate = allProducts.find(
+        (p) => p.name.toLowerCase() === values.product_name.toLowerCase()
+      );
+
+      if (duplicate) {
+        // Show modal asking if user wants to update
+        setExistingProduct(duplicate);
+        setPendingFormValues(values);
+        setShowDuplicateModal(true);
+        setLoading(false);
+        return;
+      }
+
+      // No duplicate found, proceed with creating
+      await createProduct(values);
+    } catch (error) {
+      setLoading(false);
+      console.error("Error checking for duplicates:", error);
+      toast.error("Failed to check for existing products. Please try again.", {
         duration: 4000,
       });
     }
@@ -261,7 +350,7 @@ export default function AddProducts() {
                 name="cost_price"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel>Cost Price (Optional)</FormLabel>
+                    <FormLabel>Cost Price</FormLabel>
                     <FormControl>
                       <Input placeholder="₦" {...field} className="w-full" />
                     </FormControl>
@@ -308,6 +397,23 @@ export default function AddProducts() {
           </form>
         </Form>
       </ComponentCard>
+
+      {/* Duplicate Product Confirmation Modal */}
+      <AlertDialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Product Already Exists</AlertDialogTitle>
+            <AlertDialogDescription>
+              A product with the name <strong>"{existingProduct?.name}"</strong> already exists.
+              Would you like to update the existing product with the new details instead?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDuplicate}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleUpdateExisting}>Update Existing</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

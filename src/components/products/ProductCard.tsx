@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShoppingCart, Package, MoreVertical } from "lucide-react";
+import { ShoppingCart, Package, MoreVertical, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,12 +8,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import QuickSell from "@/components/sales/QuickSell";
+import { Modal } from "@/components/ui/modal/index";
+import { products } from "@/lib/api";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import toast from "react-hot-toast";
+import { useDataRefresh } from "@/context/DataRefreshContext";
 
 export type Product = {
   id: string;
   name: string;
   stock: number;
   price: string;
+  costPrice?: string;
   created_at: string;
   category: string;
 };
@@ -23,6 +41,24 @@ interface ProductCardProps {
   onSelect?: (product: Product) => void;
   isSelected?: boolean;
 }
+
+const formSchema = z.object({
+  product_name: z.string().min(2, {
+    error: "Product name must be at least 2 characters.",
+  }),
+  category: z.string().min(2, {
+    error: "Category name must be at least 2 characters.",
+  }),
+  stock: z.number().min(0, {
+    error: "Stock must be at least 0",
+  }),
+  price: z.string().min(1, {
+    error: "Price is required.",
+  }),
+  cost_price: z.string().min(1, {
+    error: "Cost price is required.",
+  }),
+});
 
 // Generate a consistent color based on category name
 function getCategoryColor(category: string): string {
@@ -54,6 +90,37 @@ function getInitials(name: string): string {
 
 export default function ProductCard({ product, onSelect, isSelected }: ProductCardProps) {
   const [showQuickSell, setShowQuickSell] = useState(false);
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const { refreshProducts } = useDataRefresh();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      product_name: product.name,
+      category: product.category,
+      stock: product.stock,
+      price: product.price,
+      cost_price: product.costPrice || "",
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await products.update(product.id, {
+        name: values.product_name,
+        categoryName: values.category,
+        stock: values.stock,
+        price: parseFloat(values.price),
+        costPrice: values.cost_price ? parseFloat(values.cost_price) : undefined,
+      });
+      toast.success("Product restocked successfully");
+      setShowRestockModal(false);
+      await refreshProducts();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to restock product");
+    }
+  }
 
   const formattedPrice = new Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -110,7 +177,13 @@ export default function ProductCard({ product, onSelect, isSelected }: ProductCa
                 <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.id)}>
                   Copy ID
                 </DropdownMenuItem>
-                <DropdownMenuItem>Edit</DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => {
+                  e.stopPropagation();
+                  setShowRestockModal(true);
+                }}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Restock
+                </DropdownMenuItem>
                 <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -165,6 +238,102 @@ export default function ProductCard({ product, onSelect, isSelected }: ProductCa
           }}
         />
       )}
+
+      {/* Restock Modal */}
+      <Modal isOpen={showRestockModal} onClose={() => setShowRestockModal(false)} className="max-w-2xl">
+        <div className="p-6 lg:p-10 max-h-[80%] overflow-y-auto">
+          <div className="flex flex-col px-2 overflow-y-auto max-h-[80%] custom-scrollbar">
+            <div>
+              <h5 className="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl">
+                Restock Product
+              </h5>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Update stock quantity and product details
+              </p>
+            </div>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-5">
+                <div className="flex w-full gap-5">
+                  <FormField
+                    control={form.control}
+                    name="product_name"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Product Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter Product Name" {...field} className="w-full" />
+                        </FormControl>
+                        <FormDescription>This is the name of the product.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Category</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter Category" {...field} className="w-full" />
+                        </FormControl>
+                        <FormDescription>This is the category the product belongs to.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="flex w-full gap-5">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Price</FormLabel>
+                        <FormControl>
+                          <Input placeholder="₦" {...field} className="w-full" />
+                        </FormControl>
+                        <FormDescription>The selling price.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="cost_price"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Cost Price</FormLabel>
+                        <FormControl>
+                          <Input placeholder="₦" {...field} className="w-full" />
+                        </FormControl>
+                        <FormDescription>Used for profit calculation.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="stock"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Stock Quantity</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Enter stock quantity" {...field} className="w-full" />
+                      </FormControl>
+                      <FormDescription>The available stock for the product.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit">Save Changes</Button>
+              </form>
+            </Form>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
+

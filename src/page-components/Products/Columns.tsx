@@ -60,7 +60,9 @@ const formSchema = z.object({
   price: z.string().min(2, {
     error: "Price must be at least 2 characters.",
   }),
-  cost_price: z.string().optional(),
+  cost_price: z.string().min(1, {
+    error: "Cost price is required.",
+  }),
 });
 
 export const columns: ColumnDef<Product>[] = [
@@ -297,7 +299,7 @@ export const columns: ColumnDef<Product>[] = [
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => openModal()}>
-                Update Product
+                Restock
               </DropdownMenuItem>
               <DropdownMenuItem>Delete Product</DropdownMenuItem>
             </DropdownMenuContent>
@@ -307,10 +309,10 @@ export const columns: ColumnDef<Product>[] = [
               <div className="flex flex-col px-2 overflow-y-auto max-h-[80%] custom-scrollbar">
                 <div>
                   <h5 className="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl">
-                    Update Product
+                    Restock Product
                   </h5>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Update the product details and save changes
+                    Update stock quantity and product details
                   </p>
                 </div>
                 <Form {...form}>
@@ -382,7 +384,7 @@ export const columns: ColumnDef<Product>[] = [
                         name="cost_price"
                         render={({ field }) => (
                           <FormItem className="flex-1">
-                            <FormLabel>Cost Price (Optional)</FormLabel>
+                            <FormLabel>Cost Price</FormLabel>
                             <FormControl>
                               <Input placeholder="₦" {...field} className="w-full" />
                             </FormControl>
@@ -413,7 +415,7 @@ export const columns: ColumnDef<Product>[] = [
                         </FormItem>
                       )}
                     />
-                    <Button type="submit">Update Product</Button>
+                    <Button type="submit">Save Changes</Button>
                   </form>
                 </Form>
               </div>

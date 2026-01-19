@@ -61,7 +61,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { items, totalAmount, customerId } = body;
+    const {
+      items,
+      totalAmount,
+      customerId,
+      paymentType = 'full',
+      paymentMethod,
+      bankName,
+      accountNumber,
+      amountPaid,
+      installments = []
+    } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'At least one item is required' }, { status: 400 });
@@ -103,6 +113,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Calculate payment status and outstanding balance
+    const installmentTotal = installments.reduce((sum: number, inst: any) => sum + Number(inst.amount), 0);
+    const effectiveAmountPaid = installments.length > 0
+      ? installmentTotal
+      : (amountPaid !== undefined ? amountPaid : (paymentType === 'full' ? totalAmount : 0));
+    const outstandingBalance = Math.max(0, totalAmount - effectiveAmountPaid);
+    const paymentStatus = outstandingBalance > 0 ? 'pending' : 'completed';
+
     // Create sale and update stock in a transaction
     const sale = await prisma.$transaction(async (tx) => {
       // Create sale
@@ -113,17 +131,47 @@ export async function POST(request: NextRequest) {
           staffId: authResult.user!.id,
           customerId: customerId || null,
           totalAmount,
+          // Payment tracking fields
+          paymentType,
+          paymentMethod: paymentMethod || null,
+          bankName: bankName || null,
+          accountNumber: accountNumber || null,
+          amountPaid: effectiveAmountPaid,
+          outstandingBalance,
+          paymentStatus,
         },
       });
 
+      // Create installment records if any
+      if (installments.length > 0) {
+        for (const inst of installments) {
+          await tx.installment.create({
+            data: {
+              saleId: newSale.id,
+              amount: inst.amount,
+              paymentMethod: inst.paymentMethod || 'cash',
+              bankName: inst.bankName || null,
+              accountNumber: inst.accountNumber || null,
+            },
+          });
+        }
+      }
+
       // Create sale items and update product stock
       for (const item of items) {
+        // Fetch current cost price to snapshot it
+        const currentProduct = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: { costPrice: true }
+        });
+
         await tx.saleItem.create({
           data: {
             saleId: newSale.id,
             productId: item.productId,
             quantity: item.quantity,
             price: item.price,
+            costPrice: currentProduct?.costPrice || 0, // Snapshot current cost
             discountPercent: item.discountPercent || 0,
           },
         });

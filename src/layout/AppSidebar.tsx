@@ -18,7 +18,7 @@ import {
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
-import { Network, ShoppingCart, Shield } from "lucide-react";
+import { Network, ShoppingCart, Shield, Store } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -83,6 +83,11 @@ const navItems: NavItem[] = [
     icon: <Shield />,
     name: "Roles & Permissions",
     path: "/roles",
+  },
+  {
+    icon: <Store />,
+    name: "Online Store",
+    path: "/dashboard/shop-settings",
   },
   {
     icon: <UserCircleIcon />,

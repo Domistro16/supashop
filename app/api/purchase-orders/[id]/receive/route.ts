@@ -88,14 +88,38 @@ export async function POST(
     await prisma.$transaction(async (tx) => {
       for (const item of receivedItems) {
         const poItem = purchaseOrder.items.find(i => i.id === item.itemId)!;
+        const product = poItem.product; // Already included in findFirst query
 
-        // Update product stock (INCREASE inventory)
-        await tx.product.update({
+        // Calculate Weighted Average Cost (AVCO)
+        // New Cost = ((Current Stock * Current Cost) + (Received Qty * PO Unit Cost)) / (Current Stock + Received Qty)
+        const currentStock = Number(product.stock); // Should be number, but safer to cast
+        // Note: product.costPrice wasn't selected in the initial query, we assumed it exists on product.
+        // We need to fetch it or ensure it's selected.
+        // Actually, we need to fetch the current product data including costPrice inside the transaction to ensure accuracy.
+
+        const currentProduct = await tx.product.findUnique({
           where: { id: poItem.productId },
-          data: {
-            stock: { increment: item.quantityReceived },
-          },
+          select: { stock: true, costPrice: true }
         });
+
+        if (currentProduct) {
+          const currentTotalValue = Number(currentProduct.stock) * Number(currentProduct.costPrice || 0);
+          const receivedTotalValue = item.quantityReceived * Number(poItem.unitCost);
+          const newTotalStock = Number(currentProduct.stock) + item.quantityReceived;
+
+          const newWeightedCost = newTotalStock > 0
+            ? (currentTotalValue + receivedTotalValue) / newTotalStock
+            : Number(poItem.unitCost);
+
+          // Update product stock (INCREASE inventory) and Cost Price
+          await tx.product.update({
+            where: { id: poItem.productId },
+            data: {
+              stock: { increment: item.quantityReceived },
+              costPrice: newWeightedCost
+            },
+          });
+        }
 
         // Update PO item received quantity
         await tx.purchaseOrderItem.update({

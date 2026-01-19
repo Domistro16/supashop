@@ -23,7 +23,7 @@ export default function EcommerceMetrics({
   profitChange?: number;
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
       {/* <!-- Metric Item Start --> */}
       <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex items-center justify-between">
@@ -71,7 +71,7 @@ export default function EcommerceMetrics({
       {/* <!-- Metric Item End --> */}
 
       {/* <!-- Metric Item Start --> */}
-      <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="col-span-2 lg:col-span-1 rounded-xl border border-gray-200 bg-white p-3 sm:p-4 dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex items-center justify-between">
           <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-green-100 rounded-lg dark:bg-green-900/20">
             <span className="text-green-600 size-4 sm:size-5 flex items-center justify-center font-bold text-lg">₦</span>

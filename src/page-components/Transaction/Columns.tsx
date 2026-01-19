@@ -23,11 +23,22 @@ export type Transaction = {
   created_at: string;
   staff_id: string;
   profit?: number; // Calculated profit for this transaction
+  expectedProfit?: number;
+  realizedProfit?: number;
   customer?: {
     id: string;
     name: string;
     phone?: string;
   } | null;
+  // Payment tracking
+  payment_type?: 'full' | 'installment';
+  payment_method?: 'cash' | 'bank_transfer' | 'card';
+  bank_name?: string;
+  account_number?: string;
+  amount_paid?: string | number;
+  outstanding_balance?: string | number;
+  payment_status?: 'completed' | 'pending';
+  proof_of_payment?: string;
 };
 
 export const columns: ColumnDef<Transaction>[] = [
@@ -92,12 +103,15 @@ export const columns: ColumnDef<Transaction>[] = [
       );
     },
     cell: ({ row }) => {
+      const status = row.original.payment_status;
+      const isPending = status === 'pending';
+
       return (
-        <div className="font-medium">
+        <div className={`font-medium ${isPending ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
           {new Intl.NumberFormat("en-NG", {
             style: "currency",
             currency: "NGN",
-          }).format(row.getValue("total_amount"))}
+          }).format(Number(row.getValue("total_amount")))}
         </div>
       );
     },

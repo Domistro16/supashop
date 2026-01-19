@@ -25,11 +25,22 @@ type Transaction = {
   total_amount: string;
   created_at: string;
   staff_id: string;
-  profit?: number;
+  profit?: number; // @deprecated Use expectedProfit
+  expectedProfit?: number; // Total potential profit (TotalAmount - Cost)
+  realizedProfit?: number; // Profit based on actual cash collected (AmountPaid - Cost)
   customer?: {
     id: string;
     name: string;
   } | null;
+  // Payment tracking
+  payment_type?: 'full' | 'installment';
+  payment_method?: 'cash' | 'bank_transfer' | 'card';
+  bank_name?: string;
+  account_number?: string;
+  amount_paid?: string;
+  outstanding_balance?: string;
+  payment_status?: 'completed' | 'pending';
+  proof_of_payment?: string; // URL to uploaded receipt image
 };
 
 type Item = {
@@ -37,6 +48,21 @@ type Item = {
   quantity: number;
   unitCost: number;
   discountPercent?: number;
+};
+
+// Payment options for record_sale
+type PaymentOptions = {
+  paymentType?: 'full' | 'installment';
+  paymentMethod?: 'cash' | 'bank_transfer' | 'card';
+  bankName?: string;
+  accountNumber?: string;
+  amountPaid?: number;
+  installments?: Array<{
+    amount: number;
+    paymentMethod: 'cash' | 'bank_transfer' | 'card';
+    bankName?: string;
+    accountNumber?: string;
+  }>;
 };
 
 // ... other types if any
@@ -82,7 +108,11 @@ export const getSales = async (): Promise<Transaction[]> => {
       let totalCost = 0;
       if (item.saleItems) {
         totalCost = item.saleItems.reduce((acc: number, saleItem: any) => {
-          const cost = Number(saleItem.product?.costPrice || 0);
+          // Use historical costPrice from SaleItem if available (and > 0), otherwise fallback to current product cost
+          const historicalCost = Number(saleItem.costPrice);
+          const currentCost = Number(saleItem.product?.costPrice || 0);
+          const cost = historicalCost > 0 ? historicalCost : currentCost;
+
           return acc + (saleItem.quantity * cost);
         }, 0);
       }
@@ -91,7 +121,16 @@ export const getSales = async (): Promise<Transaction[]> => {
       // Only calculate profit if we have cost data (totalCost > 0 or explicit 0 cost)
       // If totalCost is 0, it might mean no cost data, so profit = revenue (100% margin) or 0? 
       // For now, assume 0 cost if not provided.
-      const profit = revenue - totalCost;
+      // Calculate profit metrics
+      // Expected Profit = Total Sale Value - Total Cost
+      // Realized Profit = Amount Paid - Total Cost
+      // (If realized profit is negative, it means we haven't covered costs yet)
+      const expectedProfit = revenue - totalCost;
+      const amountPaid = Number(item.amountPaid) || (item.paymentStatus === 'completed' ? revenue : 0);
+      const realizedProfit = amountPaid - totalCost;
+
+      // Keep legacy profit field for compatibility (points to expected profit)
+      const profit = expectedProfit;
 
       transactions.push({
         id: item.id,
@@ -100,7 +139,17 @@ export const getSales = async (): Promise<Transaction[]> => {
         created_at: item.createdAt,
         staff_id: staffName,
         profit,
+        expectedProfit,
+        realizedProfit,
         customer: item.customer || null,
+        // Payment tracking fields
+        payment_type: item.paymentType as Transaction['payment_type'],
+        payment_method: item.paymentMethod as Transaction['payment_method'],
+        bank_name: item.bankName,
+        account_number: item.accountNumber,
+        amount_paid: item.amountPaid?.toString(),
+        outstanding_balance: item.outstandingBalance?.toString(),
+        payment_status: item.paymentStatus as Transaction['payment_status'],
       });
     }
 
@@ -120,10 +169,19 @@ export const getSale = async (id: string): Promise<Transaction | null> => {
     let totalCost = 0;
     if (sale.saleItems) {
       totalCost = sale.saleItems.reduce((acc: number, saleItem: any) => {
-        const cost = Number(saleItem.product?.costPrice || 0);
+        // Use historical costPrice from SaleItem if available (and > 0), otherwise fallback to current product cost
+        const historicalCost = Number(saleItem.costPrice);
+        const currentCost = Number(saleItem.product?.costPrice || 0);
+        const cost = historicalCost > 0 ? historicalCost : currentCost;
+
         return acc + (saleItem.quantity * cost);
       }, 0);
     }
+
+    const revenue = Number(sale.totalAmount);
+    const amountPaid = Number(sale.amountPaid) || (sale.paymentStatus === 'completed' ? revenue : 0);
+    const expectedProfit = revenue - totalCost;
+    const realizedProfit = amountPaid - totalCost;
 
     return {
       id: sale.id,
@@ -131,8 +189,19 @@ export const getSale = async (id: string): Promise<Transaction | null> => {
       total_amount: sale.totalAmount.toString(),
       created_at: sale.createdAt,
       staff_id: sale.staff?.name || 'Unknown',
-      profit: Number(sale.totalAmount) - totalCost,
+      profit: expectedProfit,
+      expectedProfit,
+      realizedProfit,
       customer: sale.customer || null,
+      // Payment tracking fields
+      payment_type: sale.paymentType as Transaction['payment_type'],
+      payment_method: sale.paymentMethod as Transaction['payment_method'],
+      bank_name: sale.bankName,
+      account_number: sale.accountNumber,
+      amount_paid: sale.amountPaid?.toString(),
+      outstanding_balance: sale.outstandingBalance?.toString(),
+      payment_status: sale.paymentStatus as Transaction['payment_status'],
+      proof_of_payment: (sale as any).proofOfPayment,
     };
   } catch (error) {
     console.log('Failed to fetch individual sale', error);
@@ -148,6 +217,7 @@ export const getSaleItems = async (sale_id: string): Promise<Item[]> => {
       product: item.product?.name || 'Unknown',
       quantity: Number(item.quantity),
       unitCost: Number(item.price),
+      costPrice: Number(item.costPrice || item.product?.costPrice || 0), // Include cost for UI margin calc
       discountPercent: Number(item.discountPercent ?? 0),
     }));
 
@@ -227,7 +297,11 @@ export async function getProfiles() {
   }
 }
 
-export const record_sale = async (items: Item[], customerId?: string): Promise<boolean> => {
+export const record_sale = async (
+  items: Item[],
+  customerId?: string,
+  paymentOptions?: PaymentOptions
+): Promise<boolean> => {
   try {
     if (!Array.isArray(items) || items.length === 0) {
       console.error('Invalid items array');
@@ -251,12 +325,13 @@ export const record_sale = async (items: Item[], customerId?: string): Promise<b
       };
     });
 
-    // Create sale with optional customer
+    // Create sale with optional customer and payment info
     await api.sales.create({
       items: saleItems,
       totalAmount,
       customerId,
-    } as any);
+      ...paymentOptions,
+    });
 
     console.log('Sale recorded successfully');
     return true;
