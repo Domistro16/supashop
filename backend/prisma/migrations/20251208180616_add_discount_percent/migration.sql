@@ -1,4 +1,0 @@
--- AlterTable
-ALTER TABLE "sale_items" ADD COLUMN IF NOT EXISTS "discount_percent" DECIMAL(5,2) NOT NULL DEFAULT 0;
-
-

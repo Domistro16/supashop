@@ -9,7 +9,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const shopId = getShopId(request);
+    let shopId = getShopId(request);
+
+    // Fallback to query param if not in header (for internal/admin calls)
+    if (!shopId) {
+      const { searchParams } = new URL(request.url);
+      shopId = searchParams.get('shopId');
+    }
+
     if (!shopId) {
       return NextResponse.json({ error: 'Shop context required' }, { status: 400 });
     }

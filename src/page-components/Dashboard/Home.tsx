@@ -132,6 +132,11 @@ export default function Home({
 
   console.log(salesPerMonth);
 
+
+  const recentOrders = [...sales]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5);
+
   return (
     <>
       <PageMeta
@@ -180,7 +185,7 @@ export default function Home({
         </div>
 
         <div className="col-span-12">
-          <RecentOrders items={items} />
+          <RecentOrders orders={recentOrders} />
         </div>
       </div>
     </>

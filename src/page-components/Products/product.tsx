@@ -8,14 +8,16 @@ import { DownloadIcon, RefreshCw, LayoutGrid, List, Search } from "lucide-react"
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
+import Spinner from "@/components/ui/Spinner";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { set } from "zod";
 import { record_sale } from "@/supabaseClient";
 import CustomerSearchSelect from "@/components/customers/CustomerSearchSelect";
-import { Customer } from "@/lib/api";
+import { Customer, InstallmentInput } from "@/lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useDataRefresh } from "@/context/DataRefreshContext";
+import { useAuth } from "@/auth";
 import toast from "react-hot-toast";
 import ProductCard from "@/components/products/ProductCard";
 function getData(): Product[] {
@@ -63,6 +65,26 @@ export default function Products({ products }: { products: Product[] }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { refreshProducts, refreshSales } = useDataRefresh();
+  const { currentShop } = useAuth();
+
+  const canGiveDiscount = useMemo(() => {
+    if (!currentShop) return false;
+    return currentShop.role === 'owner' || currentShop.permissions?.includes('sales:discount');
+  }, [currentShop]);
+
+  // Payment tracking state
+  const [paymentType, setPaymentType] = useState<'full' | 'installment'>('full');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank_transfer' | 'card'>('cash');
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+
+  // Multi-installment state
+  const [installments, setInstallments] = useState<InstallmentInput[]>([]);
+  const [newInstAmount, setNewInstAmount] = useState<number | ''>('');
+  const [newInstMethod, setNewInstMethod] = useState<'cash' | 'bank_transfer' | 'card'>('cash');
+  const [newInstBank, setNewInstBank] = useState('');
+  const [newInstAccount, setNewInstAccount] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // View mode state with localStorage persistence
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -144,6 +166,48 @@ export default function Products({ products }: { products: Product[] }) {
     },
     0
   );
+
+  // Calculate total paid from installments
+  const installmentTotal = useMemo(() => {
+    return installments.reduce((sum, inst) => sum + Number(inst.amount), 0);
+  }, [installments]);
+
+  // Calculate outstanding balance
+  const outstandingBalance = useMemo(() => {
+    if (paymentType === 'full') return 0;
+    return Math.max(0, total - installmentTotal);
+  }, [paymentType, installmentTotal, total]);
+
+  // Add installment helper
+  const addInstallment = () => {
+    if (!newInstAmount || newInstAmount <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    if (newInstAmount > outstandingBalance) {
+      toast.error(`Amount exceeds remaining balance`);
+      return;
+    }
+    const newInst: InstallmentInput = {
+      amount: newInstAmount,
+      paymentMethod: newInstMethod,
+      bankName: newInstMethod === 'bank_transfer' ? newInstBank : undefined,
+      accountNumber: newInstMethod === 'bank_transfer' ? newInstAccount : undefined,
+    };
+    setInstallments([...installments, newInst]);
+    setNewInstAmount('');
+    setNewInstMethod('cash');
+    setNewInstBank('');
+    setNewInstAccount('');
+  };
+
+  const removeInstallment = (index: number) => {
+    setInstallments(installments.filter((_, i) => i !== index));
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(amount);
+  };
 
   const onChange = (value: string) => {
     if (value.trim() === "") {
@@ -426,125 +490,285 @@ export default function Products({ products }: { products: Product[] }) {
                 ))}
               </div>
 
-              <div>
-                <div className="p-1 px-5 text-[14px] w-full flex items-center  mt-10 group font-medium text-gray-500 cursor-pointer">
-                  <div className="flex-1">Product</div>
-                  <div className="mr-6">Unit Price</div>
-                  <div className="mr-4">Qty</div>
-                  <div className="mr-4">Disc%</div>
-                  <div className="mr-6">Total</div>
-                  <div className="w-10"></div>
-                </div>
-                {selected?.map((s, index) => {
-                  const quantity = quantities[s.id] ?? 1;
-                  const discount = discounts[s.id] ?? 0;
-                  const subtotal = Number(s.price) * quantity;
-                  const discountAmount = (subtotal * discount) / 100;
-                  const total = subtotal - discountAmount;
-                  return (
-                    <div
-                      key={index}
-                      className="p-1 px-5 text-[14px] w-full flex items-center gap-2 group font-medium text-gray-500 cursor-pointer"
-                    >
-                      <div className="text-white flex-1">{s.name}</div>
-                      <div className="text-white text-sm mr-2">
-                        {new Intl.NumberFormat("en-NG", {
-                          style: "currency",
-                          currency: "NGN",
-                        }).format(Number(s.price))}
-                      </div>
-                      <Input
-                        className="max-w-[60px] text-white no-spinner"
-                        type="number"
-                        min={1}
-                        max={s.stock}
-                        value={quantity}
-                        onChange={(e) => {
-                          let val = e.target.value;
-
-                          if (val === "") {
-                            handleQuantityChange(s.id, "");
-                            return;
-                          }
-
-                          let num = Number(val);
-                          if (num < 1) num = 1;
-                          if (num > s.stock) num = s.stock;
-
-                          handleQuantityChange(s.id, num);
-                        }}
-                      />
-                      <Input
-                        className="max-w-[60px] text-white no-spinner"
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={discount}
-                        placeholder="0"
-                        onChange={(e) => {
-                          let val = e.target.value;
-
-                          if (val === "") {
-                            handleDiscountChange(s.id, 0);
-                            return;
-                          }
-
-                          let num = Number(val);
-                          if (num < 0) num = 0;
-                          if (num > 100) num = 100;
-
-                          handleDiscountChange(s.id, num);
-                        }}
-                      />
-                      <div className="text-white text-sm mr-2 min-w-[80px]">
-                        {new Intl.NumberFormat("en-NG", {
-                          style: "currency",
-                          currency: "NGN",
-                        }).format(total)}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelected((prev) => prev.filter((p) => p.id !== s.id));
-                          setQuantities((prev) => {
-                            const newQty = { ...prev };
-                            delete newQty[s.id];
-                            return newQty;
-                          });
-                          setDiscounts((prev) => {
-                            const newDisc = { ...prev };
-                            delete newDisc[s.id];
-                            return newDisc;
-                          });
-                        }}
-                        className="text-red-400 hover:text-red-600 ml-2"
-                        title="Remove product"
+              <div className="overflow-x-auto">
+                <div className="min-w-[600px]">
+                  <div className="p-1 px-5 text-[14px] w-full flex items-center mt-6 mb-2 group font-medium text-gray-400 border-b border-gray-700 pb-2">
+                    <div className="flex-1">Product</div>
+                    <div className="w-28 text-right">Unit Price</div>
+                    <div className="w-20 text-center">Qty</div>
+                    <div className="w-20 text-center">Disc%</div>
+                    <div className="w-28 text-right">Total</div>
+                    <div className="w-8"></div>
+                  </div>
+                  {selected?.map((s, index) => {
+                    const quantity = quantities[s.id] ?? 1;
+                    const discount = discounts[s.id] ?? 0;
+                    const subtotal = Number(s.price) * quantity;
+                    const discountAmount = (subtotal * discount) / 100;
+                    const total = subtotal - discountAmount;
+                    return (
+                      <div
+                        key={index}
+                        className="p-1 px-5 text-[14px] w-full flex items-center py-2 hover:bg-white/5 transition-colors border-b border-gray-800/50"
                       >
-                        ×
-                      </button>
+                        <div className="flex-1 text-white font-medium truncate pr-2" title={s.name}>{s.name}</div>
+                        <div className="w-28 text-right text-white text-sm">
+                          {new Intl.NumberFormat("en-NG", {
+                            style: "currency",
+                            currency: "NGN",
+                          }).format(Number(s.price))}
+                        </div>
+                        <div className="w-20 flex justify-center px-1">
+                          <Input
+                            className="w-full text-center h-8 text-white no-spinner bg-gray-900/50 border-gray-600 focus:border-blue-500"
+                            type="number"
+                            min={1}
+                            max={s.stock}
+                            value={quantity}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val === "") {
+                                handleQuantityChange(s.id, "");
+                                return;
+                              }
+                              let num = Number(val);
+                              if (num < 1) num = 1;
+                              if (num > s.stock) num = s.stock;
+                              handleQuantityChange(s.id, num);
+                            }}
+                          />
+                        </div>
+                        <div className="w-20 flex justify-center px-1">
+                          <Input
+                            className={`w-full text-center h-8 text-white no-spinner bg-gray-900/50 border-gray-600 focus:border-blue-500 ${!canGiveDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={discount}
+                            placeholder="0"
+                            disabled={!canGiveDiscount}
+                            title={!canGiveDiscount ? "Only owners can give discounts" : "Discount percentage"}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val === "") {
+                                handleDiscountChange(s.id, 0);
+                                return;
+                              }
+                              let num = Number(val);
+                              if (num < 0) num = 0;
+                              if (num > 100) num = 100;
+                              handleDiscountChange(s.id, num);
+                            }}
+                          />
+                        </div>
+                        <div className="w-28 text-right text-white text-sm font-medium">
+                          {new Intl.NumberFormat("en-NG", {
+                            style: "currency",
+                            currency: "NGN",
+                          }).format(total)}
+                        </div>
+                        <div className="w-8 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelected((prev) => prev.filter((p) => p.id !== s.id));
+                              setQuantities((prev) => {
+                                const newQty = { ...prev };
+                                delete newQty[s.id];
+                                return newQty;
+                              });
+                              setDiscounts((prev) => {
+                                const newDisc = { ...prev };
+                                delete newDisc[s.id];
+                                return newDisc;
+                              });
+                            }}
+                            className="text-red-400 hover:text-red-300 transition-colors p-1"
+                            title="Remove product"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="flex flex-col items-end mt-4">
+                    <div className="text-white font-bold">
+                      Total:{" "}
+                      {new Intl.NumberFormat("en-NG", {
+                        style: "currency",
+                        currency: "NGN",
+                      }).format(total)}
                     </div>
-                  );
-                })}
-                <div className="text-right text-white font-bold mt-4">
-                  Total:{" "}
-                  {new Intl.NumberFormat("en-NG", {
-                    style: "currency",
-                    currency: "NGN",
-                  }).format(total)}
+                    <div className="text-xs text-gray-300 mt-1">
+                      Profit: <span className="text-green-400 font-medium">
+                        {(() => {
+                          const totalCost = selected.reduce((sum, p) => sum + ((quantities[p.id] || 0) * Number(p.costPrice || 0)), 0);
+                          const profit = Math.max(0, total - totalCost);
+                          const margin = total > 0 ? (profit / total) * 100 : 0;
+
+                          return (
+                            <>
+                              {new Intl.NumberFormat("en-NG", {
+                                style: "currency",
+                                currency: "NGN",
+                              }).format(profit)}
+                              <span className="ml-2 text-xs bg-green-500/20 px-2 py-0.5 rounded-full">
+                                {margin.toFixed(0)}%
+                              </span>
+                            </>
+                          );
+                        })()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Payment Section */}
+          <div className="mt-6 space-y-4">
+            {/* Payment Type Toggle */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Payment Type
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentType('full')}
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${paymentType === 'full'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                >
+                  Full Payment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentType('installment')}
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${paymentType === 'installment'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                >
+                  Installment
+                </button>
+              </div>
+            </div>
+
+            {/* Full Payment Method */}
+            {paymentType === 'full' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Payment Method
+                  </label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'bank_transfer' | 'card')}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-white/90"
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="card">Card</option>
+                  </select>
+                </div>
+                {paymentMethod === 'bank_transfer' && (
+                  <div className="space-y-3 p-3 bg-gray-100 dark:bg-gray-800/50 rounded-md">
+                    <Input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="Bank Name" className="dark:bg-gray-800" />
+                    <Input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="Account Number (Optional)" className="dark:bg-gray-800" />
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Installment Payments */}
+            {paymentType === 'installment' && (
+              <div className="space-y-3">
+                {/* Installment List */}
+                {installments.length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-3 space-y-2">
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Installments Added</div>
+                    {installments.map((inst, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-sm bg-white dark:bg-gray-800 p-2 rounded">
+                        <div>
+                          <span className="font-medium">{formatCurrency(Number(inst.amount))}</span>
+                          <span className="text-gray-500 dark:text-gray-400 ml-2">({inst.paymentMethod.replace('_', ' ')})</span>
+                          {inst.bankName && <span className="text-gray-500 dark:text-gray-400"> - {inst.bankName}</span>}
+                        </div>
+                        <button type="button" onClick={() => removeInstallment(idx)} className="text-red-500 hover:text-red-700 text-xs">Remove</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add New Installment */}
+                {outstandingBalance > 0 && (
+                  <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-md p-3 space-y-3">
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Add Installment</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input type="number" value={newInstAmount} onChange={(e) => setNewInstAmount(e.target.value ? Number(e.target.value) : '')} placeholder="Amount" className="dark:bg-gray-800" />
+                      <select value={newInstMethod} onChange={(e) => setNewInstMethod(e.target.value as 'cash' | 'bank_transfer' | 'card')}
+                        className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-white/90">
+                        <option value="cash">Cash</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="card">Card</option>
+                      </select>
+                    </div>
+                    {newInstMethod === 'bank_transfer' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input type="text" value={newInstBank} onChange={(e) => setNewInstBank(e.target.value)} placeholder="Bank Name" className="dark:bg-gray-800" />
+                        <Input type="text" value={newInstAccount} onChange={(e) => setNewInstAccount(e.target.value)} placeholder="Account #" className="dark:bg-gray-800" />
+                      </div>
+                    )}
+                    <button type="button" onClick={addInstallment}
+                      className="w-full py-2 text-sm font-medium text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                      + Add Installment
+                    </button>
+                  </div>
+                )}
+
+                {/* Summary */}
+                <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Paid ({installments.length} installment{installments.length !== 1 ? 's' : ''})</span>
+                    <span className="text-green-600 dark:text-green-400 font-medium">{formatCurrency(installmentTotal)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm border-t border-gray-200 dark:border-gray-700 pt-2">
+                    <span className="text-gray-600 dark:text-gray-400">Remaining</span>
+                    <span className={`font-medium ${outstandingBalance > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
+                      {formatCurrency(outstandingBalance)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Warning */}
+                {outstandingBalance > 0 && (
+                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md p-3">
+                    <p className="text-sm text-orange-700 dark:text-orange-300">⚠️ This sale will be marked as <strong>"Pending"</strong></p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="md:flex md:space-x-3 md:space-y-0 space-y-3 mt-5">
             <Button
               variant="outline"
               className="mt-10 text-white bg-blue-700 hover:bg-blue-800 flex-end md:py-6 text-[12px] md:text-[15px]"
               onClick={() => {
-                // Handle form submission here
+                // Reset form
                 setSelected([]);
                 setQuantities({});
                 setDiscounts({});
                 setSelectedCustomer(null);
+                setPaymentType('full');
+                setPaymentMethod('cash');
+                setBankName('');
+                setAccountNumber('');
+                setInstallments([]);
               }}
             >
               Reset
@@ -552,16 +776,39 @@ export default function Products({ products }: { products: Product[] }) {
             <Button
               variant="default"
               className="mt-10 text-white bg-blue-700 hover:bg-blue-800 flex-end md:py-6 text-[12px] md:text-[15px]"
+              disabled={isSubmitting}
               onClick={async () => {
-                // Handle form submission here
+                // Validate payment for installments
+                if (paymentType === 'installment' && installments.length === 0) {
+                  toast.error('Please add at least one installment payment');
+                  return;
+                }
+
+                setIsSubmitting(true);
                 console.log("Selected Products:", selectedProducts);
                 console.log("Selected Customer:", selectedCustomer);
 
                 try {
-                  const success = await record_sale(selectedProducts, selectedCustomer?.id);
+                  const success = await record_sale(
+                    selectedProducts,
+                    selectedCustomer?.id,
+                    paymentType === 'full'
+                      ? {
+                        paymentType: 'full',
+                        paymentMethod,
+                        bankName: paymentMethod === 'bank_transfer' ? bankName : undefined,
+                        accountNumber: paymentMethod === 'bank_transfer' ? accountNumber : undefined,
+                        amountPaid: total,
+                      }
+                      : {
+                        paymentType: 'installment',
+                        installments,
+                      }
+                  );
 
                   if (success) {
-                    toast.success("Sale recorded successfully!");
+                    const statusMsg = outstandingBalance > 0 ? ' (Pending payment)' : '';
+                    toast.success(`Sale recorded successfully!${statusMsg}`);
 
                     // Refresh sales and products data
                     await Promise.all([refreshSales(), refreshProducts()]);
@@ -570,6 +817,11 @@ export default function Products({ products }: { products: Product[] }) {
                     setQuantities({});
                     setDiscounts({});
                     setSelectedCustomer(null);
+                    setPaymentType('full');
+                    setPaymentMethod('cash');
+                    setBankName('');
+                    setAccountNumber('');
+                    setInstallments([]);
                     closeModal();
                   } else {
                     toast.error("Failed to record sale");
@@ -577,10 +829,19 @@ export default function Products({ products }: { products: Product[] }) {
                 } catch (error) {
                   console.error("Error recording sale:", error);
                   toast.error("Failed to record sale");
+                } finally {
+                  setIsSubmitting(false);
                 }
               }}
             >
-              Submit
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <Spinner size="sm" className="text-white" />
+                  Submitting...
+                </span>
+              ) : (
+                "Submit"
+              )}
             </Button>
           </div>
         </div>

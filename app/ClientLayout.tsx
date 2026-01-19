@@ -21,6 +21,7 @@ export default function ClientLayout({
   const router = useRouter()
   const pathname = usePathname()
   const [isAuthPage, setIsAuthPage] = useState(false)
+  const [isStorefront, setIsStorefront] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
@@ -41,16 +42,32 @@ export default function ClientLayout({
   }, []);
 
   useEffect(() => {
+    // Detect if we're on a storefront subdomain
+    const hostname = window.location.hostname
+    const parts = hostname.split('.')
+    // If hostname is like "shopname.localhost" or "shopname.supashop.com"
+    const hasSubdomain = (hostname.includes('localhost') && parts.length > 1) ||
+      (!hostname.includes('localhost') && parts.length > 2)
+    const subdomain = hasSubdomain ? parts[0] : null
+    const isShopSubdomain = hasSubdomain && subdomain !== 'www' && subdomain !== 'app'
+
+    // Only treat as storefront if on subdomain AND not on an excluded path (auth, dashboard, etc.)
+    const excludedPaths = ['/auth/', '/dashboard', '/products', '/sales', '/customers', '/staff', '/suppliers', '/reports', '/roles', '/profile', '/calendar']
+    const isExcludedPath = excludedPaths.some(path => pathname.startsWith(path))
+    const isActualStorefront = isShopSubdomain && !isExcludedPath
+    setIsStorefront(isActualStorefront)
+
     const authPages = ['/auth/signin', '/auth/signup', '/']
     const isAuth = authPages.includes(pathname)
-    setIsAuthPage(isAuth)
+    const isPublicPage = isAuth || isActualStorefront
+    setIsAuthPage(isPublicPage)
 
     // Check authentication
     const token = localStorage.getItem('auth_token')
     setIsAuthenticated(!!token)
 
-    // Redirect unauthenticated users to signin (except for auth pages and root)
-    if (!token && !isAuth) {
+    // Redirect unauthenticated users to signin (except for auth pages, root, and shop subdomains)
+    if (!token && !isPublicPage) {
       router.push('/auth/signin')
     } else {
       setIsLoading(false)
@@ -58,13 +75,22 @@ export default function ClientLayout({
   }, [pathname, router])
 
   // Show loading spinner while checking auth
-  if (isLoading && !isAuthPage) {
+  if (isLoading && !isAuthPage && !isStorefront) {
     return (
       <HelmetProvider>
         <ThemeProvider>
           <Spinner size="lg" />
         </ThemeProvider>
       </HelmetProvider>
+    )
+  }
+
+  // Storefront routes get minimal layout - they have their own layout in app/shop/
+  if (isStorefront) {
+    return (
+      <ThemeProvider>
+        {children}
+      </ThemeProvider>
     )
   }
 

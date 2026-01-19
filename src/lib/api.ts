@@ -78,6 +78,16 @@ export interface Sale {
       costPrice?: string | number | null;
     };
   }[];
+  // Payment tracking
+  paymentType?: 'full' | 'installment';
+  paymentMethod?: 'cash' | 'bank_transfer' | 'card';
+  bankName?: string;
+  accountNumber?: string;
+  amountPaid?: string | number;
+  outstandingBalance?: string | number;
+  paymentStatus?: 'completed' | 'pending';
+  installments?: Installment[];
+  proofOfPayment?: string; // URL to uploaded receipt image
 }
 
 export interface SaleItem {
@@ -91,6 +101,23 @@ export interface SaleItem {
     name: string;
     costPrice?: string | number | null;
   };
+}
+
+export interface Installment {
+  id: string;
+  saleId: string;
+  amount: string | number;
+  paymentMethod: 'cash' | 'bank_transfer' | 'card';
+  bankName?: string;
+  accountNumber?: string;
+  createdAt: string;
+}
+
+export interface InstallmentInput {
+  amount: number;
+  paymentMethod: 'cash' | 'bank_transfer' | 'card';
+  bankName?: string;
+  accountNumber?: string;
 }
 
 export interface Staff {
@@ -357,8 +384,15 @@ export const sales = {
   },
 
   create: async (data: {
-    items: Array<{ productId: string; quantity: number; price: number }>;
+    items: Array<{ productId: string; quantity: number; price: number; discountPercent?: number }>;
     totalAmount: number;
+    customerId?: string;
+    paymentType?: 'full' | 'installment';
+    paymentMethod?: 'cash' | 'bank_transfer' | 'card';
+    bankName?: string;
+    accountNumber?: string;
+    amountPaid?: number;
+    installments?: InstallmentInput[];
   }): Promise<Sale> => {
     return apiCall('/sales', {
       method: 'POST',
@@ -370,8 +404,24 @@ export const sales = {
     return apiCall(`/sales/${saleId}/items`, {}, true);
   },
 
+  getInstallments: async (saleId: string): Promise<Installment[]> => {
+    return apiCall(`/sales/${saleId}/installments`, {}, true);
+  },
+
   getRecentItems: async (limit = 10): Promise<SaleItem[]> => {
     return apiCall(`/sales/recent-items?limit=${limit}`, {}, true);
+  },
+
+  updatePayment: async (saleId: string, data: {
+    amountPaid: number;
+    paymentMethod?: 'cash' | 'bank_transfer' | 'card';
+    bankName?: string;
+    accountNumber?: string;
+  }): Promise<Sale> => {
+    return apiCall(`/sales/${saleId}/payment`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }, true);
   },
 };
 
