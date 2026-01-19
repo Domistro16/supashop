@@ -45,9 +45,20 @@ export default function ClientLayout({
     // Detect if we're on a storefront subdomain
     const hostname = window.location.hostname
     const parts = hostname.split('.')
-    // If hostname is like "shopname.localhost" or "shopname.supashop.com"
-    const hasSubdomain = (hostname.includes('localhost') && parts.length > 1) ||
-      (!hostname.includes('localhost') && parts.length > 2)
+    const isVercelUrl = hostname.endsWith('vercel.app')
+
+    // Determine if we have a subdomain based on URL type:
+    // - Vercel: "supashop.vercel.app" (3 parts) = no subdomain, "hulop.supashop.vercel.app" (4+ parts) = subdomain
+    // - Localhost: "localhost" (1 part) = no subdomain, "hulop.localhost" (2+ parts) = subdomain  
+    // - Production: "supashop.com" (2 parts) = no subdomain, "hulop.supashop.com" (3+ parts) = subdomain
+    let hasSubdomain = false
+    if (isVercelUrl) {
+      hasSubdomain = parts.length > 3
+    } else if (hostname.includes('localhost')) {
+      hasSubdomain = parts.length > 1
+    } else {
+      hasSubdomain = parts.length > 2
+    }
     const subdomain = hasSubdomain ? parts[0] : null
     const isShopSubdomain = hasSubdomain && subdomain !== 'www' && subdomain !== 'app'
 

@@ -30,11 +30,23 @@ export default async function middleware(req: NextRequest) {
     // Hostname in local: "hulop.localhost:3000" or "localhost:3000"
     const isLocal = hostname.includes("localhost")
 
+    // Check for Vercel preview/production URLs (e.g., supashop.vercel.app)
+    // These should be treated as the main app, not as shop subdomains
+    const isVercelUrl = hostname.endsWith("vercel.app")
+
     // Get the subdomain
     let subdomain: string | null = null
 
-    if (isLocal) {
-        // Localhost logic
+    if (isVercelUrl) {
+        // Vercel URLs: "supashop.vercel.app" or "hulop.supashop.vercel.app"
+        const parts = hostname.split(".")
+        // parts = ["supashop", "vercel", "app"] -> Length 3 -> Main App (no subdomain)
+        // parts = ["hulop", "supashop", "vercel", "app"] -> Length 4 -> Subdomain "hulop"
+        if (parts.length > 3) {
+            subdomain = parts[0]
+        }
+    } else if (isLocal) {
+        // Localhost logic: "localhost:3000" or "hulop.localhost:3000"
         const parts = hostname.split(".")
         // parts = ["localhost:3000"] -> Length 1 -> Main App
         // parts = ["hulop", "localhost:3000"] -> Length 2 -> Subdomain "hulop"
