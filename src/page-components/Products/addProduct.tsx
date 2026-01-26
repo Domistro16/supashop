@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { addProduct } from "@/supabaseClient";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Supplier, Product, products as productsApi } from "@/lib/api";
 import {
   AlertDialog,
@@ -56,8 +56,15 @@ interface QuantityInputProps {
 }
 
 export function QuantityInput({ value, onChange }: QuantityInputProps) {
-  const [inputValue, setInputValue] = useState<string>("0");
+  const [inputValue, setInputValue] = useState<string>(value?.toString() || "0");
   const [selectedUnit, setSelectedUnit] = useState<string>("pieces");
+
+  // Sync with prop changes if value changes externally (e.g. form reset)
+  useEffect(() => {
+    if (selectedUnit === 'pieces') {
+      setInputValue(value?.toString() || "0");
+    }
+  }, [value, selectedUnit]);
 
   const currentMultiplier = UNIT_MULTIPLIERS.find(
     (u) => u.value === selectedUnit

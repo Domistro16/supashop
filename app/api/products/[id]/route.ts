@@ -51,7 +51,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, stock, price, categoryName, supplierId } = body;
+    const { name, stock, price, categoryName, supplierId, costPrice } = body;
 
     const product = await prisma.product.findFirst({
       where: { id, shopId },
@@ -69,6 +69,7 @@ export async function PUT(
         ...(price !== undefined && { price }),
         ...(categoryName !== undefined && { categoryName }),
         ...(supplierId !== undefined && { supplierId }),
+        ...(costPrice !== undefined && { costPrice }),
       },
     });
 
