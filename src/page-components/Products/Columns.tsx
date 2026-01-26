@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal, ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { products } from "@/lib/api";
 import toast from "react-hot-toast";
 
@@ -60,9 +60,7 @@ const formSchema = z.object({
   price: z.string().min(2, {
     error: "Price must be at least 2 characters.",
   }),
-  cost_price: z.string().min(1, {
-    error: "Cost price is required.",
-  }),
+  cost_price: z.string().optional(),
 });
 
 export const columns: ColumnDef<Product>[] = [
@@ -261,6 +259,20 @@ export const columns: ColumnDef<Product>[] = [
           cost_price: product.costPrice || "",
         },
       });
+
+      // Reset form when modal opens to ensure fresh data
+      useEffect(() => {
+        if (isOpen) {
+          form.reset({
+            product_name: product.name,
+            category: product.category,
+            stock: product.stock,
+            price: product.price,
+            cost_price: product.costPrice || "",
+          });
+        }
+      }, [isOpen, product, form]);
+
       async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
           await products.update(product.id, {
