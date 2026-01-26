@@ -943,6 +943,23 @@ export const suppliers = {
   },
 };
 
+// ============================================
+// Reports API
+// ============================================
+
+export const reports = {
+  getStats: async (): Promise<{
+    revenue: number;
+    profit: number;
+    salesCount: number;
+    revenueChange: number;
+    profitChange: number;
+    salesChange: number;
+  }> => {
+    return apiCall('/reports/stats', {}, true);
+  },
+};
+
 export const api = {
   auth,
   shops,
@@ -955,6 +972,7 @@ export const api = {
   notifications,
   customers,
   suppliers,
+  reports,
 };
 
 export default api;

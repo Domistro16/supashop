@@ -155,6 +155,17 @@ export async function POST(request: NextRequest) {
             },
           });
         }
+      } else if (Number(effectiveAmountPaid) > 0) {
+        // Automatically create an installment for the initial payment
+        await tx.installment.create({
+          data: {
+            saleId: newSale.id,
+            amount: effectiveAmountPaid,
+            paymentMethod: paymentMethod || 'cash',
+            bankName: bankName || null,
+            accountNumber: accountNumber || null,
+          },
+        });
       }
 
       // Create sale items and update product stock

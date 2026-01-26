@@ -147,7 +147,7 @@ export const getSales = async (): Promise<Transaction[]> => {
         payment_method: item.paymentMethod as Transaction['payment_method'],
         bank_name: item.bankName,
         account_number: item.accountNumber,
-        amount_paid: item.amountPaid?.toString(),
+        amount_paid: amountPaid.toString(),
         outstanding_balance: item.outstandingBalance?.toString(),
         payment_status: item.paymentStatus as Transaction['payment_status'],
       });
@@ -338,5 +338,15 @@ export const record_sale = async (
   } catch (error) {
     console.error('Failed to record sale:', error);
     return false;
+  }
+};
+
+export const getDashboardStats = async () => {
+  try {
+    const stats = await api.reports.getStats();
+    return stats;
+  } catch (error) {
+    console.error('Failed to get dashboard stats:', error);
+    return null;
   }
 };

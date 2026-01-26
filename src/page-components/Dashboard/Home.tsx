@@ -66,10 +66,19 @@ export default function Home({
   sales,
   shop,
   items,
+  stats,
 }: {
   sales: Transaction[];
   shop: any;
   items: Product[];
+  stats?: {
+    revenue: number;
+    profit: number;
+    salesCount: number;
+    revenueChange: number;
+    profitChange: number;
+    salesChange: number;
+  };
 }) {
   const { refreshAll } = useDataRefresh();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -87,41 +96,25 @@ export default function Home({
     }
   };
 
-  const todaySales = filterToday(sales);
-  const yesterdaySales = filterYesterday(sales);
-  console.log(todaySales);
+  // Provide defaults if stats failed to load (e.g. initial render or error)
+  const defaults = {
+    revenue: 0,
+    profit: 0,
+    salesCount: 0,
+    revenueChange: 0,
+    profitChange: 0,
+    salesChange: 0,
+  };
+
+  const finalStats = stats || defaults;
+
+  // Calculate total revenue from all sales for the MonthlyTarget comparison
+  // (We might want to keep this simple or also fetch it, but usually 'rev' in MonthlyTarget is 'total historical revenue'?
+  // Original code: 'rev = sales.reduce(...)'. Sales is ALL sales.
+  // So let's keep 'rev' as Historical Revenue (Cash Basis)
   const rev = sales.reduce((sum, sale) => {
-    return sum + Number(sale.total_amount); // change 'amount' if your field is named differently
+    return sum + Number(sale.amount_paid);
   }, 0);
-  const total = todaySales.reduce((sum, sale) => {
-    return sum + Number(sale.total_amount); // change 'amount' if your field is named differently
-  }, 0);
-  const yesterdayRevenue = yesterdaySales.reduce((sum, sale) => {
-    return sum + Number(sale.total_amount); // change 'amount' if your field is named differently
-  }, 0);
-
-  const revenueChange =
-    yesterdayRevenue === 0
-      ? 100 // avoid divide-by-zero, if no sales yesterday treat today as 100% increase
-      : ((total - yesterdayRevenue) / yesterdayRevenue) * 100;
-
-  const todayCount = todaySales.length;
-  const yesterdayCount = yesterdaySales.length;
-
-  // Percentage change in number of sales
-  const salesChange =
-    yesterdayCount === 0
-      ? 100 // or handle differently if you want
-      : ((todayCount - yesterdayCount) / yesterdayCount) * 100;
-
-  // Profit Calculations
-  const todayProfit = todaySales.reduce((sum, sale) => sum + (sale.profit || 0), 0);
-  const yesterdayProfit = yesterdaySales.reduce((sum, sale) => sum + (sale.profit || 0), 0);
-
-  const profitChange =
-    yesterdayProfit === 0
-      ? 100
-      : ((todayProfit - yesterdayProfit) / yesterdayProfit) * 100;
 
   const salesPerMonth = sales.reduce((acc, sale) => {
     const date = new Date(sale.created_at);
@@ -159,19 +152,19 @@ export default function Home({
       <div className="grid grid-cols-12 gap-3 sm:gap-4">
         <div className="col-span-12 space-y-3 sm:space-y-4 xl:col-span-7">
           <EcommerceMetrics
-            sales={todayCount}
-            revenue={total}
-            revenueChange={revenueChange}
-            salesChange={salesChange}
-            profit={todayProfit}
-            profitChange={profitChange}
+            sales={finalStats.salesCount}
+            revenue={finalStats.revenue}
+            revenueChange={finalStats.revenueChange}
+            salesChange={finalStats.salesChange}
+            profit={finalStats.profit}
+            profitChange={finalStats.profitChange}
           />
 
           <MonthlySalesChart sales={salesPerMonth as []} />
         </div>
 
         <div className="col-span-12 xl:col-span-5">
-          <MonthlyTarget revenue={rev} target={shop.target} today={total} />
+          <MonthlyTarget revenue={rev} target={shop.target} today={finalStats.revenue} />
         </div>
 
         {/* Unified AI-Powered Insights Section */}
