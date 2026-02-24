@@ -600,26 +600,43 @@ export default function Products({ products }: { products: Product[] }) {
                         currency: "NGN",
                       }).format(total)}
                     </div>
-                    <div className="text-xs text-gray-300 mt-1">
-                      Profit: <span className="text-green-400 font-medium">
-                        {(() => {
-                          const totalCost = selected.reduce((sum, p) => sum + ((quantities[p.id] || 0) * Number(p.costPrice || 0)), 0);
-                          const profit = Math.max(0, total - totalCost);
-                          const margin = total > 0 ? (profit / total) * 100 : 0;
+                    <div className="text-xs text-gray-300 mt-1 space-y-1 text-right">
+                      <div>
+                        Expected Profit: <span className="text-purple-400 font-medium">
+                          {(() => {
+                            const totalCost = selected.reduce((sum, p) => sum + ((quantities[p.id] || 0) * Number(p.costPrice || 0)), 0);
+                            const profit = Math.max(0, total - totalCost);
+                            const margin = total > 0 ? (profit / total) * 100 : 0;
 
-                          return (
-                            <>
-                              {new Intl.NumberFormat("en-NG", {
-                                style: "currency",
-                                currency: "NGN",
-                              }).format(profit)}
-                              <span className="ml-2 text-xs bg-green-500/20 px-2 py-0.5 rounded-full">
-                                {margin.toFixed(0)}%
-                              </span>
-                            </>
-                          );
-                        })()}
-                      </span>
+                            return (
+                              <>
+                                {new Intl.NumberFormat("en-NG", {
+                                  style: "currency",
+                                  currency: "NGN",
+                                }).format(profit)}
+                                <span className="ml-2 text-xs bg-purple-500/20 px-2 py-0.5 rounded-full">
+                                  {margin.toFixed(0)}%
+                                </span>
+                              </>
+                            );
+                          })()}
+                        </span>
+                      </div>
+                      <div>
+                        Realized Profit: <span className="text-green-400 font-medium">
+                          {(() => {
+                            const totalCost = selected.reduce((sum, p) => sum + ((quantities[p.id] || 0) * Number(p.costPrice || 0)), 0);
+                            const expectedProfit = Math.max(0, total - totalCost);
+                            const paid = paymentType === 'full' ? total : installmentTotal;
+                            const realized = total > 0 ? (paid / total) * expectedProfit : 0;
+
+                            return new Intl.NumberFormat("en-NG", {
+                              style: "currency",
+                              currency: "NGN",
+                            }).format(realized);
+                          })()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

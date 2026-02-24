@@ -32,12 +32,14 @@ export function useLocation() {
 
 export function useParams() {
   // This would need dynamic route params - for now return empty
-  return {}
+  return {} as Record<string, string>
 }
 
 // Link component wrapper
-export function RouterLink({ to, ...props }: ComponentProps<typeof Link> & { to: string }) {
-  return <Link href={to} {...props} />
+export function RouterLink({ to, ...props }: any) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { href, ...otherProps } = props;
+  return <Link href={to} {...otherProps} />
 }
 
 export { Link }

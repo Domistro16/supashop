@@ -37,6 +37,17 @@ export async function GET(request: NextRequest) {
             phone: true,
           },
         },
+        saleItems: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                costPrice: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -313,6 +324,7 @@ export async function POST(request: NextRequest) {
                 name: true,
                 price: true,
                 stock: true,
+                costPrice: true,
                 categoryName: true,
                 supplierId: true,
               },

@@ -22,7 +22,7 @@ export default function Single({
   transactions: Transaction[];
   orderId?: string;
 }) {
-  const params = useParams();
+  const params = useParams() as any;
   const orderId = propOrderId || params?.orderId;
 
   // Try to find in props (support both order_id and UUID)
