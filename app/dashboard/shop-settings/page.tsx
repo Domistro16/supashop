@@ -143,11 +143,21 @@ export default function ShopSettingsPage() {
         </div>
     );
 
+    const slugify = (text: string) => {
+        return text
+            .toString()
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-')     // Replace spaces with -
+            .replace(/[^\w-]+/g, '')  // Remove all non-word chars
+            .replace(/--+/g, '-');    // Replace multiple - with single -
+    };
+
     const isDev = process.env.NODE_ENV === 'development';
     const shopUrl = shop
         ? isDev
-            ? `http://${shop.name}.localhost:3000`
-            : `https://${shop.name}.supashop-ten.vercel.app`
+            ? `http://${slugify(shop.name)}.localhost:3000`
+            : `https://${slugify(shop.name)}.supashop-ten.vercel.app`
         : '#';
 
     return (
