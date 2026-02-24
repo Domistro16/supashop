@@ -274,23 +274,37 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
             <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-3">
               <div>
                 <div className="text-base font-medium text-gray-900 dark:text-white/90">Total Price</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Profit: <span className="text-green-600 dark:text-green-400 font-medium">
-                    {(() => {
-                      const totalCost = Number(quantity || 0) * Number(product.costPrice || 0);
-                      const profit = Math.max(0, totalPrice - totalCost);
-                      const margin = totalPrice > 0 ? (profit / totalPrice) * 100 : 0;
+                <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1 mt-1">
+                  <div>
+                    Expected Profit: <span className="text-purple-600 dark:text-purple-400 font-medium">
+                      {(() => {
+                        const totalCost = Number(quantity || 0) * Number(product.costPrice || 0);
+                        const profit = Math.max(0, totalPrice - totalCost);
+                        const margin = totalPrice > 0 ? (profit / totalPrice) * 100 : 0;
 
-                      return (
-                        <>
-                          {formatCurrency(profit)}
-                          <span className="ml-1 text-[10px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded-full">
-                            {margin.toFixed(0)}%
-                          </span>
-                        </>
-                      );
-                    })()}
-                  </span>
+                        return (
+                          <>
+                            {formatCurrency(profit)}
+                            <span className="ml-1 text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded-full">
+                              {margin.toFixed(0)}%
+                            </span>
+                          </>
+                        );
+                      })()}
+                    </span>
+                  </div>
+                  <div>
+                    Realized Profit: <span className="text-green-600 dark:text-green-400 font-medium">
+                      {(() => {
+                        const totalCost = Number(quantity || 0) * Number(product.costPrice || 0);
+                        const expectedProfit = Math.max(0, totalPrice - totalCost);
+                        const paid = paymentType === 'full' ? totalPrice : installmentTotal;
+                        const realized = totalPrice > 0 ? (paid / totalPrice) * expectedProfit : 0;
+
+                        return formatCurrency(realized);
+                      })()}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(totalPrice)}</div>

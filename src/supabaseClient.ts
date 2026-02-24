@@ -127,7 +127,12 @@ export const getSales = async (): Promise<Transaction[]> => {
       // (If realized profit is negative, it means we haven't covered costs yet)
       const expectedProfit = revenue - totalCost;
       const amountPaid = Number(item.amountPaid) || (item.paymentStatus === 'completed' ? revenue : 0);
-      const realizedProfit = amountPaid - totalCost;
+
+      // Calculate Realized Profit: (AmountPaid / TotalRevenue) * ExpectedProfit
+      // This distributes profit proportionally to the amount paid.
+      const realizedProfit = revenue > 0
+        ? (amountPaid / revenue) * expectedProfit
+        : (amountPaid - totalCost);
 
       // Keep legacy profit field for compatibility (points to expected profit)
       const profit = expectedProfit;
@@ -181,7 +186,11 @@ export const getSale = async (id: string): Promise<Transaction | null> => {
     const revenue = Number(sale.totalAmount);
     const amountPaid = Number(sale.amountPaid) || (sale.paymentStatus === 'completed' ? revenue : 0);
     const expectedProfit = revenue - totalCost;
-    const realizedProfit = amountPaid - totalCost;
+
+    // Calculate Realized Profit: (AmountPaid / TotalRevenue) * ExpectedProfit
+    const realizedProfit = revenue > 0
+      ? (amountPaid / revenue) * expectedProfit
+      : (amountPaid - totalCost);
 
     return {
       id: sale.id,

@@ -103,6 +103,7 @@ export async function getSale(req: AuthRequest, res: Response) {
               select: {
                 id: true,
                 name: true,
+                costPrice: true,
               },
             },
           },
@@ -151,6 +152,7 @@ export async function getSaleItems(req: AuthRequest, res: Response) {
           select: {
             id: true,
             name: true,
+            costPrice: true,
           },
         },
       },
@@ -235,6 +237,7 @@ export async function createSale(req: AuthRequest, res: Response) {
             productId: item.productId,
             quantity: item.quantity,
             price: item.price,
+            costPrice: currentProduct?.costPrice || 0, // Snapshot current cost
             discountPercent: item.discountPercent || 0,
           },
         });
@@ -330,6 +333,7 @@ export async function createSale(req: AuthRequest, res: Response) {
                 name: true,
                 price: true,
                 stock: true,
+                costPrice: true,
                 categoryName: true,
                 supplierId: true,
               },
