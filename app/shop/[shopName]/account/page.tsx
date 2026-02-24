@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { User, Mail, Phone, LogOut, Package, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -16,6 +16,7 @@ interface Customer {
 
 export default function ProfilePage() {
     const router = useRouter();
+    const { shopName } = useParams();
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -23,7 +24,7 @@ export default function ProfilePage() {
         const fetchProfile = async () => {
             const token = localStorage.getItem('customer_token');
             if (!token) {
-                router.push('/signin');
+                router.push(`/shop/${shopName}/signin`);
                 return;
             }
 
@@ -36,7 +37,7 @@ export default function ProfilePage() {
                     if (res.status === 401) {
                         localStorage.removeItem('customer_token');
                         localStorage.removeItem('customer_id');
-                        router.push('/signin');
+                        router.push(`/shop/${shopName}/signin`);
                     }
                     throw new Error('Failed to fetch profile');
                 }
@@ -58,7 +59,7 @@ export default function ProfilePage() {
         localStorage.removeItem('customer_token');
         localStorage.removeItem('customer_id');
         toast.success('Logged out successfully');
-        router.push('/signin');
+        router.push(`/shop/${shopName}/signin`);
     };
 
     if (isLoading) {
@@ -119,9 +120,8 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            {/* Quick Actions */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Link href="/orders" className="block p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-500 transition-colors group">
+                <Link href={`/shop/${shopName}/orders`} className="block p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-500 transition-colors group">
                     <Package className="w-8 h-8 text-blue-500 mb-3 group-hover:scale-110 transition-transform" />
                     <h3 className="font-semibold text-gray-900 dark:text-white">My Orders</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Track and view your order history</p>

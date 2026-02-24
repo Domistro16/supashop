@@ -84,13 +84,13 @@ export default function MyOrdersPage() {
                 <p className="text-gray-500 dark:text-gray-400 mb-6">Track your order history and status</p>
                 <div className="flex gap-3">
                     <Button asChild size="lg">
-                        <Link href="/signin">
+                        <Link href={`/shop/${shopName}/signin`}>
                             <LogIn className="w-4 h-4 mr-2" />
                             Sign In
                         </Link>
                     </Button>
                     <Button asChild variant="outline" size="lg" className="dark:border-gray-600">
-                        <Link href="/signup">Create Account</Link>
+                        <Link href={`/shop/${shopName}/signup`}>Create Account</Link>
                     </Button>
                 </div>
             </div>
@@ -108,7 +108,7 @@ export default function MyOrdersPage() {
                     </p>
                 </div>
                 <Button variant="outline" asChild className="dark:border-gray-600">
-                    <Link href="/">
+                    <Link href={`/shop/${shopName}`}>
                         <ShoppingBag className="w-4 h-4 mr-2" />
                         <span className="hidden sm:inline">Continue Shopping</span>
                         <span className="sm:hidden">Shop</span>
@@ -124,7 +124,7 @@ export default function MyOrdersPage() {
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No orders yet</h3>
                     <p className="text-gray-500 dark:text-gray-400 mb-6">Your order history will appear here</p>
                     <Button asChild>
-                        <Link href="/">
+                        <Link href={`/shop/${shopName}`}>
                             <ShoppingBag className="w-4 h-4 mr-2" />
                             Start Shopping
                         </Link>
@@ -139,7 +139,7 @@ export default function MyOrdersPage() {
                         return (
                             <Link
                                 key={order.id}
-                                href={`/order/${order.id}`}
+                                href={`/shop/${shopName}/order/${order.id}`}
                                 className="block bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-all group"
                             >
                                 <div className="flex items-start justify-between gap-4">

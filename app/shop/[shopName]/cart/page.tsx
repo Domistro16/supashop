@@ -54,7 +54,7 @@ export default function CartPage() {
 
         if (!isAuthenticated || !customerInfo) {
             toast.error('Please sign in to place an order');
-            router.push('/signin');
+            router.push(`/shop/${shopName}/signin`);
             return;
         }
 
@@ -86,7 +86,7 @@ export default function CartPage() {
 
             clearCart();
             toast.success('Order placed successfully!');
-            router.push(`/order/${data.orderId}`);
+            router.push(`/shop/${shopName}/order/${data.orderId}`);
         } catch (error) {
             console.error(error);
             toast.error('Failed to place order. Please try again.');
@@ -101,6 +101,7 @@ export default function CartPage() {
         setIsAuthenticated(false);
         setCustomerInfo(null);
         toast.success('Signed out');
+        router.push(`/shop/${shopName}/signin`);
     };
 
     const formatPrice = (price: number) => {
@@ -124,7 +125,7 @@ export default function CartPage() {
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Your cart is empty</h2>
                 <p className="text-gray-500 dark:text-gray-400 mb-6">Looks like you haven't added anything yet.</p>
                 <Button asChild>
-                    <Link href="/">
+                    <Link href={`/shop/${shopName}`}>
                         <ArrowRight className="w-4 h-4 mr-2" />
                         Continue Shopping
                     </Link>
@@ -259,13 +260,13 @@ export default function CartPage() {
                                 </div>
                                 <div className="flex gap-2">
                                     <Button asChild className="flex-1" size="sm">
-                                        <Link href="/signin">
+                                        <Link href={`/shop/${shopName}/signin`}>
                                             <LogIn className="w-4 h-4 mr-1" />
                                             Sign In
                                         </Link>
                                     </Button>
                                     <Button asChild variant="outline" className="flex-1 dark:border-gray-600" size="sm">
-                                        <Link href="/signup">Sign Up</Link>
+                                        <Link href={`/shop/${shopName}/signup`}>Sign Up</Link>
                                     </Button>
                                 </div>
                             </div>
@@ -296,8 +297,8 @@ export default function CartPage() {
                                     type="button"
                                     onClick={() => setPaymentType('full')}
                                     className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${paymentType === 'full'
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
                                         }`}
                                 >
                                     Full Payment
@@ -306,8 +307,8 @@ export default function CartPage() {
                                     type="button"
                                     onClick={() => setPaymentType('installment')}
                                     className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${paymentType === 'installment'
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
                                         }`}
                                 >
                                     Installment
