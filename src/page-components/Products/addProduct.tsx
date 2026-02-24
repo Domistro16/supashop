@@ -134,7 +134,7 @@ const formSchema = z.object({
   category: z.string().min(2, {
     error: "Category name must be at least 2 characters.",
   }),
-  stock: z.int().min(0, {
+  stock: z.number().int().min(0, {
     error: "Stock must be at least 0",
   }),
   price: z.string().min(2, {

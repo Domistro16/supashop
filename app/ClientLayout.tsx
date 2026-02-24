@@ -65,7 +65,7 @@ export default function ClientLayout({
     // Only treat as storefront if on subdomain AND not on an excluded path (auth, dashboard, etc.)
     const excludedPaths = ['/auth/', '/dashboard', '/products', '/sales', '/customers', '/staff', '/suppliers', '/reports', '/roles', '/profile', '/calendar']
     const isExcludedPath = excludedPaths.some(path => pathname.startsWith(path))
-    const isActualStorefront = isShopSubdomain && !isExcludedPath
+    const isActualStorefront = (isShopSubdomain || pathname.startsWith('/shop/')) && !isExcludedPath
     setIsStorefront(isActualStorefront)
 
     const authPages = ['/auth/signin', '/auth/signup', '/']

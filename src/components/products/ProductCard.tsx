@@ -49,7 +49,7 @@ const formSchema = z.object({
   category: z.string().min(2, {
     error: "Category name must be at least 2 characters.",
   }),
-  stock: z.number().min(0, {
+  stock: z.number().int().min(0, {
     error: "Stock must be at least 0",
   }),
   price: z.string().min(1, {
@@ -320,7 +320,13 @@ export default function ProductCard({ product, onSelect, isSelected }: ProductCa
                     <FormItem className="flex-1">
                       <FormLabel>Stock Quantity</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Enter stock quantity" {...field} className="w-full" />
+                        <Input
+                          type="number"
+                          placeholder="Enter stock quantity"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value === "" ? 0 : Number(e.target.value))}
+                          className="w-full"
+                        />
                       </FormControl>
                       <FormDescription>The available stock for the product.</FormDescription>
                       <FormMessage />
