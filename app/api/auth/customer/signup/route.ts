@@ -28,7 +28,12 @@ export async function POST(req: Request) {
 
         // Find the shop
         const shop = await prisma.shop.findFirst({
-            where: { name: { equals: shopName as string, mode: 'insensitive' } }
+            where: {
+                OR: [
+                    { name: { equals: shopName as string, mode: 'insensitive' } },
+                    { name: { equals: (shopName as string).replace(/-/g, ' '), mode: 'insensitive' } }
+                ]
+            }
         });
 
         if (!shop) {

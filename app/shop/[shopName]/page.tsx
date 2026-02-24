@@ -17,10 +17,10 @@ export default async function ShopPage({ params, searchParams }: PageProps) {
 
     const shop = await prisma.shop.findFirst({
         where: {
-            name: {
-                equals: shopName,
-                mode: 'insensitive'
-            }
+            OR: [
+                { name: { equals: shopName, mode: 'insensitive' } },
+                { name: { equals: shopName.replace(/-/g, ' '), mode: 'insensitive' } }
+            ]
         },
         select: {
             id: true,

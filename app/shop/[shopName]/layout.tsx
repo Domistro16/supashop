@@ -18,10 +18,10 @@ export async function generateMetadata({ params }: ShopLayoutProps): Promise<Met
 
     const shop = await prisma.shop.findFirst({
         where: {
-            name: {
-                equals: shopName,
-                mode: 'insensitive'
-            }
+            OR: [
+                { name: { equals: shopName, mode: 'insensitive' } },
+                { name: { equals: shopName.replace(/-/g, ' '), mode: 'insensitive' } }
+            ]
         },
         select: {
             name: true,
@@ -48,10 +48,10 @@ export default async function ShopLayout({
 
     const shop = await prisma.shop.findFirst({
         where: {
-            name: {
-                equals: shopName,
-                mode: 'insensitive'
-            }
+            OR: [
+                { name: { equals: shopName, mode: 'insensitive' } },
+                { name: { equals: shopName.replace(/-/g, ' '), mode: 'insensitive' } }
+            ]
         },
         select: {
             id: true,
