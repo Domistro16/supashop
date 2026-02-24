@@ -143,7 +143,12 @@ export default function ShopSettingsPage() {
         </div>
     );
 
-    const shopUrl = shop ? `http://${shop.name}.localhost:3000` : '#';
+    const isDev = process.env.NODE_ENV === 'development';
+    const shopUrl = shop
+        ? isDev
+            ? `http://${shop.name}.localhost:3000`
+            : `https://${shop.name}.supashop-ten.vercel.app`
+        : '#';
 
     return (
         <div className="space-y-6">
