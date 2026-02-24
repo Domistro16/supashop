@@ -51,7 +51,7 @@ export default async function OrderPage({ params }: PageProps) {
         <div className="max-w-3xl mx-auto">
             {/* Back Button */}
             <Button variant="ghost" className="mb-6 pl-0 hover:bg-transparent hover:underline dark:text-gray-300" asChild>
-                <Link href="/orders">
+                <Link href={`/shop/${shopName}/orders`}>
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Orders
                 </Link>
@@ -61,7 +61,7 @@ export default async function OrderPage({ params }: PageProps) {
             <div className={`p-6 sm:p-8 rounded-2xl text-center mb-6 border ${status.bgColor} ${status.borderColor}`}>
                 <div className="w-16 h-16 mx-auto rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center mb-4">
                     <StatusIcon className={`w-8 h-8 ${status.variant === 'destructive' ? 'text-orange-500' :
-                            status.variant === 'secondary' ? 'text-blue-500' : 'text-green-500'
+                        status.variant === 'secondary' ? 'text-blue-500' : 'text-green-500'
                         }`} />
                 </div>
                 <h1 className="text-xl sm:text-2xl font-bold mb-2 text-gray-900 dark:text-white">{status.text}</h1>

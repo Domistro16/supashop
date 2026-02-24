@@ -112,7 +112,7 @@ export default async function ShopLayout({
                 <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
                     <div className="container mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
                         {/* Logo */}
-                        <Link href="/" className="flex items-center gap-2 group">
+                        <Link href={`/shop/${shopName}`} className="flex items-center gap-2 group">
                             <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-1.5 sm:p-2 rounded-lg group-hover:from-blue-700 group-hover:to-blue-800 transition-all shadow-sm">
                                 <Store className="w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
@@ -132,7 +132,7 @@ export default async function ShopLayout({
                                 className="rounded-full h-9 w-9 sm:h-10 sm:w-10 hover:bg-gray-100 dark:hover:bg-gray-700"
                                 asChild
                             >
-                                <Link href="/orders" title="My Orders">
+                                <Link href={`/shop/${shopName}/orders`} title="My Orders">
                                     <Package className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                                 </Link>
                             </Button>
@@ -143,7 +143,7 @@ export default async function ShopLayout({
                                 className="rounded-full h-9 w-9 sm:h-10 sm:w-10 hover:bg-gray-100 dark:hover:bg-gray-700"
                                 asChild
                             >
-                                <Link href="/account" title="Account">
+                                <Link href={`/shop/${shopName}/account`} title="Account">
                                     <User className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                                 </Link>
                             </Button>
@@ -154,7 +154,7 @@ export default async function ShopLayout({
                                 className="rounded-full h-9 w-9 sm:h-10 sm:w-10 hover:bg-gray-100 dark:hover:bg-gray-700 relative"
                                 asChild
                             >
-                                <Link href="/cart">
+                                <Link href={`/shop/${shopName}/cart`}>
                                     <ShoppingCart className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                                 </Link>
                             </Button>

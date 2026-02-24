@@ -210,7 +210,7 @@ export default async function ShopPage({ params, searchParams }: PageProps) {
                             </p>
                             {(search || category) && (
                                 <Button asChild variant="outline">
-                                    <Link href="/" className="gap-2">
+                                    <Link href={`/shop/${shopName}`} className="gap-2">
                                         <X className="w-4 h-4" />
                                         Clear Filters
                                     </Link>

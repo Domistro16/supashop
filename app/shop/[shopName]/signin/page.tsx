@@ -57,7 +57,7 @@ export default function CustomerSigninPage() {
             <div className="w-full max-w-md">
                 {/* Back Link */}
                 <Link
-                    href="/"
+                    href={`/shop/${shopName}`}
                     className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 text-sm transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />
@@ -118,7 +118,7 @@ export default function CustomerSigninPage() {
                     {/* Footer */}
                     <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
                         Don't have an account?{' '}
-                        <Link href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                        <Link href={`/shop/${shopName}/signup`} className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
                             Sign Up
                         </Link>
                     </div>

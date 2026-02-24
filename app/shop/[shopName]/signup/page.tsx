@@ -50,7 +50,7 @@ export default function CustomerSignupPage() {
             }
 
             toast.success('Account created successfully!');
-            router.push(`/signin`);
+            router.push(`/shop/${shopName}/signin`);
         } catch (error: any) {
             toast.error(error.message || 'Failed to create account');
         } finally {
@@ -63,7 +63,7 @@ export default function CustomerSignupPage() {
             <div className="w-full max-w-md">
                 {/* Back Link */}
                 <Link
-                    href="/"
+                    href={`/shop/${shopName}`}
                     className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 text-sm transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />
@@ -174,7 +174,7 @@ export default function CustomerSignupPage() {
                     {/* Footer */}
                     <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
                         Already have an account?{' '}
-                        <Link href="/signin" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                        <Link href={`/shop/${shopName}/signin`} className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
                             Sign In
                         </Link>
                     </div>
