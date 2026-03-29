@@ -7,7 +7,7 @@ import { createDefaultRoles } from '@server/utils/defaultRoles';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, firstName, lastName, shopName, shopAddress } = body;
+    const { email, password, firstName, lastName, shopName, shopAddress, heroTitle, heroSubtitle, primaryColor } = body;
 
     // Validate input
     if (!email || !password || !firstName || !lastName || !shopName) {
@@ -49,6 +49,9 @@ export async function POST(request: NextRequest) {
           name: shopName,
           address: shopAddress,
           ownerId: user.id,
+          ...(heroTitle && { heroTitle }),
+          ...(heroSubtitle && { heroSubtitle }),
+          primaryColor: primaryColor || 'blue',
         },
       });
 

@@ -213,6 +213,9 @@ export const auth = {
     lastName: string;
     shopName: string;
     shopAddress?: string;
+    heroTitle?: string;
+    heroSubtitle?: string;
+    primaryColor?: string;
   }): Promise<AuthResponse> => {
     const response = await apiCall<AuthResponse>('/auth/signup', {
       method: 'POST',
