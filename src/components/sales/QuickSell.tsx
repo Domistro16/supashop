@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Product } from '@/page-components/Products/Columns';
-import { Customer, InstallmentInput } from '@/lib/api';
+import api, { Customer, InstallmentInput, LoyaltySettings } from '@/lib/api';
 import CustomerSearchSelect from '@/components/customers/CustomerSearchSelect';
 import { record_sale } from '@/supabaseClient';
 import { toast } from 'react-hot-toast';
@@ -35,7 +35,34 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
   const [newInstallmentBank, setNewInstallmentBank] = useState('');
   const [newInstallmentAccount, setNewInstallmentAccount] = useState('');
 
-  const totalPrice = quantity * Number(product.price);
+  // Loyalty redemption state
+  const [loyaltySettings, setLoyaltySettings] = useState<LoyaltySettings | null>(null);
+  const [pointsToRedeem, setPointsToRedeem] = useState<number>(0);
+
+  useEffect(() => {
+    if (!selectedCustomer) {
+      setPointsToRedeem(0);
+      return;
+    }
+    if (loyaltySettings) return;
+    api.loyalty
+      .getOverview()
+      .then((o) => setLoyaltySettings(o.settings))
+      .catch(() => {});
+  }, [selectedCustomer, loyaltySettings]);
+
+  const subtotal = quantity * Number(product.price);
+  const customerPoints = selectedCustomer?.loyaltyPoint?.points ?? 0;
+  const nairaPerPoint = loyaltySettings?.nairaPerPoint ?? 0;
+  const redemptionEnabled = !!(loyaltySettings?.enabled && selectedCustomer && customerPoints > 0 && nairaPerPoint > 0);
+  const maxRedeemablePoints = redemptionEnabled
+    ? Math.min(customerPoints, Math.floor(subtotal / Math.max(nairaPerPoint, 0.0001)))
+    : 0;
+  const redemptionDiscount = Math.min(
+    subtotal,
+    Math.max(0, pointsToRedeem) * nairaPerPoint
+  );
+  const totalPrice = Math.max(0, subtotal - redemptionDiscount);
 
   // Calculate total paid from installments
   const installmentTotal = useMemo(() => {
@@ -93,6 +120,9 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
 
     try {
       setLoading(true);
+      const redemption = redemptionEnabled && pointsToRedeem > 0
+        ? { pointsRedeemed: pointsToRedeem, redemptionDiscount }
+        : {};
       const success = await record_sale(
         [{
           product: product.id,
@@ -107,10 +137,12 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
             bankName: paymentMethod === 'bank_transfer' ? bankName : undefined,
             accountNumber: paymentMethod === 'bank_transfer' ? accountNumber : undefined,
             amountPaid: totalPrice,
+            ...redemption,
           }
           : {
             paymentType: 'installment',
             installments,
+            ...redemption,
           }
       );
 
@@ -177,6 +209,45 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Customer (Optional)</label>
             <CustomerSearchSelect selectedCustomer={selectedCustomer} onSelectCustomer={setSelectedCustomer} />
           </div>
+
+          {/* Loyalty Redemption */}
+          {redemptionEnabled && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                  Redeem loyalty points
+                </div>
+                <div className="text-xs text-amber-700 dark:text-amber-400">
+                  {customerPoints.toLocaleString()} pts available
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={maxRedeemablePoints}
+                  value={pointsToRedeem || ''}
+                  onChange={(e) =>
+                    setPointsToRedeem(Math.max(0, Math.min(maxRedeemablePoints, Number(e.target.value) || 0)))
+                  }
+                  placeholder="0"
+                  className="flex-1 px-3 py-2 text-sm border border-amber-200 dark:border-amber-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPointsToRedeem(maxRedeemablePoints)}
+                  className="text-xs font-medium text-amber-700 dark:text-amber-300 hover:underline"
+                >
+                  Max ({maxRedeemablePoints})
+                </button>
+              </div>
+              {pointsToRedeem > 0 && (
+                <div className="text-xs text-amber-700 dark:text-amber-300">
+                  Discount: {formatCurrency(redemptionDiscount)}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Payment Type Toggle */}
           <div>
@@ -270,6 +341,22 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
 
           {/* Total & Balance Summary */}
           <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md space-y-2">
+            {redemptionDiscount > 0 && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
+                <span className="text-gray-700 dark:text-gray-300">{formatCurrency(subtotal)}</span>
+              </div>
+            )}
+            {redemptionDiscount > 0 && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-amber-700 dark:text-amber-300">
+                  Points redeemed ({pointsToRedeem.toLocaleString()})
+                </span>
+                <span className="text-amber-700 dark:text-amber-300">
+                  - {formatCurrency(redemptionDiscount)}
+                </span>
+              </div>
+            )}
             {/* Total Price & Profit */}
             <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-3">
               <div>

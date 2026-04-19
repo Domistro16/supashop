@@ -63,6 +63,8 @@ type PaymentOptions = {
     bankName?: string;
     accountNumber?: string;
   }>;
+  pointsRedeemed?: number;
+  redemptionDiscount?: number;
 };
 
 // ... other types if any
@@ -337,12 +339,18 @@ export const record_sale = async (
       };
     });
 
+    // Apply loyalty redemption discount (floored at 0)
+    const redemptionDiscount = Math.max(0, Number(paymentOptions?.redemptionDiscount || 0));
+    const finalTotal = Math.max(0, totalAmount - redemptionDiscount);
+
+    const { redemptionDiscount: _drop, ...sendOptions } = paymentOptions || {};
+
     // Create sale with optional customer and payment info
     await api.sales.create({
       items: saleItems,
-      totalAmount,
+      totalAmount: finalTotal,
       customerId,
-      ...paymentOptions,
+      ...sendOptions,
     });
 
     console.log('Sale recorded successfully');

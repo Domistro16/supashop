@@ -50,6 +50,12 @@ model Shop {
   primaryColor        String?           @default("blue") @map("primary_color")
   isStorefrontEnabled Boolean           @default(true) @map("is_storefront_enabled")
   onboardingCompleted Boolean           @default(false) @map("onboarding_completed")
+  loyaltyEnabled           Boolean  @default(true) @map("loyalty_enabled")
+  loyaltyPointsPerNaira    Decimal  @default(0.01) @map("loyalty_points_per_naira") @db.Decimal(10, 4)
+  loyaltyNairaPerPoint     Decimal  @default(1) @map("loyalty_naira_per_point") @db.Decimal(10, 4)
+  loyaltySilverThreshold   Int      @default(1000) @map("loyalty_silver_threshold")
+  loyaltyGoldThreshold     Int      @default(5000) @map("loyalty_gold_threshold")
+  loyaltyPlatinumThreshold Int      @default(10000) @map("loyalty_platinum_threshold")
   activityLogs        ActivityLog[]
   customers           Customer[]
   notifications       Notification[]

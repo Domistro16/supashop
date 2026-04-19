@@ -18,7 +18,7 @@ import {
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
-import { Network, ShoppingCart, Shield, Store } from "lucide-react";
+import { Network, ShoppingCart, Shield, Store, Award } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -73,6 +73,11 @@ const navItems: NavItem[] = [
     icon: <UserCircleIcon />,
     name: "Customers",
     path: "/customers",
+  },
+  {
+    icon: <Award />,
+    name: "Loyalty",
+    path: "/dashboard/loyalty",
   },
   {
     icon: <BoxCubeIcon />,

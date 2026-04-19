@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@server/prisma';
 import { verifyAuth, getShopId } from '@server/middleware/auth';
+import { applySaleToLoyalty } from '@server/services/loyalty';
 
 function generateOrderId(): string {
   const timestamp = Date.now().toString(36);
@@ -81,7 +82,8 @@ export async function POST(request: NextRequest) {
       bankName,
       accountNumber,
       amountPaid,
-      installments = []
+      installments = [],
+      pointsRedeemed = 0,
     } = body;
 
     if (!items || items.length === 0) {
@@ -245,25 +247,12 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          // Update loyalty points (1 point per 100 spent)
-          const pointsToAdd = Math.floor(Number(totalAmount) / 100);
-
-          if (customer.loyaltyPoint) {
-            const newPoints = customer.loyaltyPoint.points + pointsToAdd;
-
-            let tier = 'bronze';
-            if (newPoints >= 10000) tier = 'platinum';
-            else if (newPoints >= 5000) tier = 'gold';
-            else if (newPoints >= 1000) tier = 'silver';
-
-            await prisma.loyaltyPoint.update({
-              where: { customerId },
-              data: {
-                points: newPoints,
-                tier,
-              },
-            });
-          }
+          await applySaleToLoyalty({
+            customerId,
+            shopId,
+            totalAmount: Number(totalAmount),
+            pointsRedeemed: Number(pointsRedeemed) || 0,
+          });
         }
       } catch (error) {
         console.error('Failed to update customer stats:', error);

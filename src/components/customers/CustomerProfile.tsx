@@ -3,6 +3,7 @@ import { useNavigate } from '@/lib/react-router-compat';
 import api, { Customer } from '../../lib/api';
 import { formatCurrency, formatTimeAgo } from '../../utils/formatters';
 import { toast } from 'react-hot-toast';
+import { Minus, Plus } from 'lucide-react';
 
 interface CustomerProfileProps {
   customerId: string;
@@ -12,6 +13,9 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
   const navigate = useNavigate();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
+  const [adjustDelta, setAdjustDelta] = useState<string>('');
+  const [adjustReason, setAdjustReason] = useState('');
+  const [adjusting, setAdjusting] = useState(false);
 
   useEffect(() => {
     loadCustomer();
@@ -27,6 +31,42 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
       toast.error('Failed to load customer');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const applyAdjust = async (direction: 'add' | 'remove') => {
+    const magnitude = Math.abs(Math.floor(Number(adjustDelta)));
+    if (!Number.isFinite(magnitude) || magnitude === 0) {
+      toast.error('Enter a number of points to adjust');
+      return;
+    }
+    const delta = direction === 'add' ? magnitude : -magnitude;
+    setAdjusting(true);
+    try {
+      const res = await api.loyalty.adjustPoints(customerId, delta, adjustReason || undefined);
+      setCustomer((prev) =>
+        prev
+          ? {
+              ...prev,
+              loyaltyPoint: {
+                id: prev.loyaltyPoint?.id || '',
+                customerId,
+                points: res.points,
+                tier: res.tier,
+                updatedAt: new Date().toISOString(),
+              },
+            }
+          : prev
+      );
+      setAdjustDelta('');
+      setAdjustReason('');
+      toast.success(
+        `${direction === 'add' ? 'Added' : 'Removed'} ${magnitude} points — ${res.points.toLocaleString()} total`
+      );
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to adjust points');
+    } finally {
+      setAdjusting(false);
     }
   };
 
@@ -131,6 +171,61 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
               ? formatCurrency(customer.totalSpent / customer.visitCount)
               : formatCurrency(0)}
           </p>
+        </div>
+      </div>
+
+      {/* Loyalty Adjustments */}
+      <div className="bg-white dark:bg-white/[0.03] shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white/90 mb-1">
+          Loyalty points
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Current balance:{' '}
+          <span className="font-medium text-gray-900 dark:text-white/90">
+            {(customer.loyaltyPoint?.points ?? 0).toLocaleString()} points
+          </span>
+          {customer.loyaltyPoint?.tier && (
+            <> · tier <span className="font-medium uppercase">{customer.loyaltyPoint.tier}</span></>
+          )}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="number"
+            min={0}
+            value={adjustDelta}
+            onChange={(e) => setAdjustDelta(e.target.value)}
+            placeholder="Points"
+            disabled={adjusting}
+            className="w-full sm:w-32 px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 disabled:opacity-50"
+          />
+          <input
+            type="text"
+            value={adjustReason}
+            onChange={(e) => setAdjustReason(e.target.value)}
+            placeholder="Reason (optional)"
+            disabled={adjusting}
+            className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 disabled:opacity-50"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => applyAdjust('add')}
+              disabled={adjusting}
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/50 disabled:opacity-50"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => applyAdjust('remove')}
+              disabled={adjusting}
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 rounded-md hover:bg-red-100 dark:hover:bg-red-900/50 disabled:opacity-50"
+            >
+              <Minus className="w-4 h-4 mr-1" />
+              Remove
+            </button>
+          </div>
         </div>
       </div>
 

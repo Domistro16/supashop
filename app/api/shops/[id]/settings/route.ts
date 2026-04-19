@@ -33,7 +33,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     try {
         const body = await req.json();
-        const { heroTitle, heroSubtitle, primaryColor, name, address, onboardingCompleted } = body;
+        const {
+            heroTitle,
+            heroSubtitle,
+            primaryColor,
+            name,
+            address,
+            onboardingCompleted,
+            loyaltyEnabled,
+            loyaltyPointsPerNaira,
+            loyaltyNairaPerPoint,
+            loyaltySilverThreshold,
+            loyaltyGoldThreshold,
+            loyaltyPlatinumThreshold,
+        } = body;
 
         const updatedShop = await prisma.shop.update({
             where: { id },
@@ -45,6 +58,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                 ...(address !== undefined && { address }),
                 ...(body.isStorefrontEnabled !== undefined && { isStorefrontEnabled: body.isStorefrontEnabled }),
                 ...(onboardingCompleted !== undefined && { onboardingCompleted }),
+                ...(loyaltyEnabled !== undefined && { loyaltyEnabled }),
+                ...(loyaltyPointsPerNaira !== undefined && { loyaltyPointsPerNaira }),
+                ...(loyaltyNairaPerPoint !== undefined && { loyaltyNairaPerPoint }),
+                ...(loyaltySilverThreshold !== undefined && { loyaltySilverThreshold }),
+                ...(loyaltyGoldThreshold !== undefined && { loyaltyGoldThreshold }),
+                ...(loyaltyPlatinumThreshold !== undefined && { loyaltyPlatinumThreshold }),
             }
         });
 

@@ -433,6 +433,7 @@ export const sales = {
     accountNumber?: string;
     amountPaid?: number;
     installments?: InstallmentInput[];
+    pointsRedeemed?: number;
   }): Promise<Sale> => {
     return apiCall('/sales', {
       method: 'POST',
@@ -1000,6 +1001,67 @@ export const reports = {
   },
 };
 
+// ============================================
+// Loyalty API
+// ============================================
+
+export interface LoyaltySettings {
+  enabled: boolean;
+  pointsPerNaira: number;
+  nairaPerPoint: number;
+  silverThreshold: number;
+  goldThreshold: number;
+  platinumThreshold: number;
+}
+
+export interface LoyaltyOverview {
+  settings: LoyaltySettings;
+  totalMembers: number;
+  totalActivePoints: number;
+  tierDistribution: Array<{ tier: string; count: number }>;
+  topMembers: Array<{
+    id: string;
+    name: string;
+    points: number;
+    tier: string;
+    totalSpent: number;
+  }>;
+}
+
+export const loyalty = {
+  getOverview: async (): Promise<LoyaltyOverview> => {
+    return apiCall('/loyalty/overview', {}, true);
+  },
+
+  updateSettings: async (
+    shopId: string,
+    data: Partial<{
+      loyaltyEnabled: boolean;
+      loyaltyPointsPerNaira: number;
+      loyaltyNairaPerPoint: number;
+      loyaltySilverThreshold: number;
+      loyaltyGoldThreshold: number;
+      loyaltyPlatinumThreshold: number;
+    }>
+  ): Promise<{ shop: any }> => {
+    return apiCall(`/shops/${shopId}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }, true);
+  },
+
+  adjustPoints: async (
+    customerId: string,
+    delta: number,
+    reason?: string
+  ): Promise<{ points: number; tier: string }> => {
+    return apiCall(`/customers/${customerId}/loyalty`, {
+      method: 'POST',
+      body: JSON.stringify({ delta, reason }),
+    }, true);
+  },
+};
+
 export const api = {
   auth,
   shops,
@@ -1013,6 +1075,7 @@ export const api = {
   customers,
   suppliers,
   reports,
+  loyalty,
 };
 
 export default api;
