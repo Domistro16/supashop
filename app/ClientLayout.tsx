@@ -12,6 +12,7 @@ import AppLayout from '@/layout/AppLayout'
 import Spinner from '@/components/ui/Spinner'
 import { Toaster } from 'react-hot-toast'
 import { Toaster as SonnerToaster } from '@/components/ui/sonner'
+import OnboardingGate from '@/components/common/OnboardingGate'
 
 export default function ClientLayout({
   children,
@@ -22,6 +23,7 @@ export default function ClientLayout({
   const pathname = usePathname()
   const [isAuthPage, setIsAuthPage] = useState(false)
   const [isStorefront, setIsStorefront] = useState(false)
+  const [isFullscreenPage, setIsFullscreenPage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
@@ -63,15 +65,18 @@ export default function ClientLayout({
     const isShopSubdomain = hasSubdomain && subdomain !== 'www' && subdomain !== 'app'
 
     // Only treat as storefront if on subdomain AND not on an excluded path (auth, dashboard, etc.)
-    const excludedPaths = ['/auth/', '/dashboard', '/products', '/sales', '/customers', '/staff', '/suppliers', '/reports', '/roles', '/profile', '/calendar']
+    const excludedPaths = ['/auth/', '/dashboard', '/products', '/sales', '/customers', '/staff', '/suppliers', '/reports', '/roles', '/profile', '/calendar', '/onboarding']
     const isExcludedPath = excludedPaths.some(path => pathname.startsWith(path))
     const isActualStorefront = (isShopSubdomain || pathname.startsWith('/shop/')) && !isExcludedPath
     setIsStorefront(isActualStorefront)
 
     const authPages = ['/auth/signin', '/auth/signup', '/']
+    const fullscreenPages = ['/onboarding']
     const isAuth = authPages.includes(pathname)
+    const isFullscreen = fullscreenPages.some((p) => pathname.startsWith(p))
     const isPublicPage = isAuth || isActualStorefront
     setIsAuthPage(isPublicPage)
+    setIsFullscreenPage(isFullscreen)
 
     // Check authentication
     const token = localStorage.getItem('auth_token')
@@ -127,6 +132,30 @@ export default function ClientLayout({
     )
   }
 
+  if (isFullscreenPage) {
+    return (
+      <HelmetProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <UserProvider>
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: { background: '#333', color: '#fff' },
+                  success: { duration: 3000, iconTheme: { primary: '#10b981', secondary: '#fff' } },
+                  error: { duration: 4000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+                }}
+              />
+              <SonnerToaster position="top-right" />
+              {children}
+            </UserProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </HelmetProvider>
+    )
+  }
+
   return (
     <HelmetProvider>
       <ThemeProvider>
@@ -144,7 +173,9 @@ export default function ClientLayout({
                   }}
                 />
                 <SonnerToaster position="top-right" />
-                <AppLayout>{children}</AppLayout>
+                <OnboardingGate>
+                  <AppLayout>{children}</AppLayout>
+                </OnboardingGate>
               </DataRefreshProvider>
             </SidebarProvider>
           </UserProvider>

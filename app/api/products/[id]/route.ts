@@ -51,7 +51,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, stock, price, categoryName, supplierId, costPrice } = body;
+    const { name, stock, price, categoryName, supplierId, costPrice, barcode } = body;
 
     const product = await prisma.product.findFirst({
       where: { id, shopId },
@@ -59,6 +59,22 @@ export async function PUT(
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    let normalizedBarcode: string | null | undefined = undefined;
+    if (barcode !== undefined) {
+      normalizedBarcode = typeof barcode === 'string' && barcode.trim() ? barcode.trim() : null;
+      if (normalizedBarcode) {
+        const clash = await prisma.product.findFirst({
+          where: { shopId, barcode: normalizedBarcode, NOT: { id } },
+        });
+        if (clash) {
+          return NextResponse.json(
+            { error: `Barcode already used by product "${clash.name}"` },
+            { status: 409 }
+          );
+        }
+      }
     }
 
     const updatedProduct = await prisma.product.update({
@@ -70,6 +86,7 @@ export async function PUT(
         ...(categoryName !== undefined && { categoryName }),
         ...(supplierId !== undefined && { supplierId }),
         ...(costPrice !== undefined && { costPrice }),
+        ...(normalizedBarcode !== undefined && { barcode: normalizedBarcode }),
       },
     });
 

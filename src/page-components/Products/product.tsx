@@ -4,7 +4,7 @@ import { DataTable } from "./DataTable";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import PageMeta from "@/components/common/PageMeta";
 import { Button } from "@/components/ui/button";
-import { DownloadIcon, RefreshCw, LayoutGrid, List, Search } from "lucide-react";
+import { DownloadIcon, RefreshCw, LayoutGrid, List, Search, ScanLine } from "lucide-react";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,8 @@ import { useDataRefresh } from "@/context/DataRefreshContext";
 import { useAuth } from "@/auth";
 import toast from "react-hot-toast";
 import ProductCard from "@/components/products/ProductCard";
+import BarcodeScanner from "@/components/common/BarcodeScanner";
+import QuickSell from "@/components/sales/QuickSell";
 function getData(): Product[] {
   // Fetch data from your API here.
   return [
@@ -101,6 +103,34 @@ export default function Products({ products }: { products: Product[] }) {
 
   // Grid view search
   const [gridSearch, setGridSearch] = useState("");
+
+  // Barcode scan-to-sell state
+  const [scanToSellOpen, setScanToSellOpen] = useState(false);
+  const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
+
+  // Auto-open scanner when launched from PWA shortcut (?scan=1)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("scan") === "1") {
+      setScanToSellOpen(true);
+    }
+  }, []);
+
+  const handleBarcodeScan = (code: string) => {
+    const match = products.find((p) => p.barcode === code);
+    if (match) {
+      if (match.stock <= 0) {
+        toast.error(`${match.name} is out of stock`);
+        return;
+      }
+      setScannedProduct(match);
+      setScanToSellOpen(false);
+      toast.success(`Found: ${match.name}`);
+    } else {
+      toast.error(`No product found for barcode ${code}`);
+    }
+  };
 
   // Save view preference
   useEffect(() => {
@@ -365,6 +395,15 @@ export default function Products({ products }: { products: Product[] }) {
               onClick={exportToPDF}
             >
               <span className="hidden sm:inline">Export</span> <DownloadIcon className="sm:ml-1 h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="default"
+              className="text-white bg-emerald-600 hover:bg-emerald-700 flex-end py-2 md:py-2.5 text-[11px] md:text-[13px] h-8 md:h-9"
+              onClick={() => setScanToSellOpen(true)}
+              title="Scan a barcode to sell"
+            >
+              <ScanLine className="h-3.5 w-3.5 sm:mr-1" />
+              <span className="hidden sm:inline">Scan Sell</span>
             </Button>
             <Button
               variant="default"
@@ -863,6 +902,21 @@ export default function Products({ products }: { products: Product[] }) {
           </div>
         </div>
       </Modal>
+
+      <BarcodeScanner
+        open={scanToSellOpen}
+        onClose={() => setScanToSellOpen(false)}
+        onScan={handleBarcodeScan}
+        title="Scan to sell"
+      />
+
+      {scannedProduct && (
+        <QuickSell
+          product={scannedProduct}
+          onClose={() => setScannedProduct(null)}
+          onSuccess={() => setScannedProduct(null)}
+        />
+      )}
     </div>
   );
 }

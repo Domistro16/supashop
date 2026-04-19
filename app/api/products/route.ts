@@ -46,13 +46,27 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, stock, price, categoryName, supplierId, costPrice } = body;
+    const { name, stock, price, categoryName, supplierId, costPrice, barcode } = body;
 
     if (!name || stock === undefined || price === undefined) {
       return NextResponse.json(
         { error: 'Name, stock, and price are required' },
         { status: 400 }
       );
+    }
+
+    const normalizedBarcode = typeof barcode === 'string' && barcode.trim() ? barcode.trim() : null;
+
+    if (normalizedBarcode) {
+      const existing = await prisma.product.findFirst({
+        where: { shopId, barcode: normalizedBarcode },
+      });
+      if (existing) {
+        return NextResponse.json(
+          { error: `Barcode already used by product "${existing.name}"` },
+          { status: 409 }
+        );
+      }
     }
 
     const product = await prisma.product.create({
@@ -64,6 +78,7 @@ export async function POST(request: NextRequest) {
         categoryName,
         supplierId: supplierId || null,
         costPrice: costPrice || null,
+        barcode: normalizedBarcode,
       },
     });
 

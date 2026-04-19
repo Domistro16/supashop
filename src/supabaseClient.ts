@@ -80,6 +80,7 @@ export const getProducts = async (): Promise<Product[]> => {
       costPrice: item.costPrice?.toString(),
       created_at: item.createdAt,
       category: item.categoryName || '',
+      barcode: item.barcode ?? null,
     }));
   } catch (error) {
     console.error('Failed to get products:', error);
@@ -267,7 +268,8 @@ export const addProduct = async (
   stock: number,
   price: number,
   costPrice?: number,
-  supplierId?: string
+  supplierId?: string,
+  barcode?: string | null
 ) => {
   try {
     const product = await api.products.create({
@@ -277,6 +279,7 @@ export const addProduct = async (
       price,
       costPrice,
       supplierId: supplierId || undefined,
+      barcode: barcode ? barcode.trim() : null,
     } as any);
 
     return { success: true, data: product };

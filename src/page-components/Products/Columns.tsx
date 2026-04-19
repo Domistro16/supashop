@@ -33,6 +33,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { QuantityInput } from "./addProduct";
 import QuickSell from "@/components/sales/QuickSell";
+import BarcodeScanner from "@/components/common/BarcodeScanner";
+import { Camera, X as XIcon } from "lucide-react";
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -45,6 +47,7 @@ export type Product = {
   created_at: string;
   category: string;
   dealer?: string;
+  barcode?: string | null;
 };
 
 const formSchema = z.object({
@@ -61,6 +64,7 @@ const formSchema = z.object({
     error: "Price must be at least 2 characters.",
   }),
   cost_price: z.string().optional(),
+  barcode: z.string().optional(),
 });
 
 export const columns: ColumnDef<Product>[] = [
@@ -249,6 +253,7 @@ export const columns: ColumnDef<Product>[] = [
     cell: ({ row }) => {
       const product = row.original;
       const { openModal, isOpen, closeModal } = useModal();
+      const [scannerOpen, setScannerOpen] = useState(false);
       const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -257,6 +262,7 @@ export const columns: ColumnDef<Product>[] = [
           stock: product.stock,
           price: product.price,
           cost_price: product.costPrice || "",
+          barcode: product.barcode || "",
         },
       });
 
@@ -269,6 +275,7 @@ export const columns: ColumnDef<Product>[] = [
             stock: product.stock,
             price: product.price,
             cost_price: product.costPrice || "",
+            barcode: product.barcode || "",
           });
         }
       }, [isOpen, product, form]);
@@ -281,6 +288,7 @@ export const columns: ColumnDef<Product>[] = [
             stock: values.stock,
             price: parseFloat(values.price),
             costPrice: values.cost_price ? parseFloat(values.cost_price) : undefined,
+            barcode: values.barcode?.trim() || null,
           });
           toast.success("Product updated successfully");
           closeModal();
@@ -410,6 +418,48 @@ export const columns: ColumnDef<Product>[] = [
                     </div>
                     <FormField
                       control={form.control}
+                      name="barcode"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Barcode / SKU (Optional)</FormLabel>
+                          <FormControl>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Scan or type barcode"
+                                {...field}
+                                value={field.value || ""}
+                                className="w-full"
+                              />
+                              {field.value ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => field.onChange("")}
+                                  title="Clear barcode"
+                                >
+                                  <XIcon className="h-4 w-4" />
+                                </Button>
+                              ) : null}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setScannerOpen(true)}
+                                className="shrink-0"
+                              >
+                                <Camera className="h-4 w-4 mr-1" />
+                                Scan
+                              </Button>
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            Enables quick-sell by scan on this product.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
                       name="stock"
                       render={({ field }) => (
                         <FormItem className="flex-1">
@@ -433,6 +483,16 @@ export const columns: ColumnDef<Product>[] = [
               </div>
             </div>
           </Modal>
+          <BarcodeScanner
+            open={scannerOpen}
+            onClose={() => setScannerOpen(false)}
+            onScan={(code) => {
+              form.setValue("barcode", code, { shouldDirty: true, shouldValidate: true });
+              toast.success(`Barcode captured: ${code}`);
+              setScannerOpen(false);
+            }}
+            title="Scan product barcode"
+          />
         </div>
       );
     },

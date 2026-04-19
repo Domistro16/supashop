@@ -22,6 +22,8 @@ export interface Shop {
   role: string;
   permissions: string[];
   joinedAt?: string;
+  onboardingCompleted?: boolean;
+  isOwner?: boolean;
   owner?: {
     id: string;
     name: string;
@@ -47,6 +49,7 @@ export interface Product {
     id: string;
     name: string;
   } | null;
+  barcode?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -309,6 +312,28 @@ export const shops = {
     }, true);
   },
 
+  updateSettings: async (shopId: string, data: {
+    name?: string;
+    address?: string;
+    heroTitle?: string;
+    heroSubtitle?: string;
+    primaryColor?: string;
+    isStorefrontEnabled?: boolean;
+    onboardingCompleted?: boolean;
+  }): Promise<{ shop: any }> => {
+    return apiCall(`/shops/${shopId}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }, true);
+  },
+
+  completeOnboarding: async (shopId: string): Promise<{ shop: any }> => {
+    return apiCall(`/shops/${shopId}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify({ onboardingCompleted: true }),
+    }, true);
+  },
+
   setCurrentShop: (shopId: string): void => {
     currentShopId = shopId;
     localStorage.setItem('current_shop_id', shopId);
@@ -339,6 +364,7 @@ export const products = {
     costPrice?: number;
     categoryName?: string;
     supplierId?: string;
+    barcode?: string | null;
   }): Promise<Product> => {
     return apiCall('/products', {
       method: 'POST',
@@ -353,6 +379,7 @@ export const products = {
     costPrice?: number;
     categoryName?: string;
     supplierId?: string;
+    barcode?: string | null;
   }): Promise<Product> => {
     return apiCall(`/products/${id}`, {
       method: 'PUT',
@@ -370,6 +397,16 @@ export const products = {
     return apiCall('/products/categories', {}, true);
   },
 
+  getByBarcode: async (barcode: string): Promise<Product | null> => {
+    try {
+      return await apiCall(`/products/barcode/${encodeURIComponent(barcode)}`, {}, true);
+    } catch (error: any) {
+      if (error?.status === 404 || /not found/i.test(error?.message || '')) {
+        return null;
+      }
+      throw error;
+    }
+  },
 
 };
 

@@ -32,6 +32,8 @@ import SupplierSearchSelect from "@/components/suppliers/SupplierSearchSelect";
 import CategorySuggest from "@/components/products/CategorySuggest";
 import toast from "react-hot-toast";
 import { useDataRefresh } from "@/context/DataRefreshContext";
+import BarcodeScanner from "@/components/common/BarcodeScanner";
+import { Camera, X as XIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -143,11 +145,13 @@ const formSchema = z.object({
   cost_price: z.string().min(1, {
     error: "Cost price is required.",
   }),
+  barcode: z.string().optional(),
 });
 
 export default function AddProducts() {
   const [loading, setLoading] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const { refreshProducts } = useDataRefresh();
 
   // Duplicate product modal state
@@ -163,6 +167,7 @@ export default function AddProducts() {
       stock: 0,
       price: "",
       cost_price: "",
+      barcode: "",
     },
   });
 
@@ -175,7 +180,8 @@ export default function AddProducts() {
         values.stock,
         parseFloat(values.price),
         values.cost_price ? parseFloat(values.cost_price) : undefined,
-        selectedSupplier?.id
+        selectedSupplier?.id,
+        values.barcode?.trim() || null
       );
 
       if (response) {
@@ -223,6 +229,7 @@ export default function AddProducts() {
         price: parseFloat(pendingFormValues.price),
         costPrice: pendingFormValues.cost_price ? parseFloat(pendingFormValues.cost_price) : undefined,
         supplierId: selectedSupplier?.id,
+        barcode: pendingFormValues.barcode?.trim() || null,
       });
 
       setLoading(false);
@@ -383,6 +390,48 @@ export default function AddProducts() {
             </div>
             <FormField
               control={form.control}
+              name="barcode"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Barcode / SKU (Optional)</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Scan or type barcode"
+                        {...field}
+                        value={field.value || ""}
+                        className="w-full"
+                      />
+                      {field.value ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => field.onChange("")}
+                          title="Clear barcode"
+                        >
+                          <XIcon className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setScannerOpen(true)}
+                        className="shrink-0"
+                      >
+                        <Camera className="h-4 w-4 mr-1" />
+                        Scan
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Scan the product&apos;s barcode to enable quick-sell by scan.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="stock"
               render={({ field }) => (
                 <FormItem className="flex-1">
@@ -404,6 +453,17 @@ export default function AddProducts() {
           </form>
         </Form>
       </ComponentCard>
+
+      <BarcodeScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={(code) => {
+          form.setValue("barcode", code, { shouldDirty: true, shouldValidate: true });
+          toast.success(`Barcode captured: ${code}`);
+          setScannerOpen(false);
+        }}
+        title="Scan product barcode"
+      />
 
       {/* Duplicate Product Confirmation Modal */}
       <AlertDialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>

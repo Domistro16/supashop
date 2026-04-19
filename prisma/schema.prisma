@@ -49,6 +49,7 @@ model Shop {
   heroTitle           String?           @map("hero_title")
   primaryColor        String?           @default("blue") @map("primary_color")
   isStorefrontEnabled Boolean           @default(true) @map("is_storefront_enabled")
+  onboardingCompleted Boolean           @default(false) @map("onboarding_completed")
   activityLogs        ActivityLog[]
   customers           Customer[]
   notifications       Notification[]
@@ -153,11 +154,14 @@ model Product {
   supplierId         String?             @map("supplier_id")
   costPrice          Decimal?            @map("cost_price") @db.Decimal(10, 2)
   isFeatured         Boolean             @default(false) @map("is_featured")
+  barcode            String?
   shop               Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
   supplier           Supplier?           @relation(fields: [supplierId], references: [id])
   purchaseOrderItems PurchaseOrderItem[]
   saleItems          SaleItem[]
 
+  @@unique([shopId, barcode])
+  @@index([shopId, barcode])
   @@map("products")
 }
 

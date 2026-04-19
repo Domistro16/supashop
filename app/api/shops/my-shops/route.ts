@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
       role: staffShop.role.name,
       permissions: staffShop.role.rolePermissions.map((rp) => rp.permission.name),
       joinedAt: staffShop.joinedAt,
+      onboardingCompleted: staffShop.shop.onboardingCompleted,
+      isOwner: staffShop.shop.ownerId === authResult.user.id,
     }));
 
     return NextResponse.json(shops);

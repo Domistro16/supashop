@@ -33,15 +33,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     try {
         const body = await req.json();
-        const { heroTitle, heroSubtitle, primaryColor } = body;
+        const { heroTitle, heroSubtitle, primaryColor, name, address, onboardingCompleted } = body;
 
         const updatedShop = await prisma.shop.update({
             where: { id },
             data: {
-                heroTitle,
-                heroSubtitle,
-                primaryColor,
-                isStorefrontEnabled: body.isStorefrontEnabled,
+                ...(heroTitle !== undefined && { heroTitle }),
+                ...(heroSubtitle !== undefined && { heroSubtitle }),
+                ...(primaryColor !== undefined && { primaryColor }),
+                ...(name !== undefined && { name }),
+                ...(address !== undefined && { address }),
+                ...(body.isStorefrontEnabled !== undefined && { isStorefrontEnabled: body.isStorefrontEnabled }),
+                ...(onboardingCompleted !== undefined && { onboardingCompleted }),
             }
         });
 
