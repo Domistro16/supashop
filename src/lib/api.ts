@@ -113,6 +113,7 @@ export interface Installment {
   paymentMethod: 'cash' | 'bank_transfer' | 'card';
   bankName?: string;
   accountNumber?: string;
+  proofOfPayment?: string | null;
   createdAt: string;
 }
 

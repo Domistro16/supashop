@@ -64,6 +64,8 @@ export default function OnboardingWizard() {
   const [finishing, setFinishing] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
+  const storageKey = currentShop?.id ? `onboarding_state_${currentShop.id}` : null
+
   const [brand, setBrand] = useState({
     heroTitle: '',
     heroSubtitle: '',
@@ -90,18 +92,28 @@ export default function OnboardingWizard() {
   useEffect(() => {
     if (userLoading || !currentShop?.id || loaded) return
     const load = async () => {
+      let savedState: any = null
+      try {
+        const raw = storageKey ? localStorage.getItem(storageKey) : null
+        if (raw) savedState = JSON.parse(raw)
+      } catch {
+        // ignore corrupt state
+      }
+
       try {
         const shopRes = await fetch(`/api/shops/${currentShop.id}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
         })
         if (shopRes.ok) {
           const data = await shopRes.json()
-          setBrand({
-            heroTitle: data.heroTitle || `Welcome to ${data.name}`,
-            heroSubtitle:
-              data.heroSubtitle || 'Shop our latest products with fast delivery',
-            primaryColor: data.primaryColor || 'blue',
-          })
+          setBrand(
+            savedState?.brand || {
+              heroTitle: data.heroTitle || `Welcome to ${data.name}`,
+              heroSubtitle:
+                data.heroSubtitle || 'Shop our latest products with fast delivery',
+              primaryColor: data.primaryColor || 'blue',
+            },
+          )
         }
       } catch {
         // non-fatal; keep defaults
@@ -110,14 +122,48 @@ export default function OnboardingWizard() {
         const r = await api.roles.getAll()
         setRoles(r.map((x) => ({ id: x.id, name: x.name })))
         const staffRole = r.find((x) => x.name.toLowerCase() === 'staff')
-        setInvite((prev) => ({ ...prev, roleId: staffRole?.id || r[0]?.id || '' }))
+        setInvite((prev) => ({
+          ...prev,
+          roleId: savedState?.invite?.roleId || staffRole?.id || r[0]?.id || '',
+          email: savedState?.invite?.email || prev.email,
+        }))
       } catch {
         // roles optional
       }
+
+      if (savedState?.product) setProduct(savedState.product)
+      if (savedState?.productSaved) setProductSaved(true)
+      if (savedState?.inviteSent) setInviteSent(savedState.inviteSent)
+      if (typeof savedState?.step === 'number' && savedState.step >= 1 && savedState.step <= 4) {
+        setStep(savedState.step)
+      }
+
       setLoaded(true)
     }
     load()
-  }, [currentShop?.id, userLoading, loaded])
+  }, [currentShop?.id, userLoading, loaded, storageKey])
+
+  useEffect(() => {
+    if (!loaded || !storageKey) return
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ step, brand, product, productSaved, invite, inviteSent }),
+      )
+    } catch {
+      // quota exceeded or storage disabled — non-fatal
+    }
+  }, [loaded, storageKey, step, brand, product, productSaved, invite, inviteSent])
+
+  const clearOnboardingState = () => {
+    if (storageKey) {
+      try {
+        localStorage.removeItem(storageKey)
+      } catch {
+        // ignore
+      }
+    }
+  }
 
   if (userLoading || !currentShop) {
     return (
@@ -186,6 +232,7 @@ export default function OnboardingWizard() {
     setFinishing(true)
     try {
       await api.shops.completeOnboarding(currentShop.id)
+      clearOnboardingState()
       await refreshUser()
       router.push('/dashboard')
     } catch (err: any) {
@@ -198,9 +245,11 @@ export default function OnboardingWizard() {
     setFinishing(true)
     try {
       await api.shops.completeOnboarding(currentShop.id)
+      clearOnboardingState()
       await refreshUser()
       router.push('/dashboard')
     } catch {
+      clearOnboardingState()
       router.push('/dashboard')
     }
   }

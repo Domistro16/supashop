@@ -17,7 +17,8 @@ export default async function OrderPage({ params }: PageProps) {
         where: { id: orderId },
         include: {
             shop: true,
-            saleItems: { include: { product: true } }
+            saleItems: { include: { product: true } },
+            installments: { orderBy: { createdAt: 'asc' } },
         }
     });
 
@@ -72,7 +73,7 @@ export default async function OrderPage({ params }: PageProps) {
             </div>
 
             {/* Payment Section */}
-            {sale.orderStatus === 'payment_pending' && (
+            {(sale.orderStatus === 'payment_pending' || sale.orderStatus === 'payment_review') && (
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 sm:p-6 mb-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
@@ -83,7 +84,17 @@ export default async function OrderPage({ params }: PageProps) {
 
                     <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg mb-5 text-sm">
                         <p className="text-gray-700 dark:text-gray-300 mb-3">
-                            Please transfer <strong className="text-blue-600 dark:text-blue-400">{formatPrice(Number(sale.totalAmount))}</strong> to:
+                            {sale.paymentType === 'installment' ? (
+                                <>
+                                    Total: <strong>{formatPrice(Number(sale.totalAmount))}</strong>.
+                                    Outstanding: <strong className="text-orange-600 dark:text-orange-400">{formatPrice(Number(sale.outstandingBalance))}</strong>.
+                                    Transfer each installment to:
+                                </>
+                            ) : (
+                                <>
+                                    Please transfer <strong className="text-blue-600 dark:text-blue-400">{formatPrice(Number(sale.totalAmount))}</strong> to:
+                                </>
+                            )}
                         </p>
                         <div className="bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
                             <p className="font-semibold text-gray-900 dark:text-white">{sale.shop.name} Bank</p>
@@ -95,8 +106,21 @@ export default async function OrderPage({ params }: PageProps) {
                     </div>
 
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-5">
-                        <h3 className="text-sm font-semibold mb-4 text-gray-900 dark:text-white">Upload Payment Receipt</h3>
-                        <UploadReceiptForm orderId={sale.id} shopName={shopName} />
+                        <h3 className="text-sm font-semibold mb-4 text-gray-900 dark:text-white">
+                            {sale.paymentType === 'installment' ? 'Upload Proof per Installment' : 'Upload Payment Receipt'}
+                        </h3>
+                        <UploadReceiptForm
+                            orderId={sale.id}
+                            shopName={shopName}
+                            paymentType={sale.paymentType}
+                            saleProof={sale.proofOfPayment}
+                            installments={sale.installments.map((i) => ({
+                                id: i.id,
+                                amount: Number(i.amount),
+                                createdAt: i.createdAt.toISOString(),
+                                proofOfPayment: i.proofOfPayment,
+                            }))}
+                        />
                     </div>
                 </div>
             )}

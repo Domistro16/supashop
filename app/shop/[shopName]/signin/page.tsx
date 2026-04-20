@@ -44,7 +44,7 @@ export default function CustomerSigninPage() {
             localStorage.setItem('customer_id', data.customerId);
 
             toast.success('Signed in successfully!');
-            router.push('/');
+            router.push(`/shop/${shopName}`);
         } catch (error: any) {
             toast.error(error.message || 'Failed to sign in');
         } finally {

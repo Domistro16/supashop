@@ -201,14 +201,15 @@ model Sale {
 }
 
 model Installment {
-  id            String   @id @default(uuid())
-  saleId        String   @map("sale_id")
-  amount        Decimal  @db.Decimal(10, 2)
-  paymentMethod String   @map("payment_method")
-  bankName      String?  @map("bank_name")
-  accountNumber String?  @map("account_number")
-  createdAt     DateTime @default(now()) @map("created_at")
-  sale          Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid())
+  saleId         String   @map("sale_id")
+  amount         Decimal  @db.Decimal(10, 2)
+  paymentMethod  String   @map("payment_method")
+  bankName       String?  @map("bank_name")
+  accountNumber  String?  @map("account_number")
+  proofOfPayment String?  @map("proof_of_payment")
+  createdAt      DateTime @default(now()) @map("created_at")
+  sale           Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
   @@map("installments")
 }

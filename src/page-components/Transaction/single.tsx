@@ -615,6 +615,7 @@ export default function Single({
                         <th className="text-right p-2 font-medium text-gray-600 dark:text-gray-400">Amount</th>
                         <th className="text-left p-2 font-medium text-gray-600 dark:text-gray-400">Method</th>
                         <th className="text-left p-2 font-medium text-gray-600 dark:text-gray-400">Bank</th>
+                        <th className="text-left p-2 font-medium text-gray-600 dark:text-gray-400">Proof</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -631,6 +632,27 @@ export default function Single({
                           </td>
                           <td className="p-2 text-gray-500 dark:text-gray-400">
                             {inst.bankName || '-'}
+                          </td>
+                          <td className="p-2">
+                            {inst.proofOfPayment ? (
+                              <a
+                                href={inst.proofOfPayment}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-block border border-gray-200 dark:border-gray-700 rounded overflow-hidden w-14 h-14 hover:opacity-90"
+                                title="View proof of payment"
+                              >
+                                <img
+                                  src={inst.proofOfPayment}
+                                  alt="Installment proof"
+                                  className="w-full h-full object-cover bg-white"
+                                />
+                              </a>
+                            ) : (
+                              <span className="text-xs text-orange-600 dark:text-orange-400">
+                                Missing
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))}

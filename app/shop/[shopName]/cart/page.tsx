@@ -22,8 +22,6 @@ export default function CartPage() {
     // Payment info state
     const [paymentType, setPaymentType] = useState<'full' | 'installment'>('full');
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank_transfer' | 'card'>('bank_transfer');
-    const [bankName, setBankName] = useState('');
-    const [accountNumber, setAccountNumber] = useState('');
     const [initialPayment, setInitialPayment] = useState<number | ''>('');
 
     useEffect(() => {
@@ -74,8 +72,6 @@ export default function CartPage() {
                     note,
                     paymentType,
                     paymentMethod,
-                    bankName: paymentMethod === 'bank_transfer' ? bankName : null,
-                    accountNumber: paymentMethod === 'bank_transfer' ? accountNumber : null,
                     amountPaid: paymentType === 'installment' ? initialPayment : 0,
                 }),
             });
@@ -329,29 +325,10 @@ export default function CartPage() {
                                 </select>
                             </div>
 
-                            {/* Bank Details (for bank transfer) */}
+                            {/* Bank Transfer Notice */}
                             {paymentMethod === 'bank_transfer' && (
-                                <div className="space-y-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
-                                    <div className="space-y-1">
-                                        <Label className="text-gray-700 dark:text-gray-300 text-xs">Bank Name</Label>
-                                        <input
-                                            type="text"
-                                            value={bankName}
-                                            onChange={(e) => setBankName(e.target.value)}
-                                            placeholder="e.g. GTBank, Access Bank"
-                                            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label className="text-gray-700 dark:text-gray-300 text-xs">Account Number (Optional)</Label>
-                                        <input
-                                            type="text"
-                                            value={accountNumber}
-                                            onChange={(e) => setAccountNumber(e.target.value)}
-                                            placeholder="e.g. 0123456789"
-                                            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                        />
-                                    </div>
+                                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-xs text-blue-800 dark:text-blue-300">
+                                    After placing the order, you'll see the shop's bank details and can upload proof of payment for verification.
                                 </div>
                             )}
 

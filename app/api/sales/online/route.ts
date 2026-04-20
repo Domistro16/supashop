@@ -78,8 +78,6 @@ export async function POST(req: Request) {
         // Extract payment info from request (if provided by customer)
         const paymentType = body.paymentType || 'full';
         const paymentMethod = body.paymentMethod || 'bank_transfer'; // Default for online orders
-        const bankName = body.bankName || null;
-        const accountNumber = body.accountNumber || null;
         const initialPayment = body.amountPaid ? Number(body.amountPaid) : 0;
 
         // Calculate outstanding balance based on payment type
@@ -102,8 +100,6 @@ export async function POST(req: Request) {
                 paymentStatus,
                 paymentType,
                 paymentMethod,
-                bankName,
-                accountNumber,
 
                 // Online Specifics
                 isOnlineOrder: true,
@@ -116,7 +112,19 @@ export async function POST(req: Request) {
             }
         });
 
-        return NextResponse.json({ success: true, orderId: sale.id }); // Return UUID for lookup
+        // For installment orders with an initial payment, create an Installment record
+        // so the customer can attach a proof image for that specific payment.
+        if (paymentType === 'installment' && amountPaid > 0) {
+            await prisma.installment.create({
+                data: {
+                    saleId: sale.id,
+                    amount: amountPaid,
+                    paymentMethod,
+                }
+            });
+        }
+
+        return NextResponse.json({ success: true, orderId: sale.id, paymentType }); // Return UUID for lookup
     } catch (error) {
         console.error('Online Order Error:', error);
         return NextResponse.json({ error: 'Failed to process order' }, { status: 500 });
