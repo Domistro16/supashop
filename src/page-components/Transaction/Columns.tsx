@@ -39,6 +39,8 @@ export type Transaction = {
   outstanding_balance?: string | number;
   payment_status?: 'completed' | 'pending';
   proof_of_payment?: string;
+  is_online_order?: boolean;
+  order_status?: string;
 };
 
 export const columns: ColumnDef<Transaction>[] = [

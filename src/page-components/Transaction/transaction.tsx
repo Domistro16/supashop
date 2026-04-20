@@ -283,6 +283,7 @@ export default function Transactions({ sales }: { sales: Transaction[] }) {
         onClose={() => setScanOrderOpen(false)}
         onScan={handleOrderScan}
         title="Scan customer order QR"
+        scanMode="qr"
       />
     </div>
   );

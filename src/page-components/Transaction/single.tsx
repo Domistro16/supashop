@@ -50,6 +50,7 @@ export default function Single({
 
   const activeSale = fetchedSale || saleFromProps;
   const sale = useMemo(() => activeSale ? [activeSale] : [], [activeSale]);
+  const isStorefrontSale = Boolean(activeSale?.is_online_order);
 
   const [items, setItems] = useState<Item[]>();
   const [total, setTotal] = useState(0);
@@ -61,8 +62,8 @@ export default function Single({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank_transfer' | 'card'>('cash');
-  const [bankName, setBankName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState("Receipt Preview");
@@ -70,6 +71,33 @@ export default function Single({
   // Installments history
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [loadingInstallments, setLoadingInstallments] = useState(false);
+  const storefrontProof = useMemo(() => {
+    if (!isStorefrontSale) return null;
+
+    if (activeSale?.payment_type === 'installment') {
+      const latestInstallmentProof = [...installments]
+        .reverse()
+        .find((inst) => Boolean(inst.proofOfPayment));
+
+      if (latestInstallmentProof?.proofOfPayment) {
+        return {
+          url: latestInstallmentProof.proofOfPayment,
+          title: "Customer Installment Receipt",
+          helper: "Using the latest installment proof uploaded by the customer.",
+        };
+      }
+    }
+
+    if (activeSale?.proof_of_payment) {
+      return {
+        url: activeSale.proof_of_payment,
+        title: "Customer Receipt",
+        helper: "Using the payment proof uploaded by the customer from the storefront.",
+      };
+    }
+
+    return null;
+  }, [activeSale?.payment_type, activeSale?.proof_of_payment, installments, isStorefrontSale]);
 
   useEffect(() => {
     hasAttemptedFetch.current = false;
@@ -674,7 +702,7 @@ export default function Single({
                         <th className="text-left p-2 font-medium text-gray-600 dark:text-gray-400">Date</th>
                         <th className="text-right p-2 font-medium text-gray-600 dark:text-gray-400">Amount</th>
                         <th className="text-left p-2 font-medium text-gray-600 dark:text-gray-400">Method</th>
-                        <th className="text-left p-2 font-medium text-gray-600 dark:text-gray-400">Bank</th>
+                        <th className="text-left p-2 font-medium text-gray-600 dark:text-gray-400">Notes</th>
                         <th className="text-left p-2 font-medium text-gray-600 dark:text-gray-400">Proof</th>
                       </tr>
                     </thead>
@@ -690,8 +718,12 @@ export default function Single({
                           <td className="p-2 text-gray-700 dark:text-gray-300 capitalize">
                             {inst.paymentMethod.replace('_', ' ')}
                           </td>
-                          <td className="p-2 text-gray-500 dark:text-gray-400">
-                            {inst.bankName || '-'}
+                          <td className="p-2 text-gray-500 dark:text-gray-400 max-w-[180px]">
+                            {inst.notes ? (
+                              <span className="line-clamp-2" title={inst.notes}>
+                                {inst.notes}
+                              </span>
+                            ) : '-'}
                           </td>
                           <td className="p-2">
                             {inst.proofOfPayment ? (
@@ -757,49 +789,114 @@ export default function Single({
               </div>
 
               {/* Payment Method */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Payment Method
-                </label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'bank_transfer' | 'card')}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="cash">Cash</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="card">Card</option>
-                </select>
-              </div>
+              {isStorefrontSale ? (
+                <div className="space-y-3">
+                  <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
+                    <div className="font-medium">Storefront payment approval</div>
+                    <div className="mt-1">
+                      Customer selected <strong>{(activeSale?.payment_method || 'cash').replace('_', ' ')}</strong> on the storefront.
+                      This approval will reuse that payment info instead of asking staff to enter it again.
+                    </div>
+                  </div>
 
-              {/* Bank Details (shown for bank transfer) */}
-              {paymentMethod === 'bank_transfer' && (
-                <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Bank Name
-                    </label>
-                    <input
-                      type="text"
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                      placeholder="e.g. GTBank, Access Bank"
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Account Number (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={accountNumber}
-                      onChange={(e) => setAccountNumber(e.target.value)}
-                      placeholder="e.g. 0123456789"
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90"
-                    />
-                  </div>
+                  {storefrontProof ? (
+                    <div className="rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">Customer proof of payment</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{storefrontProof.helper}</div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="shrink-0"
+                          onClick={() => openImagePreview(storefrontProof.url, storefrontProof.title)}
+                        >
+                          View Full Size
+                        </Button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openImagePreview(storefrontProof.url, storefrontProof.title)}
+                        className="block w-full overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+                      >
+                        <img
+                          src={storefrontProof.url}
+                          alt={storefrontProof.title}
+                          className="w-full max-h-56 object-contain bg-white dark:bg-gray-900"
+                        />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                      No uploaded storefront receipt was found on this sale yet. Approval will still reuse the customer&apos;s existing storefront payment method.
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Payment Method
+                    </label>
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'bank_transfer' | 'card')}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="card">Card</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Notes <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <textarea
+                      value={paymentNotes}
+                      onChange={(e) => setPaymentNotes(e.target.value.slice(0, 500))}
+                      rows={2}
+                      placeholder={paymentMethod === 'bank_transfer' ? 'e.g. Sent from GTBank — John A.' : 'Any detail worth remembering about this payment'}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <div className="mt-1 text-[11px] text-gray-400 text-right">{paymentNotes.length}/500</div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Proof of Payment <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 text-center relative hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setPaymentProofFile(e.target.files?.[0] || null)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={isSubmittingPayment}
+                      />
+                      {paymentProofFile ? (
+                        <div className="text-blue-600 dark:text-blue-400 font-medium text-sm break-all">
+                          {paymentProofFile.name}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Click to attach a receipt screenshot (JPG/PNG, up to 5MB)
+                        </div>
+                      )}
+                    </div>
+                    {paymentProofFile && (
+                      <button
+                        type="button"
+                        onClick={() => setPaymentProofFile(null)}
+                        className="mt-2 text-xs text-red-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </>
               )}
 
               {/* Actions */}
@@ -810,8 +907,8 @@ export default function Single({
                     setShowPaymentModal(false);
                     setPaymentAmount('');
                     setPaymentMethod('cash');
-                    setBankName('');
-                    setAccountNumber('');
+                    setPaymentNotes('');
+                    setPaymentProofFile(null);
                   }}
                   disabled={isSubmittingPayment}
                 >
@@ -829,12 +926,40 @@ export default function Single({
 
                     try {
                       setIsSubmittingPayment(true);
-                      await api.sales.updatePayment(activeSale!.id, {
-                        amountPaid: paymentAmount as number,
-                        paymentMethod,
-                        bankName: paymentMethod === 'bank_transfer' ? bankName : undefined,
-                        accountNumber: paymentMethod === 'bank_transfer' ? accountNumber : undefined,
-                      });
+                      const updated = await api.sales.updatePayment(
+                        activeSale!.id,
+                        isStorefrontSale
+                          ? {
+                              amountPaid: paymentAmount as number,
+                            }
+                          : {
+                              amountPaid: paymentAmount as number,
+                              paymentMethod,
+                              notes: paymentNotes.trim() || undefined,
+                            }
+                      );
+
+                      // Upload proof for the just-created installment, if provided
+                      if (!isStorefrontSale && paymentProofFile) {
+                        try {
+                          const newInst = [...(updated.installments || [])]
+                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+                          if (newInst?.id) {
+                            const formData = new FormData();
+                            formData.append('file', paymentProofFile);
+                            formData.append('orderId', activeSale!.id);
+                            formData.append('installmentId', newInst.id);
+                            const resp = await fetch('/api/upload', { method: 'POST', body: formData });
+                            if (!resp.ok) {
+                              const err = await resp.json().catch(() => ({}));
+                              throw new Error(err.error || 'Proof upload failed');
+                            }
+                          }
+                        } catch (uploadErr: any) {
+                          console.error('Proof upload failed:', uploadErr);
+                          toast.error(`Payment saved, but proof upload failed: ${uploadErr.message || 'unknown error'}`);
+                        }
+                      }
 
                       toast.success('Payment recorded successfully!');
 
@@ -855,8 +980,8 @@ export default function Single({
                       setShowPaymentModal(false);
                       setPaymentAmount('');
                       setPaymentMethod('cash');
-                      setBankName('');
-                      setAccountNumber('');
+                      setPaymentNotes('');
+                      setPaymentProofFile(null);
 
                       // Refetch sale data to update UI
                       await refetchSale();
@@ -868,7 +993,7 @@ export default function Single({
                     }
                   }}
                 >
-                  {isSubmittingPayment ? 'Recording...' : 'Confirm Payment'}
+                  {isSubmittingPayment ? 'Recording...' : isStorefrontSale ? 'Approve Payment' : 'Confirm Payment'}
                 </Button>
               </div>
             </div>

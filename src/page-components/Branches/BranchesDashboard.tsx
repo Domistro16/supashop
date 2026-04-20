@@ -416,7 +416,7 @@ function CreateTransferModal({
         setLoadingProducts(true);
         api.products
             .getAll()
-            .then((res) => setProducts(res.products || []))
+            .then((res) => setProducts(res))
             .catch(() => toast.error('Failed to load products'))
             .finally(() => setLoadingProducts(false));
     }, []);

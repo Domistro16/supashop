@@ -7,6 +7,7 @@ interface BarcodeScannerProps {
   onClose: () => void;
   onScan: (code: string) => void;
   title?: string;
+  scanMode?: 'barcode' | 'qr';
   /**
    * When true, the scanner stays open after a successful scan so multiple
    * codes can be captured (caller decides when to close). Default: false.
@@ -42,6 +43,7 @@ export default function BarcodeScanner({
   onClose,
   onScan,
   title = 'Scan a barcode',
+  scanMode = 'barcode',
   continuous = false,
 }: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -71,7 +73,9 @@ export default function BarcodeScanner({
       }
 
       try {
-        detectorRef.current = new window.BarcodeDetector({ formats: SUPPORTED_FORMATS });
+        detectorRef.current = new window.BarcodeDetector({
+          formats: scanMode === 'qr' ? ['qr_code'] : SUPPORTED_FORMATS
+        });
       } catch {
         detectorRef.current = new window.BarcodeDetector();
       }
@@ -146,7 +150,7 @@ export default function BarcodeScanner({
       detectorRef.current = null;
       lastCodeRef.current = null;
     };
-  }, [open, continuous, onScan]);
+  }, [open, continuous, onScan, scanMode]);
 
   useEffect(() => {
     if (!open) {
@@ -199,7 +203,13 @@ export default function BarcodeScanner({
             />
             {/* Scan guide overlay */}
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="w-4/5 h-1/3 border-2 border-blue-400 rounded-md shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]" />
+              <div
+                className={
+                  scanMode === 'qr'
+                    ? 'w-3/5 aspect-square border-2 border-blue-400 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]'
+                    : 'w-4/5 h-1/3 border-2 border-blue-400 rounded-md shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]'
+                }
+              />
             </div>
             {error && (
               <div className="absolute bottom-0 left-0 right-0 bg-red-600/90 text-white text-xs px-3 py-2 flex items-center gap-2">
@@ -225,13 +235,15 @@ export default function BarcodeScanner({
               </div>
             )}
             <form onSubmit={handleManualSubmit} className="space-y-2">
-              <label className="text-xs text-gray-300">Enter barcode</label>
+              <label className="text-xs text-gray-300">
+                {scanMode === 'qr' ? 'Enter QR code text' : 'Enter barcode'}
+              </label>
               <input
                 type="text"
                 autoFocus
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value)}
-                placeholder="e.g. 6009880050122"
+                placeholder={scanMode === 'qr' ? 'Paste or type the QR code value' : 'e.g. 6009880050122'}
                 className="w-full px-3 py-2 rounded-md bg-gray-800 text-white text-sm border border-white/10 focus:border-blue-400 focus:outline-none"
               />
               <button
@@ -247,7 +259,7 @@ export default function BarcodeScanner({
 
         <div className="px-4 py-2.5 bg-black/40 flex items-center justify-between text-xs">
           <span className="text-gray-400">
-            {manualMode ? 'Manual entry' : 'Point the camera at the barcode'}
+            {manualMode ? 'Manual entry' : scanMode === 'qr' ? 'Point the camera at the QR code' : 'Point the camera at the barcode'}
           </span>
           <button
             type="button"

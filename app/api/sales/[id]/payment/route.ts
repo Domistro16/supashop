@@ -22,8 +22,8 @@ export async function PUT(
         const {
             amountPaid,
             paymentMethod,
-            bankName,
-            accountNumber,
+            notes,
+            proofOfPayment,
         } = body;
 
         if (!amountPaid || amountPaid <= 0) {
@@ -38,6 +38,11 @@ export async function PUT(
                     { id },
                     { orderId: id }
                 ]
+            },
+            include: {
+                installments: {
+                    orderBy: { createdAt: 'desc' },
+                },
             },
         });
 
@@ -62,6 +67,24 @@ export async function PUT(
         const newAmountPaid = previousAmountPaid + Number(amountPaid);
         const newOutstandingBalance = Math.max(0, totalAmount - newAmountPaid);
         const newPaymentStatus = newOutstandingBalance > 0 ? 'pending' : 'completed';
+        const isStorefrontSale = sale.isOnlineOrder;
+        const resolvedPaymentMethod = isStorefrontSale
+            ? (sale.paymentMethod || paymentMethod || 'cash')
+            : (paymentMethod || 'cash');
+        const matchingInstallmentProof = sale.paymentType === 'installment'
+            ? sale.installments.find((inst) =>
+                Boolean(inst.proofOfPayment) && Number(inst.amount) === Number(amountPaid)
+            )?.proofOfPayment
+            : null;
+        const storefrontProof = isStorefrontSale
+            ? (
+                sale.paymentType === 'installment'
+                    ? (matchingInstallmentProof || sale.installments.find((inst) => Boolean(inst.proofOfPayment))?.proofOfPayment || sale.proofOfPayment || null)
+                    : (sale.proofOfPayment || null)
+            )
+            : null;
+        const resolvedProof = isStorefrontSale ? storefrontProof : (proofOfPayment || null);
+        const resolvedNotes = typeof notes === 'string' && notes.trim().length > 0 ? notes.trim().slice(0, 500) : null;
 
         const updatedSale = await prisma.$transaction(async (tx) => {
             // Create installment record
@@ -69,9 +92,9 @@ export async function PUT(
                 data: {
                     saleId: sale.id, // Use UUID from found sale
                     amount: amountPaid,
-                    paymentMethod: paymentMethod || 'cash',
-                    bankName: bankName || null,
-                    accountNumber: accountNumber || null,
+                    paymentMethod: resolvedPaymentMethod,
+                    proofOfPayment: resolvedProof,
+                    notes: resolvedNotes,
                 },
             });
 

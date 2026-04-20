@@ -253,6 +253,7 @@ model Installment {
   bankName       String?  @map("bank_name")
   accountNumber  String?  @map("account_number")
   proofOfPayment String?  @map("proof_of_payment")
+  notes          String?
   createdAt      DateTime @default(now()) @map("created_at")
   sale           Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
 

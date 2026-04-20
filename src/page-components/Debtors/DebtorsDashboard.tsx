@@ -19,6 +19,9 @@ type Debtor = {
   customer?: { id: string; name: string; phone?: string } | null
   payment_method?: string
   bank_name?: string
+  proof_of_payment?: string
+  payment_type?: 'full' | 'installment'
+  is_online_order?: boolean
 }
 
 type CustomerGroup = {
@@ -137,12 +140,19 @@ export default function DebtorsDashboard() {
     }
     try {
       setSubmitting(true)
-      await api.sales.updatePayment(activeSale.id, {
-        amountPaid: Number(paymentAmount),
-        paymentMethod,
-        bankName: paymentMethod === 'bank_transfer' ? bankName : undefined,
-        accountNumber: paymentMethod === 'bank_transfer' ? accountNumber : undefined,
-      })
+      await api.sales.updatePayment(
+        activeSale.id,
+        activeSale.is_online_order
+          ? {
+              amountPaid: Number(paymentAmount),
+            }
+          : {
+              amountPaid: Number(paymentAmount),
+              paymentMethod,
+              bankName: paymentMethod === 'bank_transfer' ? bankName : undefined,
+              accountNumber: paymentMethod === 'bank_transfer' ? accountNumber : undefined,
+            },
+      )
       toast.success('Payment recorded')
       closePayment()
       await load()
@@ -363,47 +373,71 @@ export default function DebtorsDashboard() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Payment method
-                </label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as typeof paymentMethod)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="cash">Cash</option>
-                  <option value="bank_transfer">Bank transfer</option>
-                  <option value="card">Card</option>
-                </select>
-              </div>
-
-              {paymentMethod === 'bank_transfer' && (
-                <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Bank name
-                    </label>
-                    <input
-                      type="text"
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                      placeholder="e.g. GTBank"
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90"
-                    />
+              {activeSale.is_online_order ? (
+                <div className="space-y-3">
+                  <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
+                    Customer chose <strong>{(activeSale.payment_method || 'cash').replace('_', ' ')}</strong> on the storefront.
+                    This approval will reuse that payment method instead of asking staff to enter it again.
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Account number (optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={accountNumber}
-                      onChange={(e) => setAccountNumber(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90"
-                    />
-                  </div>
+                  {activeSale.proof_of_payment ? (
+                    <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                      <img
+                        src={activeSale.proof_of_payment}
+                        alt="Customer receipt"
+                        className="w-full max-h-56 object-contain bg-white dark:bg-gray-900"
+                      />
+                    </div>
+                  ) : (
+                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                      Open the full transaction page to review uploaded receipt proofs for this storefront sale.
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Payment method
+                    </label>
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value as typeof paymentMethod)}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="bank_transfer">Bank transfer</option>
+                      <option value="card">Card</option>
+                    </select>
+                  </div>
+
+                  {paymentMethod === 'bank_transfer' && (
+                    <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Bank name
+                        </label>
+                        <input
+                          type="text"
+                          value={bankName}
+                          onChange={(e) => setBankName(e.target.value)}
+                          placeholder="e.g. GTBank"
+                          className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Account number (optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={accountNumber}
+                          onChange={(e) => setAccountNumber(e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -417,7 +451,7 @@ export default function DebtorsDashboard() {
                 onClick={submitPayment}
                 disabled={submitting || !paymentAmount || Number(paymentAmount) <= 0}
               >
-                {submitting ? 'Recording...' : 'Confirm'}
+                {submitting ? 'Recording...' : activeSale.is_online_order ? 'Approve' : 'Confirm'}
               </Button>
             </div>
           </div>

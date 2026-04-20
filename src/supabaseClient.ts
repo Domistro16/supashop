@@ -41,6 +41,8 @@ type Transaction = {
   outstanding_balance?: string;
   payment_status?: 'completed' | 'pending';
   proof_of_payment?: string; // URL to uploaded receipt image
+  is_online_order?: boolean;
+  order_status?: string;
 };
 
 type Item = {
@@ -159,6 +161,8 @@ export const getSales = async (): Promise<Transaction[]> => {
         outstanding_balance: item.outstandingBalance?.toString(),
         payment_status: item.paymentStatus as Transaction['payment_status'],
         proof_of_payment: item.proofOfPayment || undefined,
+        is_online_order: item.isOnlineOrder,
+        order_status: item.orderStatus,
       });
     }
 
@@ -215,6 +219,8 @@ export const getSale = async (id: string): Promise<Transaction | null> => {
       outstanding_balance: sale.outstandingBalance?.toString(),
       payment_status: sale.paymentStatus as Transaction['payment_status'],
       proof_of_payment: (sale as any).proofOfPayment,
+      is_online_order: (sale as any).isOnlineOrder,
+      order_status: (sale as any).orderStatus,
     };
   } catch (error) {
     console.log('Failed to fetch individual sale', error);

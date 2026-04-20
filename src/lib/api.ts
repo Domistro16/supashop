@@ -93,7 +93,9 @@ export interface Sale {
   outstandingBalance?: string | number;
   paymentStatus?: 'completed' | 'pending';
   installments?: Installment[];
-  proofOfPayment?: string; // URL to uploaded receipt image
+  proofOfPayment?: string | null; // URL to uploaded receipt image
+  isOnlineOrder?: boolean;
+  orderStatus?: string;
 }
 
 export interface SaleItem {
@@ -117,6 +119,7 @@ export interface Installment {
   bankName?: string;
   accountNumber?: string;
   proofOfPayment?: string | null;
+  notes?: string | null;
   createdAt: string;
 }
 
@@ -460,8 +463,8 @@ export const sales = {
   updatePayment: async (saleId: string, data: {
     amountPaid: number;
     paymentMethod?: 'cash' | 'bank_transfer' | 'card';
-    bankName?: string;
-    accountNumber?: string;
+    notes?: string;
+    proofOfPayment?: string;
   }): Promise<Sale> => {
     return apiCall(`/sales/${saleId}/payment`, {
       method: 'PUT',
