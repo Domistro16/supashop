@@ -11,7 +11,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import Spinner from "@/components/ui/Spinner";
 import api, { Installment } from "@/lib/api";
 import { toast } from "react-hot-toast";
-import { Share2, MessageCircle } from "lucide-react";
+import { Share2, MessageCircle, X } from "lucide-react";
 import { waLink, receiptMessage, paymentVerifiedMessage } from "@/lib/utils/whatsapp";
 import BluetoothPrintButton from "@/components/printer/BluetoothPrintButton";
 
@@ -64,6 +64,8 @@ export default function Single({
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState("Receipt Preview");
 
   // Installments history
   const [installments, setInstallments] = useState<Installment[]>([]);
@@ -184,6 +186,11 @@ export default function Single({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const openImagePreview = (imageUrl: string, title = "Receipt Preview") => {
+    setPreviewImage(imageUrl);
+    setPreviewTitle(title);
   };
 
   const handleShare = async () => {
@@ -628,11 +635,10 @@ export default function Single({
             <div className="mt-6 px-3">
               <h6 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Payment Receipt</h6>
               <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                <a
-                  href={activeSale.proof_of_payment}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block group"
+                <button
+                  type="button"
+                  onClick={() => openImagePreview(activeSale.proof_of_payment!, "Customer Receipt")}
+                  className="block group w-full text-left"
                 >
                   <div className="relative overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600">
                     <img
@@ -649,7 +655,7 @@ export default function Single({
                   <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
                     Uploaded by customer
                   </p>
-                </a>
+                </button>
               </div>
             </div>
           )}
@@ -689,10 +695,9 @@ export default function Single({
                           </td>
                           <td className="p-2">
                             {inst.proofOfPayment ? (
-                              <a
-                                href={inst.proofOfPayment}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
+                                type="button"
+                                onClick={() => openImagePreview(inst.proofOfPayment!, "Installment Proof")}
                                 className="inline-block border border-gray-200 dark:border-gray-700 rounded overflow-hidden w-14 h-14 hover:opacity-90"
                                 title="View proof of payment"
                               >
@@ -701,7 +706,7 @@ export default function Single({
                                   alt="Installment proof"
                                   className="w-full h-full object-cover bg-white"
                                 />
-                              </a>
+                              </button>
                             ) : (
                               <span className="text-xs text-orange-600 dark:text-orange-400">
                                 Missing
@@ -866,6 +871,37 @@ export default function Single({
                   {isSubmittingPayment ? 'Recording...' : 'Confirm Payment'}
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 no-print"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative w-full max-w-5xl max-h-[90vh] rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">{previewTitle}</h3>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="inline-flex items-center justify-center rounded-md p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.06]"
+                aria-label="Close preview"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="bg-gray-100 dark:bg-gray-950 flex items-center justify-center p-4 max-h-[calc(90vh-57px)] overflow-auto">
+              <img
+                src={previewImage}
+                alt={previewTitle}
+                className="max-w-full h-auto max-h-[calc(90vh-89px)] object-contain rounded-lg"
+              />
             </div>
           </div>
         </div>
