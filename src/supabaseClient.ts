@@ -158,6 +158,7 @@ export const getSales = async (): Promise<Transaction[]> => {
         amount_paid: amountPaid.toString(),
         outstanding_balance: item.outstandingBalance?.toString(),
         payment_status: item.paymentStatus as Transaction['payment_status'],
+        proof_of_payment: item.proofOfPayment || undefined,
       });
     }
 

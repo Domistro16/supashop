@@ -38,7 +38,7 @@ export default function Single({
   const hasAttemptedFetch = useRef(false);
 
   useEffect(() => {
-    if (!saleFromProps && orderId && !fetchedSale && !loadingSale && !hasAttemptedFetch.current) {
+    if (orderId && !loadingSale && !hasAttemptedFetch.current) {
       hasAttemptedFetch.current = true;
       setLoadingSale(true);
       getSale(orderId).then(data => {
@@ -46,9 +46,9 @@ export default function Single({
         setLoadingSale(false);
       });
     }
-  }, [saleFromProps, orderId, fetchedSale, loadingSale]);
+  }, [orderId, loadingSale]);
 
-  const activeSale = saleFromProps || fetchedSale;
+  const activeSale = fetchedSale || saleFromProps;
   const sale = useMemo(() => activeSale ? [activeSale] : [], [activeSale]);
 
   const [items, setItems] = useState<Item[]>();
@@ -68,6 +68,13 @@ export default function Single({
   // Installments history
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [loadingInstallments, setLoadingInstallments] = useState(false);
+
+  useEffect(() => {
+    hasAttemptedFetch.current = false;
+    setFetchedSale(null);
+    setItems(undefined);
+    setInstallments([]);
+  }, [orderId]);
 
   // Function to refetch sale data after payment update
   const refetchSale = async () => {
@@ -290,18 +297,18 @@ export default function Single({
       <div
         className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]
                 py-3 px-4 sm:px-6 md:px-8 lg:px-10
-                flex flex-col md:flex-row md:items-center md:justify-between gap-3 no-print"
+                flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 no-print"
       >
         {/* Left section */}
-        <div className="w-full text-gray-400 dark:text-gray-400 flex flex-col gap-2">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
-            <h5 className="flex items-center gap-2 px-0 sm:px-3 sm:border-r sm:border-gray-500 dark:border-gray-600 text-base font-medium">
-              Order ID: #{orderId}{" "}
+        <div className="w-full xl:flex-1 text-gray-400 dark:text-gray-400 flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-4">
+            <h5 className="flex items-center gap-2 text-base font-medium">
+              Order ID: #{orderId}
               <Badge
                 variant="light"
                 color={activeSale?.payment_status === 'pending' ? 'warning' : 'success'}
               >
-                {activeSale?.payment_status === 'pending' ? 'Pending: payment not completed' : 'Completed'}
+                {activeSale?.payment_status === 'pending' ? 'Payment Pending' : 'Completed'}
               </Badge>
             </h5>
             <h5 className="text-sm sm:text-[15px]">
@@ -321,7 +328,7 @@ export default function Single({
         </div>
 
         {/* Right section (buttons) */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap xl:justify-end gap-2 sm:gap-3 xl:max-w-[42rem]">
           {/* Record Payment button - only show for pending payments */}
           {activeSale?.payment_status === 'pending' && Number(activeSale?.outstanding_balance || 0) > 0 && (
             <Button
@@ -380,16 +387,9 @@ export default function Single({
               </a>
             );
           })()}
-          <Button
-            variant="outline"
-            className="px-4 py-2"
-            onClick={handlePrint}
-          >
-            Print Receipt
-          </Button>
           {activeSale && items && items.length > 0 && (
             <BluetoothPrintButton
-              label="Bluetooth Print"
+              label="Print Receipt"
               buildPayload={() => ({
                 shopName: shopInfo?.name || 'Supashop',
                 shopAddress: shopInfo?.address,
