@@ -5,6 +5,7 @@ import UploadReceiptForm from './UploadReceiptForm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import OrderPickupQrCard from '@/components/orders/OrderPickupQrCard';
 
 interface PageProps {
     params: Promise<{ shopName: string; orderId: string }>;
@@ -76,6 +77,10 @@ export default async function OrderPage({ params }: PageProps) {
                     {sale.orderStatus.replace('_', ' ').toUpperCase()}
                 </Badge>
             </div>
+
+            {sale.orderStatus !== 'cancelled' && (
+                <OrderPickupQrCard saleId={sale.id} orderId={sale.orderId} />
+            )}
 
             {/* Payment Section */}
             {(sale.orderStatus === 'payment_pending' || sale.orderStatus === 'payment_review') && (

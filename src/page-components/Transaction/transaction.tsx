@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDataRefresh } from "@/context/DataRefreshContext";
-import { FileText, LayoutGrid, RefreshCw, Table as TableIcon } from "lucide-react";
+import { FileText, LayoutGrid, QrCode, RefreshCw, Table as TableIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "@/lib/react-router-compat";
+import BarcodeScanner from "@/components/common/BarcodeScanner";
+import { parseOrderPickupCode } from "@/lib/utils/orderPickupCode";
 
 type ViewMode = "cards" | "table";
 
@@ -107,6 +109,7 @@ export default function Transactions({ sales }: { sales: Transaction[] }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [searchTerm, setSearchTerm] = useState("");
+  const [scanOrderOpen, setScanOrderOpen] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -146,6 +149,25 @@ export default function Transactions({ sales }: { sales: Transaction[] }) {
     [filteredSales]
   );
 
+  const handleOrderScan = (code: string) => {
+    const parsed = parseOrderPickupCode(code);
+    if (!parsed) {
+      toast.error("Scanned code is not a valid order reference");
+      return;
+    }
+
+    setScanOrderOpen(false);
+
+    const target = parsed.saleId || parsed.orderId;
+    if (!target) {
+      toast.error("Scanned code is missing an order reference");
+      return;
+    }
+
+    toast.success("Order found");
+    navigate(`/sales/${target}`);
+  };
+
   return (
     <div className="container mx-auto py-3 sm:py-5">
       <PageMeta title="Transactions | Supashop" description="View and manage all store transactions" />
@@ -172,6 +194,14 @@ export default function Transactions({ sales }: { sales: Transaction[] }) {
           </Button>
         </div>
         <div className="flex w-full sm:w-auto gap-2">
+          <Button
+            onClick={() => setScanOrderOpen(true)}
+            variant="outline"
+            className="flex-1 sm:flex-none flex items-center gap-2"
+          >
+            <QrCode className="h-4 w-4" />
+            Scan Order QR
+          </Button>
           <Button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -247,6 +277,13 @@ export default function Transactions({ sales }: { sales: Transaction[] }) {
           </div>
         </ComponentCard>
       )}
+
+      <BarcodeScanner
+        open={scanOrderOpen}
+        onClose={() => setScanOrderOpen(false)}
+        onScan={handleOrderScan}
+        title="Scan customer order QR"
+      />
     </div>
   );
 }
