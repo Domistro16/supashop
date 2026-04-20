@@ -19,6 +19,9 @@ export interface Shop {
   name: string;
   address?: string | null;
   target?: number;
+  transferBankName?: string | null;
+  transferAccountName?: string | null;
+  transferAccountNumber?: string | null;
   role: string;
   permissions: string[];
   joinedAt?: string;

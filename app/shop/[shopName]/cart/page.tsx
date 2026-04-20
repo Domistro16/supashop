@@ -8,9 +8,15 @@ import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
+interface StorefrontShopConfig {
+    name: string;
+    supportsBankTransfer: boolean;
+}
+
 export default function CartPage() {
     const { items, removeItem, updateQuantity, total, clearCart } = useCart();
-    const { shopName } = useParams();
+    const params = useParams<{ shopName: string | string[] }>();
+    const shopName = Array.isArray(params.shopName) ? params.shopName[0] : params.shopName;
     const router = useRouter();
 
     const [note, setNote] = useState('');
@@ -18,10 +24,11 @@ export default function CartPage() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [customerInfo, setCustomerInfo] = useState<{ id: string; name: string; email: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [shopConfig, setShopConfig] = useState<StorefrontShopConfig | null>(null);
 
     // Payment info state
     const [paymentType, setPaymentType] = useState<'full' | 'installment'>('full');
-    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank_transfer' | 'card'>('bank_transfer');
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank_transfer' | 'card'>('cash');
     const [initialPayment, setInitialPayment] = useState<number | ''>('');
 
     useEffect(() => {
@@ -46,6 +53,46 @@ export default function CartPage() {
         }
     }, []);
 
+    useEffect(() => {
+        if (!shopName) return;
+
+        fetch(`/api/storefront/${encodeURIComponent(shopName)}`)
+            .then(async (res) => {
+                if (!res.ok) {
+                    setShopConfig({ name: shopName, supportsBankTransfer: false });
+                    return null;
+                }
+
+                return res.json();
+            })
+            .then(data => {
+                if (!data) return;
+
+                setShopConfig({
+                    name: data.name,
+                    supportsBankTransfer: Boolean(data.supportsBankTransfer),
+                });
+            })
+            .catch(() => {
+                setShopConfig({ name: shopName, supportsBankTransfer: false });
+            });
+    }, [shopName]);
+
+    useEffect(() => {
+        if (paymentType === 'installment') {
+            if (!shopConfig?.supportsBankTransfer) {
+                setPaymentType('full');
+                setPaymentMethod('cash');
+                setInitialPayment('');
+                return;
+            }
+
+            if (paymentMethod !== 'bank_transfer') {
+                setPaymentMethod('bank_transfer');
+            }
+        }
+    }, [paymentMethod, paymentType, shopConfig?.supportsBankTransfer]);
+
     const handleSubmitOrder = async (e: React.FormEvent) => {
         e.preventDefault();
         if (items.length === 0) return;
@@ -53,6 +100,16 @@ export default function CartPage() {
         if (!isAuthenticated || !customerInfo) {
             toast.error('Please sign in to place an order');
             router.push(`/shop/${shopName}/signin`);
+            return;
+        }
+
+        if (paymentType === 'installment' && !shopConfig?.supportsBankTransfer) {
+            toast.error('Installment orders require bank transfer details from the shop');
+            return;
+        }
+
+        if (paymentType === 'installment' && (!initialPayment || Number(initialPayment) <= 0 || Number(initialPayment) > total)) {
+            toast.error('Enter a valid initial payment amount');
             return;
         }
 
@@ -76,16 +133,18 @@ export default function CartPage() {
                 }),
             });
 
-            if (!response.ok) throw new Error('Failed to place order');
-
             const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to place order');
+            }
 
             clearCart();
             toast.success('Order placed successfully!');
             router.push(`/shop/${shopName}/order/${data.orderId}`);
         } catch (error) {
             console.error(error);
-            toast.error('Failed to place order. Please try again.');
+            toast.error(error instanceof Error ? error.message : 'Failed to place order. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -301,7 +360,12 @@ export default function CartPage() {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setPaymentType('installment')}
+                                    onClick={() => {
+                                        if (!shopConfig?.supportsBankTransfer) return;
+                                        setPaymentType('installment');
+                                        setPaymentMethod('bank_transfer');
+                                    }}
+                                    disabled={!shopConfig?.supportsBankTransfer}
                                     className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${paymentType === 'installment'
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
@@ -310,6 +374,11 @@ export default function CartPage() {
                                     Installment
                                 </button>
                             </div>
+                            {shopConfig && !shopConfig.supportsBankTransfer && (
+                                <p className="mb-4 text-xs text-amber-700 dark:text-amber-300">
+                                    Installment and bank transfer become available after the shop adds transfer details.
+                                </p>
+                            )}
 
                             {/* Payment Method */}
                             <div className="space-y-2 mb-4">
@@ -317,9 +386,10 @@ export default function CartPage() {
                                 <select
                                     value={paymentMethod}
                                     onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'bank_transfer' | 'card')}
+                                    disabled={paymentType === 'installment'}
                                     className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                 >
-                                    <option value="bank_transfer">Bank Transfer</option>
+                                    {shopConfig?.supportsBankTransfer && <option value="bank_transfer">Bank Transfer</option>}
                                     <option value="cash">Cash</option>
                                     <option value="card">Card</option>
                                 </select>
@@ -328,7 +398,12 @@ export default function CartPage() {
                             {/* Bank Transfer Notice */}
                             {paymentMethod === 'bank_transfer' && (
                                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-xs text-blue-800 dark:text-blue-300">
-                                    After placing the order, you'll see the shop's bank details and can upload proof of payment for verification.
+                                    After placing the order, you'll see the shop's configured bank details and can upload proof of payment for verification.
+                                </div>
+                            )}
+                            {paymentMethod !== 'bank_transfer' && (
+                                <div className="p-3 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs text-gray-700 dark:text-gray-300">
+                                    You will pay by {paymentMethod === 'card' ? 'card' : 'cash'} when the shop confirms pickup or collection.
                                 </div>
                             )}
 

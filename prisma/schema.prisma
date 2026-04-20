@@ -42,6 +42,9 @@ model Shop {
   name                String
   address             String?
   target              Decimal?          @db.Decimal(10, 2)
+  transferBankName    String?           @map("transfer_bank_name")
+  transferAccountName String?           @map("transfer_account_name")
+  transferAccountNumber String?         @map("transfer_account_number")
   ownerId             String            @map("owner_id")
   createdAt           DateTime          @default(now()) @map("created_at")
   updatedAt           DateTime          @updatedAt @map("updated_at")

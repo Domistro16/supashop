@@ -1,15 +1,27 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { SaleItem } from '@/lib/api';
+
+function getStorefrontShopWhere(shopName: string) {
+    return {
+        OR: [
+            { name: { equals: shopName, mode: 'insensitive' as const } },
+            { name: { equals: shopName.replace(/-/g, ' '), mode: 'insensitive' as const } }
+        ]
+    };
+}
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
         const { shopName, items, customer, note } = body;
 
+        if (!shopName || !Array.isArray(items) || items.length === 0) {
+            return NextResponse.json({ error: 'Shop and at least one item are required' }, { status: 400 });
+        }
+
         // 1. Get Shop
         const shop = await prisma.shop.findFirst({
-            where: { name: { equals: shopName, mode: 'insensitive' } },
+            where: getStorefrontShopWhere(shopName),
             include: { owner: true }
         });
 
@@ -45,6 +57,10 @@ export async function POST(req: Request) {
             });
         }
 
+        if (saleItemsData.length === 0) {
+            return NextResponse.json({ error: 'No valid items found for this order' }, { status: 400 });
+        }
+
         // 3. Get or Create Customer
         // If customerId is provided (authenticated user), use it directly
         // Otherwise, try to find/create from guest info
@@ -77,12 +93,31 @@ export async function POST(req: Request) {
 
         // Extract payment info from request (if provided by customer)
         const paymentType = body.paymentType || 'full';
-        const paymentMethod = body.paymentMethod || 'bank_transfer'; // Default for online orders
+        const supportsBankTransfer = Boolean(
+            shop.transferBankName &&
+            shop.transferAccountName &&
+            shop.transferAccountNumber
+        );
+        const paymentMethod = body.paymentMethod || (supportsBankTransfer ? 'bank_transfer' : 'cash');
         const initialPayment = body.amountPaid ? Number(body.amountPaid) : 0;
+
+        if (paymentType === 'installment' && paymentMethod !== 'bank_transfer') {
+            return NextResponse.json(
+                { error: 'Installment orders currently require bank transfer' },
+                { status: 400 }
+            );
+        }
+
+        if (paymentMethod === 'bank_transfer' && !supportsBankTransfer) {
+            return NextResponse.json(
+                { error: 'This shop has not configured bank transfer details yet' },
+                { status: 400 }
+            );
+        }
 
         // Calculate outstanding balance based on payment type
         const amountPaid = paymentType === 'full' ? 0 : initialPayment;
-        const outstandingBalance = totalAmount - amountPaid;
+        const outstandingBalance = Math.max(totalAmount - amountPaid, 0);
         const paymentStatus = outstandingBalance <= 0 ? 'completed' : 'pending';
 
         // 5. Create Sale
@@ -100,6 +135,8 @@ export async function POST(req: Request) {
                 paymentStatus,
                 paymentType,
                 paymentMethod,
+                bankName: paymentMethod === 'bank_transfer' ? shop.transferBankName : null,
+                accountNumber: paymentMethod === 'bank_transfer' ? shop.transferAccountNumber : null,
 
                 // Online Specifics
                 isOnlineOrder: true,

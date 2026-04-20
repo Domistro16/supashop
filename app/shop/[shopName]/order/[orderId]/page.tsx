@@ -43,6 +43,11 @@ export default async function OrderPage({ params }: PageProps) {
 
     const status = getStatusDisplay(sale.orderStatus);
     const StatusIcon = status.icon;
+    const hasBankTransferDetails = Boolean(
+        sale.shop.transferBankName &&
+        sale.shop.transferAccountName &&
+        sale.shop.transferAccountNumber
+    );
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(price);
@@ -82,46 +87,66 @@ export default async function OrderPage({ params }: PageProps) {
                         <h2 className="text-lg font-bold text-gray-900 dark:text-white">Payment Instructions</h2>
                     </div>
 
-                    <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg mb-5 text-sm">
-                        <p className="text-gray-700 dark:text-gray-300 mb-3">
-                            {sale.paymentType === 'installment' ? (
-                                <>
-                                    Total: <strong>{formatPrice(Number(sale.totalAmount))}</strong>.
-                                    Outstanding: <strong className="text-orange-600 dark:text-orange-400">{formatPrice(Number(sale.outstandingBalance))}</strong>.
-                                    Transfer each installment to:
-                                </>
-                            ) : (
-                                <>
-                                    Please transfer <strong className="text-blue-600 dark:text-blue-400">{formatPrice(Number(sale.totalAmount))}</strong> to:
-                                </>
-                            )}
-                        </p>
-                        <div className="bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-                            <p className="font-semibold text-gray-900 dark:text-white">{sale.shop.name} Bank</p>
-                            <p className="text-gray-600 dark:text-gray-300 font-mono mt-1">ACC: 1234567890</p>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-                            Use Order <strong>#{sale.orderId}</strong> as payment reference
-                        </p>
-                    </div>
+                    {sale.paymentMethod === 'bank_transfer' ? (
+                        <>
+                            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg mb-5 text-sm">
+                                <p className="text-gray-700 dark:text-gray-300 mb-3">
+                                    {sale.paymentType === 'installment' ? (
+                                        <>
+                                            Total: <strong>{formatPrice(Number(sale.totalAmount))}</strong>.
+                                            Outstanding: <strong className="text-orange-600 dark:text-orange-400">{formatPrice(Number(sale.outstandingBalance))}</strong>.
+                                            Transfer each installment to:
+                                        </>
+                                    ) : (
+                                        <>
+                                            Please transfer <strong className="text-blue-600 dark:text-blue-400">{formatPrice(Number(sale.totalAmount))}</strong> to:
+                                        </>
+                                    )}
+                                </p>
+                                {hasBankTransferDetails ? (
+                                    <div className="bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-600 rounded-lg space-y-1">
+                                        <p className="font-semibold text-gray-900 dark:text-white">{sale.shop.transferBankName}</p>
+                                        <p className="text-gray-700 dark:text-gray-300">{sale.shop.transferAccountName}</p>
+                                        <p className="text-gray-600 dark:text-gray-300 font-mono">{sale.shop.transferAccountNumber}</p>
+                                    </div>
+                                ) : (
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-800 dark:text-amber-300">
+                                        The shop has not configured bank transfer details yet. Contact the shop before making payment.
+                                    </div>
+                                )}
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                                    Use Order <strong>#{sale.orderId}</strong> as payment reference
+                                </p>
+                            </div>
 
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-5">
-                        <h3 className="text-sm font-semibold mb-4 text-gray-900 dark:text-white">
-                            {sale.paymentType === 'installment' ? 'Upload Proof per Installment' : 'Upload Payment Receipt'}
-                        </h3>
-                        <UploadReceiptForm
-                            orderId={sale.id}
-                            shopName={shopName}
-                            paymentType={sale.paymentType}
-                            saleProof={sale.proofOfPayment}
-                            installments={sale.installments.map((i) => ({
-                                id: i.id,
-                                amount: Number(i.amount),
-                                createdAt: i.createdAt.toISOString(),
-                                proofOfPayment: i.proofOfPayment,
-                            }))}
-                        />
-                    </div>
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-5">
+                                <h3 className="text-sm font-semibold mb-4 text-gray-900 dark:text-white">
+                                    {sale.paymentType === 'installment' ? 'Upload Proof per Installment' : 'Upload Payment Receipt'}
+                                </h3>
+                                <UploadReceiptForm
+                                    orderId={sale.id}
+                                    shopName={shopName}
+                                    paymentType={sale.paymentType}
+                                    saleProof={sale.proofOfPayment}
+                                    installments={sale.installments.map((i) => ({
+                                        id: i.id,
+                                        amount: Number(i.amount),
+                                        createdAt: i.createdAt.toISOString(),
+                                        proofOfPayment: i.proofOfPayment,
+                                    }))}
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg text-sm text-gray-700 dark:text-gray-300">
+                            <p>
+                                Payment method: <strong>{sale.paymentMethod === 'card' ? 'Card' : 'Cash'}</strong>.
+                            </p>
+                            <p className="mt-2">
+                                The shop will collect payment when your order is confirmed for pickup or collection.
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
 

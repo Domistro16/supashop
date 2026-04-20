@@ -25,6 +25,9 @@ export default function ShopSettingsPage() {
         heroSubtitle: '',
         primaryColor: 'blue',
         isStorefrontEnabled: true,
+        transferBankName: '',
+        transferAccountName: '',
+        transferAccountNumber: '',
     });
 
     const shopId = currentShop?.id || shops?.[0]?.id;
@@ -52,6 +55,9 @@ export default function ShopSettingsPage() {
                         heroSubtitle: shopData.heroSubtitle || '',
                         primaryColor: shopData.primaryColor || 'blue',
                         isStorefrontEnabled: shopData.isStorefrontEnabled ?? true,
+                        transferBankName: shopData.transferBankName || '',
+                        transferAccountName: shopData.transferAccountName || '',
+                        transferAccountNumber: shopData.transferAccountNumber || '',
                     });
                 } else {
                     console.error('Failed to fetch shop settings');
@@ -239,6 +245,41 @@ export default function ShopSettingsPage() {
                                     <option value="pink">Pink</option>
                                     <option value="neutral">Neutral (Black/Gray)</option>
                                 </select>
+                            </div>
+                            <div className="border-t pt-4 space-y-4">
+                                <div>
+                                    <Label className="text-base">Bank Transfer Details</Label>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Customers will only see bank transfer on the storefront when all three fields are filled.
+                                    </p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="transferBankName">Bank Name</Label>
+                                    <Input
+                                        id="transferBankName"
+                                        placeholder="e.g. Access Bank"
+                                        value={formData.transferBankName}
+                                        onChange={e => setFormData({ ...formData, transferBankName: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="transferAccountName">Account Name</Label>
+                                    <Input
+                                        id="transferAccountName"
+                                        placeholder="e.g. SupaShop Ventures"
+                                        value={formData.transferAccountName}
+                                        onChange={e => setFormData({ ...formData, transferAccountName: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="transferAccountNumber">Account Number</Label>
+                                    <Input
+                                        id="transferAccountNumber"
+                                        placeholder="e.g. 0123456789"
+                                        value={formData.transferAccountNumber}
+                                        onChange={e => setFormData({ ...formData, transferAccountNumber: e.target.value })}
+                                    />
+                                </div>
                             </div>
                             <div className="pt-4">
                                 <Button onClick={handleSaveSettings} disabled={isSaving}>
