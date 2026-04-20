@@ -56,6 +56,12 @@ model Shop {
   loyaltySilverThreshold   Int      @default(1000) @map("loyalty_silver_threshold")
   loyaltyGoldThreshold     Int      @default(5000) @map("loyalty_gold_threshold")
   loyaltyPlatinumThreshold Int      @default(10000) @map("loyalty_platinum_threshold")
+  parentShopId        String?           @map("parent_shop_id")
+  branchLabel         String?           @map("branch_label")
+  parent              Shop?             @relation("ShopBranches", fields: [parentShopId], references: [id], onDelete: SetNull)
+  branches            Shop[]            @relation("ShopBranches")
+  outgoingTransfers   StockTransfer[]   @relation("TransferFromShop")
+  incomingTransfers   StockTransfer[]   @relation("TransferToShop")
   activityLogs        ActivityLog[]
   customers           Customer[]
   notifications       Notification[]
@@ -68,7 +74,39 @@ model Shop {
   staff               StaffShop[]
   suppliers           Supplier[]
 
+  @@index([parentShopId])
   @@map("shops")
+}
+
+model StockTransfer {
+  id              String              @id @default(uuid())
+  fromShopId      String              @map("from_shop_id")
+  toShopId        String              @map("to_shop_id")
+  status          String              @default("pending")
+  notes           String?
+  createdByUserId String              @map("created_by_user_id")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  completedAt     DateTime?           @map("completed_at")
+  fromShop        Shop                @relation("TransferFromShop", fields: [fromShopId], references: [id], onDelete: Cascade)
+  toShop          Shop                @relation("TransferToShop", fields: [toShopId], references: [id], onDelete: Cascade)
+  items           StockTransferItem[]
+
+  @@index([fromShopId])
+  @@index([toShopId])
+  @@index([status])
+  @@map("stock_transfers")
+}
+
+model StockTransferItem {
+  id                String        @id @default(uuid())
+  transferId        String        @map("transfer_id")
+  fromProductId     String        @map("from_product_id")
+  toProductId       String?       @map("to_product_id")
+  quantity          Int
+  transfer          StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+
+  @@index([transferId])
+  @@map("stock_transfer_items")
 }
 
 model StaffShop {
@@ -161,13 +199,17 @@ model Product {
   costPrice          Decimal?            @map("cost_price") @db.Decimal(10, 2)
   isFeatured         Boolean             @default(false) @map("is_featured")
   barcode            String?
+  originProductId    String?             @map("origin_product_id")
   shop               Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
   supplier           Supplier?           @relation(fields: [supplierId], references: [id])
+  origin             Product?            @relation("ProductBranchClones", fields: [originProductId], references: [id], onDelete: SetNull)
+  branchClones       Product[]           @relation("ProductBranchClones")
   purchaseOrderItems PurchaseOrderItem[]
   saleItems          SaleItem[]
 
   @@unique([shopId, barcode])
   @@index([shopId, barcode])
+  @@index([originProductId])
   @@map("products")
 }
 

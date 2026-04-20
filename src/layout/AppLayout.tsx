@@ -3,6 +3,7 @@ import { SidebarProvider, useSidebar } from "../context/SidebarContext";
 import AppHeader from "./AppHeader";
 import Backdrop from "./Backdrop";
 import AppSidebar from "./AppSidebar";
+import ShopAssistantWidget from "../components/ai/ShopAssistantWidget";
 
 interface LayoutContentProps {
   children: React.ReactNode;
@@ -27,6 +28,7 @@ const LayoutContent: React.FC<LayoutContentProps> = ({ children }) => {
           {children}
         </div>
       </div>
+      <ShopAssistantWidget />
     </div>
   );
 };

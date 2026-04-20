@@ -3,7 +3,9 @@ import { useNavigate } from '@/lib/react-router-compat';
 import api, { Customer } from '../../lib/api';
 import { formatCurrency, formatTimeAgo } from '../../utils/formatters';
 import { toast } from 'react-hot-toast';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, MessageCircle } from 'lucide-react';
+import { useUser } from '@/context/UserContext';
+import { waLink, comeBackSoonMessage, debtReminderMessage } from '@/lib/utils/whatsapp';
 
 interface CustomerProfileProps {
   customerId: string;
@@ -11,6 +13,7 @@ interface CustomerProfileProps {
 
 export default function CustomerProfile({ customerId }: CustomerProfileProps) {
   const navigate = useNavigate();
+  const { currentShop } = useUser();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [adjustDelta, setAdjustDelta] = useState<string>('');
@@ -239,7 +242,38 @@ export default function CustomerProfile({ customerId }: CustomerProfileProps) {
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</dt>
-            <dd className="mt-1 text-sm text-gray-900 dark:text-white/90">{customer.phone || '-'}</dd>
+            <dd className="mt-1 text-sm text-gray-900 dark:text-white/90 flex items-center gap-3 flex-wrap">
+              {customer.phone ? (
+                <a href={`tel:${customer.phone}`} className="text-blue-600 dark:text-blue-400 hover:underline">{customer.phone}</a>
+              ) : (
+                <span>-</span>
+              )}
+              {customer.phone && (() => {
+                const balance = Number((customer as any).outstandingBalance || 0);
+                const href = balance > 0
+                  ? waLink(customer.phone, debtReminderMessage({
+                      shopName: currentShop?.name || 'our shop',
+                      customerName: customer.name,
+                      outstandingBalance: balance,
+                    }))
+                  : waLink(customer.phone, comeBackSoonMessage({
+                      shopName: currentShop?.name || 'our shop',
+                      customerName: customer.name,
+                    }));
+                if (!href) return null;
+                return (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    {balance > 0 ? 'Send debt reminder' : 'Message on WhatsApp'}
+                  </a>
+                );
+              })()}
+            </dd>
           </div>
           <div className="md:col-span-2">
             <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</dt>

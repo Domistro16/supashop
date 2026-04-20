@@ -13,10 +13,14 @@ import {
   Package,
   Calendar,
   DollarSign,
+  MessageCircle,
 } from "lucide-react";
+import { useUser } from "@/context/UserContext";
+import { waLink, restockNudgeMessage } from "@/lib/utils/whatsapp";
 
 export default function SupplierProfile() {
   const navigate = useNavigate();
+  const { currentShop } = useUser();
   const { id } = useParams<{ id: string }>();
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(true);
@@ -224,12 +228,36 @@ export default function SupplierProfile() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Phone
                 </p>
-                <a
-                  href={`tel:${supplier.phone}`}
-                  className="text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  {supplier.phone}
-                </a>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <a
+                    href={`tel:${supplier.phone}`}
+                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    {supplier.phone}
+                  </a>
+                  {(() => {
+                    const href = waLink(
+                      supplier.phone,
+                      restockNudgeMessage({
+                        shopName: currentShop?.name || "our shop",
+                        supplierName: supplier.name,
+                        products: [],
+                      })
+                    );
+                    if (!href) return null;
+                    return (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50"
+                      >
+                        <MessageCircle className="w-3 h-3" />
+                        Restock via WhatsApp
+                      </a>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
           )}

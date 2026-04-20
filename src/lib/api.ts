@@ -739,6 +739,135 @@ export const ai = {
     const response = await apiCall<{ success: boolean; data: AIDailyBriefing }>(`/shops/${id}/briefing`, { method: 'POST' }, true);
     return response.data;
   },
+
+  // Shop assistant natural-language Q&A
+  askAssistant: async (
+    question: string,
+    history?: { role: 'user' | 'assistant'; content: string }[],
+    shopId?: string
+  ): Promise<{ answer: string; snapshotAt: string }> => {
+    const id = shopId || currentShopId;
+    const response = await apiCall<{ success: boolean; answer: string; snapshotAt: string }>(
+      `/ai/assistant`,
+      { method: 'POST', body: JSON.stringify({ shopId: id, question, history }) },
+      true
+    );
+    return { answer: response.answer, snapshotAt: response.snapshotAt };
+  },
+};
+
+// ============================================
+// Branches / Multi-location API
+// ============================================
+
+export interface Branch {
+  id: string;
+  name: string;
+  branchLabel?: string | null;
+  address?: string | null;
+  createdAt: string;
+  _count: { products: number; sales: number };
+}
+
+export interface ConsolidatedReportRow {
+  shopId: string;
+  name: string;
+  branchLabel?: string | null;
+  isHQ: boolean;
+  revenue30d: number;
+  sales30d: number;
+  productCount: number;
+  outstandingBalance: number;
+}
+
+export interface StockTransfer {
+  id: string;
+  fromShopId: string;
+  toShopId: string;
+  status: 'pending' | 'completed' | 'cancelled';
+  notes?: string | null;
+  createdAt: string;
+  completedAt?: string | null;
+  fromShop: { id: string; name: string; branchLabel?: string | null };
+  toShop: { id: string; name: string; branchLabel?: string | null };
+  items: { id: string; fromProductId: string; toProductId?: string | null; quantity: number }[];
+}
+
+export const branchesApi = {
+  list: async (): Promise<{ rootShopId: string; branches: Branch[] }> => {
+    const res = await apiCall<{ success: boolean; rootShopId: string; branches: Branch[] }>(
+      '/branches',
+      {},
+      true
+    );
+    return { rootShopId: res.rootShopId, branches: res.branches };
+  },
+
+  create: async (args: { name: string; branchLabel?: string; address?: string }): Promise<{ branchId: string; clonedProducts: number }> => {
+    const res = await apiCall<{ success: boolean; branchId: string; clonedProducts: number }>(
+      '/branches',
+      { method: 'POST', body: JSON.stringify(args) },
+      true
+    );
+    return { branchId: res.branchId, clonedProducts: res.clonedProducts };
+  },
+
+  syncPrices: async (branchId: string): Promise<{ updated: number }> => {
+    const res = await apiCall<{ success: boolean; updated: number }>(
+      `/branches/${branchId}`,
+      { method: 'POST', body: JSON.stringify({ action: 'sync-prices' }) },
+      true
+    );
+    return { updated: res.updated };
+  },
+
+  consolidated: async (): Promise<{ rootShopId: string; perShop: ConsolidatedReportRow[]; totals: { revenue30d: number; sales30d: number; outstandingBalance: number } }> => {
+    const res = await apiCall<{
+      success: boolean;
+      rootShopId: string;
+      perShop: ConsolidatedReportRow[];
+      totals: { revenue30d: number; sales30d: number; outstandingBalance: number };
+    }>('/branches/consolidated', {}, true);
+    return { rootShopId: res.rootShopId, perShop: res.perShop, totals: res.totals };
+  },
+};
+
+export const stockTransfersApi = {
+  list: async (): Promise<StockTransfer[]> => {
+    const res = await apiCall<{ success: boolean; transfers: StockTransfer[] }>(
+      '/stock-transfers',
+      {},
+      true
+    );
+    return res.transfers;
+  },
+
+  create: async (args: {
+    toShopId: string;
+    items: { fromProductId: string; quantity: number }[];
+    notes?: string;
+  }): Promise<string> => {
+    const res = await apiCall<{ success: boolean; transferId: string }>(
+      '/stock-transfers',
+      { method: 'POST', body: JSON.stringify(args) },
+      true
+    );
+    return res.transferId;
+  },
+
+  complete: async (transferId: string): Promise<void> => {
+    await apiCall(`/stock-transfers/${transferId}`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'complete' }),
+    }, true);
+  },
+
+  cancel: async (transferId: string): Promise<void> => {
+    await apiCall(`/stock-transfers/${transferId}`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'cancel' }),
+    }, true);
+  },
 };
 
 // ============================================
@@ -1077,6 +1206,8 @@ export const api = {
   suppliers,
   reports,
   loyalty,
+  branches: branchesApi,
+  stockTransfers: stockTransfersApi,
 };
 
 export default api;

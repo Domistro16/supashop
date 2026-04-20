@@ -11,7 +11,9 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import Spinner from "@/components/ui/Spinner";
 import api, { Installment } from "@/lib/api";
 import { toast } from "react-hot-toast";
-import { Share2 } from "lucide-react";
+import { Share2, MessageCircle } from "lucide-react";
+import { waLink, receiptMessage, paymentVerifiedMessage } from "@/lib/utils/whatsapp";
+import BluetoothPrintButton from "@/components/printer/BluetoothPrintButton";
 
 // ... (existing code)
 
@@ -348,6 +350,36 @@ export default function Single({
             <Share2 className="w-4 h-4 mr-2" />
             Share
           </Button>
+          {activeSale?.customer?.phone && items && items.length > 0 && (() => {
+            const href = waLink(
+              activeSale.customer.phone,
+              receiptMessage({
+                shop: { name: shopInfo?.name || 'our shop', address: shopInfo?.address },
+                customerName: activeSale.customer?.name,
+                orderId: String(activeSale.order_id),
+                items: items.map((it) => ({
+                  name: it.product,
+                  quantity: it.quantity,
+                  lineTotal: it.unitCost * it.quantity,
+                })),
+                total,
+                amountPaid: Number(activeSale.amount_paid || 0),
+                outstandingBalance: Number(activeSale.outstanding_balance || 0),
+              })
+            );
+            if (!href) return null;
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-medium"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                WhatsApp Receipt
+              </a>
+            );
+          })()}
           <Button
             variant="outline"
             className="px-4 py-2"
@@ -355,6 +387,28 @@ export default function Single({
           >
             Print Receipt
           </Button>
+          {activeSale && items && items.length > 0 && (
+            <BluetoothPrintButton
+              label="Bluetooth Print"
+              buildPayload={() => ({
+                shopName: shopInfo?.name || 'Supashop',
+                shopAddress: shopInfo?.address,
+                shopPhone: shopInfo?.phone,
+                orderId: String(activeSale.order_id),
+                cashier: staff,
+                customerName: activeSale.customer?.name,
+                items: (items || []).map((it) => ({
+                  name: it.product,
+                  quantity: it.quantity,
+                  unitPrice: it.unitCost,
+                  lineTotal: it.unitCost * it.quantity,
+                })),
+                total,
+                amountPaid: Number(activeSale.amount_paid || 0),
+                outstandingBalance: Number(activeSale.outstanding_balance || 0),
+              })}
+            />
+          )}
         </div>
       </div>
 
@@ -778,6 +832,21 @@ export default function Single({
                       });
 
                       toast.success('Payment recorded successfully!');
+
+                      const phone = activeSale?.customer?.phone;
+                      if (phone) {
+                        const href = waLink(phone, paymentVerifiedMessage({
+                          shopName: shopInfo?.name || 'our shop',
+                          customerName: activeSale?.customer?.name,
+                          orderId: String(activeSale?.order_id),
+                          amount: Number(paymentAmount),
+                        }));
+                        if (href && typeof window !== 'undefined' &&
+                          window.confirm('Payment saved. Notify the customer via WhatsApp?')) {
+                          window.open(href, '_blank', 'noopener,noreferrer');
+                        }
+                      }
+
                       setShowPaymentModal(false);
                       setPaymentAmount('');
                       setPaymentMethod('cash');
