@@ -235,6 +235,7 @@ model Sale {
   isOnlineOrder      Boolean          @default(false) @map("is_online_order")
   orderStatus        String           @default("completed") @map("order_status")
   proofOfPayment     String?          @map("proof_of_payment")
+  stockDeductedAt    DateTime?        @map("stock_deducted_at")
   installments       Installment[]
   offlineSync        OfflineSaleSync?
   saleItems          SaleItem[]

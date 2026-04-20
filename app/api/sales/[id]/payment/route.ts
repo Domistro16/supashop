@@ -43,6 +43,7 @@ export async function PUT(
                 installments: {
                     orderBy: { createdAt: 'desc' },
                 },
+                saleItems: true,
             },
         });
 
@@ -86,6 +87,14 @@ export async function PUT(
         const resolvedProof = isStorefrontSale ? storefrontProof : (proofOfPayment || null);
         const resolvedNotes = typeof notes === 'string' && notes.trim().length > 0 ? notes.trim().slice(0, 500) : null;
 
+        const shouldAdvanceOrderStatus = isStorefrontSale &&
+            (sale.orderStatus === 'payment_review' || sale.orderStatus === 'payment_pending');
+        const nextOrderStatus = shouldAdvanceOrderStatus
+            ? (newPaymentStatus === 'completed' ? 'ready_for_collection' : 'payment_pending')
+            : sale.orderStatus;
+
+        const shouldDeductStock = isStorefrontSale && !sale.stockDeductedAt;
+
         const updatedSale = await prisma.$transaction(async (tx) => {
             // Create installment record
             await tx.installment.create({
@@ -98,6 +107,15 @@ export async function PUT(
                 },
             });
 
+            if (shouldDeductStock) {
+                for (const item of sale.saleItems) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { stock: { decrement: item.quantity } },
+                    });
+                }
+            }
+
             // Update sale totals
             return tx.sale.update({
                 where: { id: sale.id },
@@ -105,6 +123,8 @@ export async function PUT(
                     amountPaid: newAmountPaid,
                     outstandingBalance: newOutstandingBalance,
                     paymentStatus: newPaymentStatus,
+                    orderStatus: nextOrderStatus,
+                    ...(shouldDeductStock ? { stockDeductedAt: new Date() } : {}),
                 },
                 include: {
                     installments: {
