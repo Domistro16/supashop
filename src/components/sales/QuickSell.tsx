@@ -23,13 +23,14 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
 
   const [unitMode, setUnitMode] = useState<'piece' | 'pack'>('piece');
   const [quantity, setQuantity] = useState(1);
+  const [extraPieces, setExtraPieces] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(false);
   const { refreshSales, refreshProducts } = useDataRefresh();
 
-  const multiplier = unitMode === 'pack' ? packSize : 1;
-  const totalPieces = quantity * multiplier;
-  const maxQuantity = Math.max(1, Math.floor(product.stock / multiplier));
+  const totalPieces = unitMode === 'pack' ? (quantity * packSize + extraPieces) : quantity;
+  const maxPackQuantity = Math.max(1, Math.floor(product.stock / packSize));
+  const maxExtraPieces = Math.max(0, product.stock - quantity * packSize);
 
   // Payment tracking state
   const [paymentType, setPaymentType] = useState<PaymentType>('full');
