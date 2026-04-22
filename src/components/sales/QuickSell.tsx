@@ -30,7 +30,7 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
 
   const totalPieces = unitMode === 'pack' ? (quantity * packSize + extraPieces) : quantity;
   const maxPackQuantity = Math.max(1, Math.floor(product.stock / packSize));
-  const maxExtraPieces = Math.max(0, product.stock - quantity * packSize);
+  const maxExtraPieces = Math.max(0, Math.min(packSize - 1, product.stock - quantity * packSize));
 
   // Payment tracking state
   const [paymentType, setPaymentType] = useState<PaymentType>('full');
@@ -255,7 +255,7 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => { setUnitMode('piece'); setQuantity(1); }}
+                  onClick={() => { setUnitMode('piece'); setQuantity(1); setExtraPieces(0); }}
                   className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${unitMode === 'piece'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -265,7 +265,7 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setUnitMode('pack'); setQuantity(1); }}
+                  onClick={() => { setUnitMode('pack'); setQuantity(1); setExtraPieces(0); }}
                   className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${unitMode === 'pack'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -286,15 +286,45 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
             <div className="flex items-center gap-3">
               <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={loading || quantity <= 1}
                 className="px-3 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50">-</button>
-              <input type="number" autoFocus required min={1} max={maxQuantity} value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Math.min(maxQuantity, Number(e.target.value))))}
+              <input
+                type="number"
+                autoFocus
+                required
+                min={unitMode === 'pack' ? 0 : 1}
+                max={unitMode === 'pack' ? maxPackQuantity : product.stock}
+                value={quantity}
+                onChange={(e) => {
+                  const raw = Number(e.target.value);
+                  const maxVal = unitMode === 'pack' ? maxPackQuantity : product.stock;
+                  const minVal = unitMode === 'pack' ? 0 : 1;
+                  setQuantity(Math.max(minVal, Math.min(maxVal, raw)));
+                }}
                 className="flex-1 px-3 py-2 text-center text-sm border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90" />
-              <button type="button" onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))} disabled={loading || quantity >= maxQuantity}
+              <button
+                type="button"
+                onClick={() => setQuantity(Math.min(unitMode === 'pack' ? maxPackQuantity : product.stock, quantity + 1))}
+                disabled={loading || quantity >= (unitMode === 'pack' ? maxPackQuantity : product.stock)}
                 className="px-3 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50">+</button>
             </div>
+
             {unitMode === 'pack' && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                {quantity} × {packSize} = <span className="font-semibold text-blue-600 dark:text-blue-400">{totalPieces} pieces</span>
+              <div className="mt-3">
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  + Loose pieces <span className="text-gray-400">(optional)</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={maxExtraPieces}
+                  value={extraPieces}
+                  onChange={(e) => setExtraPieces(Math.max(0, Math.min(maxExtraPieces, Number(e.target.value) || 0)))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90"
+                  placeholder="0"
+                />
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  {quantity} × {packSize}
+                  {extraPieces > 0 ? ` + ${extraPieces}` : ''} = <span className="font-semibold text-blue-600 dark:text-blue-400">{totalPieces} pieces</span>
+                </div>
               </div>
             )}
           </div>

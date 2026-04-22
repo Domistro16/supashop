@@ -556,12 +556,13 @@ export default function Products({ products }: { products: Product[] }) {
                     const rowPackName = (s as any).packName as string | null | undefined;
                     const rowMode = unitModes[s.id] ?? 'piece';
                     const rowHasPack = rowPackSize > 1;
-                    const displayQty = rowMode === 'pack' ? Math.max(1, Math.round(quantity / rowPackSize)) : quantity;
-                    const maxDisplayQty = rowMode === 'pack' ? Math.max(1, Math.floor(s.stock / rowPackSize)) : s.stock;
+                    const packCount = rowMode === 'pack' ? Math.floor(quantity / rowPackSize) : 0;
+                    const extrasCount = rowMode === 'pack' ? quantity % rowPackSize : 0;
+                    const maxPackCount = Math.floor(s.stock / rowPackSize);
                     return (
                       <div
                         key={index}
-                        className="p-1 px-5 text-[14px] w-full flex items-center py-2 hover:bg-white/5 transition-colors border-b border-gray-800/50"
+                        className="p-1 px-5 text-[14px] w-full flex items-start py-2 hover:bg-white/5 transition-colors border-b border-gray-800/50"
                       >
                         <div className="flex-1 text-white font-medium truncate pr-2" title={s.name}>
                           {s.name}
@@ -577,44 +578,71 @@ export default function Products({ products }: { products: Product[] }) {
                             currency: "NGN",
                           }).format(Number(s.price))}
                         </div>
-                        <div className="w-32 flex justify-center px-1 gap-1 items-center">
-                          <Input
-                            className="w-full text-center h-8 text-white no-spinner bg-gray-900/50 border-gray-600 focus:border-blue-500"
-                            type="number"
-                            min={1}
-                            max={maxDisplayQty}
-                            value={displayQty}
-                            onChange={(e) => {
-                              let val = e.target.value;
-                              if (val === "") {
-                                handleQuantityChange(s.id, "");
-                                return;
-                              }
-                              let num = Number(val);
-                              if (num < 1) num = 1;
-                              if (num > maxDisplayQty) num = maxDisplayQty;
-                              const pieces = rowMode === 'pack' ? num * rowPackSize : num;
-                              handleQuantityChange(s.id, pieces);
-                            }}
-                          />
-                          {rowHasPack && (
-                            <select
-                              value={rowMode}
+                        <div className="w-32 flex flex-col justify-center px-1 gap-1">
+                          <div className="flex gap-1 items-center">
+                            <Input
+                              className="w-full text-center h-8 text-white no-spinner bg-gray-900/50 border-gray-600 focus:border-blue-500"
+                              type="number"
+                              min={rowMode === 'pack' ? 0 : 1}
+                              max={rowMode === 'pack' ? maxPackCount : s.stock}
+                              value={rowMode === 'pack' ? packCount : quantity}
                               onChange={(e) => {
-                                const next = e.target.value as 'piece' | 'pack';
-                                setUnitModes((prev) => ({ ...prev, [s.id]: next }));
-                                if (next === 'pack') {
-                                  const curPieces = quantities[s.id] ?? 1;
-                                  const rounded = Math.max(1, Math.round(curPieces / rowPackSize));
-                                  handleQuantityChange(s.id, rounded * rowPackSize);
+                                const val = e.target.value;
+                                if (val === "") {
+                                  handleQuantityChange(s.id, "");
+                                  return;
+                                }
+                                const raw = Number(val);
+                                if (rowMode === 'pack') {
+                                  const packs = Math.max(0, Math.min(maxPackCount, raw));
+                                  const pieces = packs * rowPackSize + extrasCount;
+                                  handleQuantityChange(s.id, Math.max(1, pieces));
+                                } else {
+                                  const pieces = Math.max(1, Math.min(s.stock, raw));
+                                  handleQuantityChange(s.id, pieces);
                                 }
                               }}
-                              className="h-8 text-[10px] bg-gray-900/50 border border-gray-600 text-white rounded px-1"
-                              title={rowPackName ? `Pack = ${rowPackSize} pcs per ${rowPackName}` : `Pack = ${rowPackSize} pcs`}
-                            >
-                              <option value="piece">pcs</option>
-                              <option value="pack">{rowPackName || 'pack'}</option>
-                            </select>
+                            />
+                            {rowHasPack && (
+                              <select
+                                value={rowMode}
+                                onChange={(e) => {
+                                  const next = e.target.value as 'piece' | 'pack';
+                                  setUnitModes((prev) => ({ ...prev, [s.id]: next }));
+                                  if (next === 'pack') {
+                                    const curPieces = quantities[s.id] ?? 1;
+                                    if (curPieces < rowPackSize) {
+                                      const bumped = Math.min(s.stock, rowPackSize);
+                                      handleQuantityChange(s.id, bumped);
+                                    }
+                                  }
+                                }}
+                                className="h-8 text-[10px] bg-gray-900/50 border border-gray-600 text-white rounded px-1"
+                                title={rowPackName ? `Pack = ${rowPackSize} pcs per ${rowPackName}` : `Pack = ${rowPackSize} pcs`}
+                              >
+                                <option value="piece">pcs</option>
+                                <option value="pack">{rowPackName || 'pack'}</option>
+                              </select>
+                            )}
+                          </div>
+                          {rowHasPack && rowMode === 'pack' && (
+                            <Input
+                              className="w-full text-center h-7 text-white no-spinner bg-gray-900/50 border-gray-600 focus:border-blue-500 text-[11px]"
+                              type="number"
+                              min={0}
+                              max={rowPackSize - 1}
+                              value={extrasCount}
+                              placeholder="+ loose"
+                              onChange={(e) => {
+                                const raw = Number(e.target.value) || 0;
+                                const extras = Math.max(0, Math.min(rowPackSize - 1, raw));
+                                const pieces = Math.max(1, packCount * rowPackSize + extras);
+                                if (pieces <= s.stock) {
+                                  handleQuantityChange(s.id, pieces);
+                                }
+                              }}
+                              title="Loose pieces on top of the packs"
+                            />
                           )}
                         </div>
                         <div className="w-20 flex justify-center px-1">
