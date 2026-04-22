@@ -360,16 +360,79 @@ export const record_sale = async (
 
     const { redemptionDiscount: _drop, ...sendOptions } = paymentOptions || {};
 
-    // Create sale with optional customer and payment info
-    const sale = await api.sales.create({
+    const { enqueueSale, generateClientTempId } = await import('./lib/offline/saleQueue');
+    const { notifyQueueChanged } = await import('./lib/offline/syncEngine');
+
+    const clientTempId = generateClientTempId();
+    const shopId = api.shops.getCurrentShopId();
+
+    const createPayload = {
       items: saleItems,
       totalAmount: finalTotal,
       customerId,
       ...sendOptions,
-    });
+      clientTempId,
+    };
 
-    console.log('Sale recorded successfully');
-    return sale;
+    const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+
+    // Short-circuit to the queue when we know we're offline
+    if (isOffline) {
+      if (!shopId) {
+        console.error('Cannot queue offline sale: no active shop');
+        return null;
+      }
+      await enqueueSale({
+        clientTempId,
+        shopId,
+        payload: {
+          items: saleItems,
+          totalAmount: finalTotal,
+          customerId,
+          ...sendOptions,
+        },
+      });
+      notifyQueueChanged();
+      return {
+        id: `queued-${clientTempId}`,
+        orderId: `queued-${clientTempId.slice(0, 8)}`,
+        queued: true,
+        clientTempId,
+        installments: [],
+      };
+    }
+
+    try {
+      const sale = await api.sales.create(createPayload as any);
+      console.log('Sale recorded successfully');
+      return sale;
+    } catch (error: any) {
+      // Network failure → fall back to queue. Server-returned HTTP errors already
+      // come through apiCall as thrown Error with the server message; only transient
+      // network-layer failures should queue, so we only queue when we can't reach the server.
+      const looksLikeNetwork = /network|failed to fetch|load failed|ERR_/i.test(String(error?.message || error));
+      if (looksLikeNetwork && shopId) {
+        await enqueueSale({
+          clientTempId,
+          shopId,
+          payload: {
+            items: saleItems,
+            totalAmount: finalTotal,
+            customerId,
+            ...sendOptions,
+          },
+        });
+        notifyQueueChanged();
+        return {
+          id: `queued-${clientTempId}`,
+          orderId: `queued-${clientTempId.slice(0, 8)}`,
+          queued: true,
+          clientTempId,
+          installments: [],
+        };
+      }
+      throw error;
+    }
   } catch (error) {
     console.error('Failed to record sale:', error);
     return null;

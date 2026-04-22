@@ -85,6 +85,8 @@ export async function POST(request: NextRequest) {
       notes,
       installments = [],
       pointsRedeemed = 0,
+      clientTempId,
+      fromOfflineSync = false,
     } = body;
 
     const trimmedNotes = typeof notes === 'string' && notes.trim().length > 0
@@ -93,6 +95,21 @@ export async function POST(request: NextRequest) {
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'At least one item is required' }, { status: 400 });
+    }
+
+    // Offline-sync idempotency: if we've already processed this clientTempId, return the existing sale.
+    if (clientTempId && typeof clientTempId === 'string') {
+      const existingSync = await prisma.offlineSaleSync.findUnique({
+        where: {
+          shopId_clientTempId: { shopId, clientTempId },
+        },
+        include: {
+          sale: { include: { installments: { orderBy: { createdAt: 'asc' } } } },
+        },
+      });
+      if (existingSync) {
+        return NextResponse.json(existingSync.sale);
+      }
     }
 
     // Validate customer if provided
@@ -124,7 +141,7 @@ export async function POST(request: NextRequest) {
         }, { status: 404 });
       }
 
-      if (product.stock < item.quantity) {
+      if (!fromOfflineSync && product.stock < item.quantity) {
         return NextResponse.json({
           error: `Insufficient stock for product ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`,
         }, { status: 400 });
@@ -221,17 +238,29 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // Offline-sync tombstone — lets retries be idempotent
+      if (clientTempId && typeof clientTempId === 'string') {
+        await tx.offlineSaleSync.create({
+          data: {
+            shopId,
+            clientTempId,
+            saleId: newSale.id,
+          },
+        });
+      }
+
       // Log activity
       await tx.activityLog.create({
         data: {
           shopId,
           staffId: authResult.user!.id,
-          action: 'record_sale',
+          action: fromOfflineSync ? 'sync_offline_sale' : 'record_sale',
           details: {
             saleId: newSale.id,
             orderId: newSale.orderId,
             totalAmount: totalAmount.toString(),
             itemCount: items.length,
+            ...(clientTempId ? { clientTempId } : {}),
           },
         },
       });

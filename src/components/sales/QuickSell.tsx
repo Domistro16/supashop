@@ -167,8 +167,16 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
       );
 
       if (sale) {
+        const isQueued = (sale as any)?.queued === true;
+
+        if (isQueued && ((paymentType === 'full' && paymentMethod === 'bank_transfer' && transferProofFile) ||
+          (paymentType === 'installment' && installmentProofFiles.some(Boolean)))) {
+          toast.error('Sale saved offline — proof images will need to be attached after it syncs.');
+        }
+
         // Upload any pending proof files against the newly-created installments.
         try {
+          if (isQueued) throw new Error('skip-upload-queued');
           const createdInstallments: Array<{ id: string }> = Array.isArray(sale?.installments) ? sale.installments : [];
           const uploads: Array<Promise<any>> = [];
 
@@ -201,14 +209,20 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
             }
           }
         } catch (uploadErr: any) {
-          console.error('Proof upload error:', uploadErr);
-          toast.error(`Sale saved, but proof upload failed: ${uploadErr.message || 'unknown error'}`);
+          if (uploadErr?.message !== 'skip-upload-queued') {
+            console.error('Proof upload error:', uploadErr);
+            toast.error(`Sale saved, but proof upload failed: ${uploadErr.message || 'unknown error'}`);
+          }
         }
 
         const statusMsg = outstandingBalance > 0 ? ' (Pending payment)' : '';
-        toast.success(`Sold ${totalPieces} ${product.name}${selectedCustomer ? ` to ${selectedCustomer.name}` : ''}${statusMsg}`);
+        if (isQueued) {
+          toast.success(`Saved offline: ${totalPieces} × ${product.name}. Will sync when back online.`);
+        } else {
+          toast.success(`Sold ${totalPieces} ${product.name}${selectedCustomer ? ` to ${selectedCustomer.name}` : ''}${statusMsg}`);
+        }
 
-        await Promise.all([refreshSales(), refreshProducts()]);
+        await Promise.all([refreshSales().catch(() => {}), refreshProducts().catch(() => {})]);
         onSuccess();
         onClose();
       } else {

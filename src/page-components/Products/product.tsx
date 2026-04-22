@@ -1013,48 +1013,62 @@ export default function Products({ products }: { products: Product[] }) {
                   );
 
                   if (sale) {
-                    try {
-                      const createdInstallments: Array<{ id: string }> = Array.isArray(sale?.installments) ? sale.installments : [];
-                      const uploads: Array<Promise<any>> = [];
+                    const isQueued = (sale as any)?.queued === true;
+                    const hasPendingProofs = (paymentType === 'full' && paymentMethod === 'bank_transfer' && transferProofFile) ||
+                      (paymentType === 'installment' && installmentProofFiles.some(Boolean));
 
-                      if (paymentType === 'full' && paymentMethod === 'bank_transfer' && transferProofFile && createdInstallments[0]?.id) {
-                        const fd = new FormData();
-                        fd.append('file', transferProofFile);
-                        fd.append('orderId', sale.id);
-                        fd.append('installmentId', createdInstallments[0].id);
-                        uploads.push(fetch('/api/upload', { method: 'POST', body: fd }));
-                      }
+                    if (isQueued && hasPendingProofs) {
+                      toast.error('Sale saved offline — proof images will need to be attached after it syncs.');
+                    }
 
-                      if (paymentType === 'installment') {
-                        installmentProofFiles.forEach((file, idx) => {
-                          const target = createdInstallments[idx];
-                          if (file && target?.id) {
-                            const fd = new FormData();
-                            fd.append('file', file);
-                            fd.append('orderId', sale.id);
-                            fd.append('installmentId', target.id);
-                            uploads.push(fetch('/api/upload', { method: 'POST', body: fd }));
-                          }
-                        });
-                      }
+                    if (!isQueued) {
+                      try {
+                        const createdInstallments: Array<{ id: string }> = Array.isArray(sale?.installments) ? sale.installments : [];
+                        const uploads: Array<Promise<any>> = [];
 
-                      if (uploads.length > 0) {
-                        const results = await Promise.allSettled(uploads);
-                        const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !(r.value as Response).ok));
-                        if (failed.length > 0) {
-                          toast.error(`Sale saved, but ${failed.length} proof upload${failed.length > 1 ? 's' : ''} failed`);
+                        if (paymentType === 'full' && paymentMethod === 'bank_transfer' && transferProofFile && createdInstallments[0]?.id) {
+                          const fd = new FormData();
+                          fd.append('file', transferProofFile);
+                          fd.append('orderId', sale.id);
+                          fd.append('installmentId', createdInstallments[0].id);
+                          uploads.push(fetch('/api/upload', { method: 'POST', body: fd }));
                         }
+
+                        if (paymentType === 'installment') {
+                          installmentProofFiles.forEach((file, idx) => {
+                            const target = createdInstallments[idx];
+                            if (file && target?.id) {
+                              const fd = new FormData();
+                              fd.append('file', file);
+                              fd.append('orderId', sale.id);
+                              fd.append('installmentId', target.id);
+                              uploads.push(fetch('/api/upload', { method: 'POST', body: fd }));
+                            }
+                          });
+                        }
+
+                        if (uploads.length > 0) {
+                          const results = await Promise.allSettled(uploads);
+                          const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !(r.value as Response).ok));
+                          if (failed.length > 0) {
+                            toast.error(`Sale saved, but ${failed.length} proof upload${failed.length > 1 ? 's' : ''} failed`);
+                          }
+                        }
+                      } catch (uploadErr: any) {
+                        console.error('Proof upload error:', uploadErr);
+                        toast.error(`Sale saved, but proof upload failed: ${uploadErr.message || 'unknown error'}`);
                       }
-                    } catch (uploadErr: any) {
-                      console.error('Proof upload error:', uploadErr);
-                      toast.error(`Sale saved, but proof upload failed: ${uploadErr.message || 'unknown error'}`);
                     }
 
                     const statusMsg = outstandingBalance > 0 ? ' (Pending payment)' : '';
-                    toast.success(`Sale recorded successfully!${statusMsg}`);
+                    if (isQueued) {
+                      toast.success('Saved offline — will sync when back online.');
+                    } else {
+                      toast.success(`Sale recorded successfully!${statusMsg}`);
+                    }
 
-                    // Refresh sales and products data
-                    await Promise.all([refreshSales(), refreshProducts()]);
+                    // Refresh sales and products data (tolerate failures when offline)
+                    await Promise.all([refreshSales().catch(() => {}), refreshProducts().catch(() => {})]);
 
                     setSelected([]);
                     setQuantities({});

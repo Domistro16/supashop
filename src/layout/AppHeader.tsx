@@ -6,6 +6,7 @@ import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 import NotificationDropdown from "../components/header/NotificationDropdown";
 import UserDropdown from "../components/header/UserDropdown";
 import CommandPalette from "../components/header/CommandPalette";
+import OfflineQueueIndicator from "../components/offline/OfflineQueueIndicator";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
@@ -176,6 +177,7 @@ const AppHeader: React.FC = () => {
             } items-center justify-between w-full gap-3 px-3 py-2.5 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
         >
           <div className="flex items-center gap-1.5 2xsm:gap-2">
+            <OfflineQueueIndicator />
             {/* <!-- Dark Mode Toggler --> */}
             <ThemeToggleButton />
             {/* <!-- Dark Mode Toggler --> */}
