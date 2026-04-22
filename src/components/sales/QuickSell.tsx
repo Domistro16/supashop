@@ -17,23 +17,33 @@ type PaymentType = 'full' | 'installment';
 type PaymentMethod = 'cash' | 'bank_transfer' | 'card';
 
 export default function QuickSell({ product, onClose, onSuccess }: QuickSellProps) {
+  const packSize = Math.max(1, Number((product as any).packSize) || 1);
+  const packName = (product as any).packName as string | null | undefined;
+  const hasPack = packSize > 1;
+
+  const [unitMode, setUnitMode] = useState<'piece' | 'pack'>('piece');
   const [quantity, setQuantity] = useState(1);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(false);
   const { refreshSales, refreshProducts } = useDataRefresh();
 
+  const multiplier = unitMode === 'pack' ? packSize : 1;
+  const totalPieces = quantity * multiplier;
+  const maxQuantity = Math.max(1, Math.floor(product.stock / multiplier));
+
   // Payment tracking state
   const [paymentType, setPaymentType] = useState<PaymentType>('full');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
-  const [bankName, setBankName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
+  const [transferNotes, setTransferNotes] = useState('');
+  const [transferProofFile, setTransferProofFile] = useState<File | null>(null);
 
   // Multi-installment state
   const [installments, setInstallments] = useState<InstallmentInput[]>([]);
+  const [installmentProofFiles, setInstallmentProofFiles] = useState<(File | null)[]>([]);
   const [newInstallmentAmount, setNewInstallmentAmount] = useState<number | ''>('');
   const [newInstallmentMethod, setNewInstallmentMethod] = useState<PaymentMethod>('cash');
-  const [newInstallmentBank, setNewInstallmentBank] = useState('');
-  const [newInstallmentAccount, setNewInstallmentAccount] = useState('');
+  const [newInstallmentNotes, setNewInstallmentNotes] = useState('');
+  const [newInstallmentProofFile, setNewInstallmentProofFile] = useState<File | null>(null);
 
   // Loyalty redemption state
   const [loyaltySettings, setLoyaltySettings] = useState<LoyaltySettings | null>(null);
@@ -51,7 +61,7 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
       .catch(() => {});
   }, [selectedCustomer, loyaltySettings]);
 
-  const subtotal = quantity * Number(product.price);
+  const subtotal = totalPieces * Number(product.price);
   const customerPoints = selectedCustomer?.loyaltyPoint?.points ?? 0;
   const nairaPerPoint = loyaltySettings?.nairaPerPoint ?? 0;
   const redemptionEnabled = !!(loyaltySettings?.enabled && selectedCustomer && customerPoints > 0 && nairaPerPoint > 0);
@@ -85,30 +95,37 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
       return;
     }
 
+    const trimmedNotes = newInstallmentMethod === 'bank_transfer' && newInstallmentNotes.trim().length > 0
+      ? newInstallmentNotes.trim().slice(0, 500)
+      : undefined;
+
     const newInst: InstallmentInput = {
       amount: newInstallmentAmount,
       paymentMethod: newInstallmentMethod,
-      bankName: newInstallmentMethod === 'bank_transfer' ? newInstallmentBank : undefined,
-      accountNumber: newInstallmentMethod === 'bank_transfer' ? newInstallmentAccount : undefined,
+      notes: trimmedNotes,
     };
 
+    const newProof = newInstallmentMethod === 'bank_transfer' ? newInstallmentProofFile : null;
+
     setInstallments([...installments, newInst]);
+    setInstallmentProofFiles([...installmentProofFiles, newProof]);
     setNewInstallmentAmount('');
     setNewInstallmentMethod('cash');
-    setNewInstallmentBank('');
-    setNewInstallmentAccount('');
+    setNewInstallmentNotes('');
+    setNewInstallmentProofFile(null);
   };
 
   const removeInstallment = (index: number) => {
     setInstallments(installments.filter((_, i) => i !== index));
+    setInstallmentProofFiles(installmentProofFiles.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (quantity < 1 || quantity > product.stock) {
-      toast.error(`Quantity must be between 1 and ${product.stock}`);
+    if (totalPieces < 1 || totalPieces > product.stock) {
+      toast.error(`Quantity must be between 1 and ${product.stock} pieces (have ${product.stock})`);
       return;
     }
 
@@ -123,10 +140,13 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
       const redemption = redemptionEnabled && pointsToRedeem > 0
         ? { pointsRedeemed: pointsToRedeem, redemptionDiscount }
         : {};
-      const success = await record_sale(
+      const trimmedTransferNotes = paymentMethod === 'bank_transfer' && transferNotes.trim().length > 0
+        ? transferNotes.trim().slice(0, 500)
+        : undefined;
+      const sale = await record_sale(
         [{
           product: product.id,
-          quantity: quantity,
+          quantity: totalPieces,
           unitCost: Number(product.price),
         }],
         selectedCustomer?.id,
@@ -134,9 +154,8 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
           ? {
             paymentType: 'full',
             paymentMethod,
-            bankName: paymentMethod === 'bank_transfer' ? bankName : undefined,
-            accountNumber: paymentMethod === 'bank_transfer' ? accountNumber : undefined,
             amountPaid: totalPrice,
+            notes: trimmedTransferNotes,
             ...redemption,
           }
           : {
@@ -146,9 +165,47 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
           }
       );
 
-      if (success) {
+      if (sale) {
+        // Upload any pending proof files against the newly-created installments.
+        try {
+          const createdInstallments: Array<{ id: string }> = Array.isArray(sale?.installments) ? sale.installments : [];
+          const uploads: Array<Promise<any>> = [];
+
+          if (paymentType === 'full' && paymentMethod === 'bank_transfer' && transferProofFile && createdInstallments[0]?.id) {
+            const fd = new FormData();
+            fd.append('file', transferProofFile);
+            fd.append('orderId', sale.id);
+            fd.append('installmentId', createdInstallments[0].id);
+            uploads.push(fetch('/api/upload', { method: 'POST', body: fd }));
+          }
+
+          if (paymentType === 'installment') {
+            installmentProofFiles.forEach((file, idx) => {
+              const target = createdInstallments[idx];
+              if (file && target?.id) {
+                const fd = new FormData();
+                fd.append('file', file);
+                fd.append('orderId', sale.id);
+                fd.append('installmentId', target.id);
+                uploads.push(fetch('/api/upload', { method: 'POST', body: fd }));
+              }
+            });
+          }
+
+          if (uploads.length > 0) {
+            const results = await Promise.allSettled(uploads);
+            const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !(r.value as Response).ok));
+            if (failed.length > 0) {
+              toast.error(`Sale saved, but ${failed.length} proof upload${failed.length > 1 ? 's' : ''} failed`);
+            }
+          }
+        } catch (uploadErr: any) {
+          console.error('Proof upload error:', uploadErr);
+          toast.error(`Sale saved, but proof upload failed: ${uploadErr.message || 'unknown error'}`);
+        }
+
         const statusMsg = outstandingBalance > 0 ? ' (Pending payment)' : '';
-        toast.success(`Sold ${quantity} ${product.name}${selectedCustomer ? ` to ${selectedCustomer.name}` : ''}${statusMsg}`);
+        toast.success(`Sold ${totalPieces} ${product.name}${selectedCustomer ? ` to ${selectedCustomer.name}` : ''}${statusMsg}`);
 
         await Promise.all([refreshSales(), refreshProducts()]);
         onSuccess();
@@ -190,18 +247,55 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
             <div className="text-lg font-semibold text-blue-700 dark:text-blue-300 mt-1">{formatCurrency(Number(product.price))}</div>
           </div>
 
+          {/* Unit toggle for wholesale packs */}
+          {hasPack && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sell as</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setUnitMode('piece'); setQuantity(1); }}
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${unitMode === 'piece'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                >
+                  Piece
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setUnitMode('pack'); setQuantity(1); }}
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${unitMode === 'pack'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                >
+                  {packName ? `${packName} of ${packSize}` : `Pack of ${packSize}`}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Quantity */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quantity <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Quantity <span className="text-red-500">*</span>
+              {unitMode === 'pack' && <span className="ml-2 text-xs font-normal text-gray-500">({packName || 'pack'}s)</span>}
+            </label>
             <div className="flex items-center gap-3">
               <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={loading || quantity <= 1}
                 className="px-3 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50">-</button>
-              <input type="number" autoFocus required min={1} max={product.stock} value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Math.min(product.stock, Number(e.target.value))))}
+              <input type="number" autoFocus required min={1} max={maxQuantity} value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, Math.min(maxQuantity, Number(e.target.value))))}
                 className="flex-1 px-3 py-2 text-center text-sm border border-gray-200 dark:border-gray-800 rounded-md shadow-sm bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90" />
-              <button type="button" onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} disabled={loading || quantity >= product.stock}
+              <button type="button" onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))} disabled={loading || quantity >= maxQuantity}
                 className="px-3 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50">+</button>
             </div>
+            {unitMode === 'pack' && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                {quantity} × {packSize} = <span className="font-semibold text-blue-600 dark:text-blue-400">{totalPieces} pieces</span>
+              </div>
+            )}
           </div>
 
           {/* Customer */}
@@ -276,12 +370,53 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
                   <option value="card">Card</option>
                 </select>
               </div>
+
               {paymentMethod === 'bank_transfer' && (
                 <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md">
-                  <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="Bank Name"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90" />
-                  <input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="Account Number (Optional)"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90" />
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Notes <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <textarea
+                      value={transferNotes}
+                      onChange={(e) => setTransferNotes(e.target.value.slice(0, 500))}
+                      rows={2}
+                      placeholder="e.g. Sent from GTBank — John A."
+                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Proof of Payment <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-md p-3 text-center relative hover:bg-white dark:hover:bg-gray-800/80 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setTransferProofFile(e.target.files?.[0] || null)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={loading}
+                      />
+                      {transferProofFile ? (
+                        <div className="text-blue-600 dark:text-blue-400 font-medium text-xs break-all">
+                          {transferProofFile.name}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Attach receipt image (JPG/PNG, up to 5MB)
+                        </div>
+                      )}
+                    </div>
+                    {transferProofFile && (
+                      <button
+                        type="button"
+                        onClick={() => setTransferProofFile(null)}
+                        className="mt-1 text-xs text-red-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </>
@@ -295,11 +430,22 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-3 space-y-2">
                   <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Installments Added</div>
                   {installments.map((inst, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-sm bg-white dark:bg-gray-800 p-2 rounded">
-                      <div>
-                        <span className="font-medium">{formatCurrency(Number(inst.amount))}</span>
-                        <span className="text-gray-500 dark:text-gray-400 ml-2">({inst.paymentMethod.replace('_', ' ')})</span>
-                        {inst.bankName && <span className="text-gray-500 dark:text-gray-400"> - {inst.bankName}</span>}
+                    <div key={idx} className="flex justify-between items-start gap-2 text-sm bg-white dark:bg-gray-800 p-2 rounded">
+                      <div className="min-w-0 flex-1">
+                        <div>
+                          <span className="font-medium">{formatCurrency(Number(inst.amount))}</span>
+                          <span className="text-gray-500 dark:text-gray-400 ml-2">({inst.paymentMethod.replace('_', ' ')})</span>
+                          {installmentProofFiles[idx] && (
+                            <span className="text-[10px] ml-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-full">
+                              proof
+                            </span>
+                          )}
+                        </div>
+                        {inst.notes && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate" title={inst.notes}>
+                            {inst.notes}
+                          </div>
+                        )}
                       </div>
                       <button type="button" onClick={() => removeInstallment(idx)} className="text-red-500 hover:text-red-700 text-xs">Remove</button>
                     </div>
@@ -323,11 +469,29 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
                     </select>
                   </div>
                   {newInstallmentMethod === 'bank_transfer' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input type="text" value={newInstallmentBank} onChange={(e) => setNewInstallmentBank(e.target.value)} placeholder="Bank Name"
-                        className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90" />
-                      <input type="text" value={newInstallmentAccount} onChange={(e) => setNewInstallmentAccount(e.target.value)} placeholder="Account #"
-                        className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-white/[0.03] text-gray-800 dark:text-white/90" />
+                    <div className="space-y-2 bg-white dark:bg-gray-800/50 p-2 rounded border border-gray-200 dark:border-gray-700">
+                      <textarea
+                        value={newInstallmentNotes}
+                        onChange={(e) => setNewInstallmentNotes(e.target.value.slice(0, 500))}
+                        rows={2}
+                        placeholder="Notes (optional) — e.g. GTBank transfer"
+                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-white/90"
+                      />
+                      <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-md p-2 text-center relative">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setNewInstallmentProofFile(e.target.files?.[0] || null)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        {newInstallmentProofFile ? (
+                          <div className="text-blue-600 dark:text-blue-400 font-medium text-xs break-all">
+                            {newInstallmentProofFile.name}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Attach proof (optional)</div>
+                        )}
+                      </div>
                     </div>
                   )}
                   <button type="button" onClick={addInstallment}
@@ -365,7 +529,7 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
                   <div>
                     Expected Profit: <span className="text-purple-600 dark:text-purple-400 font-medium">
                       {(() => {
-                        const totalCost = Number(quantity || 0) * Number(product.costPrice || 0);
+                        const totalCost = Number(totalPieces || 0) * Number(product.costPrice || 0);
                         const profit = Math.max(0, totalPrice - totalCost);
                         const margin = totalPrice > 0 ? (profit / totalPrice) * 100 : 0;
 
@@ -383,7 +547,7 @@ export default function QuickSell({ product, onClose, onSuccess }: QuickSellProp
                   <div>
                     Realized Profit: <span className="text-green-600 dark:text-green-400 font-medium">
                       {(() => {
-                        const totalCost = Number(quantity || 0) * Number(product.costPrice || 0);
+                        const totalCost = Number(totalPieces || 0) * Number(product.costPrice || 0);
                         const expectedProfit = Math.max(0, totalPrice - totalCost);
                         const paid = paymentType === 'full' ? totalPrice : installmentTotal;
                         const realized = totalPrice > 0 ? (paid / totalPrice) * expectedProfit : 0;

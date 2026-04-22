@@ -1,0 +1,2 @@
+ALTER TABLE "products" ADD COLUMN "pack_size" INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE "products" ADD COLUMN "pack_name" TEXT;

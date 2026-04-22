@@ -48,6 +48,8 @@ export type Product = {
   category: string;
   dealer?: string;
   barcode?: string | null;
+  packSize?: number;
+  packName?: string | null;
 };
 
 const formSchema = z.object({

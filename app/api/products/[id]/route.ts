@@ -51,7 +51,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, stock, price, categoryName, supplierId, costPrice, barcode } = body;
+    const { name, stock, price, categoryName, supplierId, costPrice, barcode, packSize, packName } = body;
 
     const product = await prisma.product.findFirst({
       where: { id, shopId },
@@ -77,6 +77,21 @@ export async function PUT(
       }
     }
 
+    let normalizedPackSize: number | undefined = undefined;
+    if (packSize !== undefined) {
+      const n = Number(packSize);
+      if (!Number.isFinite(n) || n < 1) {
+        return NextResponse.json({ error: 'Pack size must be at least 1' }, { status: 400 });
+      }
+      normalizedPackSize = Math.floor(n);
+    }
+    let normalizedPackName: string | null | undefined = undefined;
+    if (packName !== undefined) {
+      normalizedPackName = typeof packName === 'string' && packName.trim().length > 0
+        ? packName.trim().slice(0, 40)
+        : null;
+    }
+
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
@@ -87,6 +102,8 @@ export async function PUT(
         ...(supplierId !== undefined && { supplierId }),
         ...(costPrice !== undefined && { costPrice }),
         ...(normalizedBarcode !== undefined && { barcode: normalizedBarcode }),
+        ...(normalizedPackSize !== undefined && { packSize: normalizedPackSize }),
+        ...(normalizedPackName !== undefined && { packName: normalizedPackName }),
       },
     });
 

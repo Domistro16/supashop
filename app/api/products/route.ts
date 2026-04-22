@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, stock, price, categoryName, supplierId, costPrice, barcode } = body;
+    const { name, stock, price, categoryName, supplierId, costPrice, barcode, packSize, packName } = body;
 
     if (!name || stock === undefined || price === undefined) {
       return NextResponse.json(
@@ -56,6 +56,12 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedBarcode = typeof barcode === 'string' && barcode.trim() ? barcode.trim() : null;
+    const normalizedPackSize = Number.isFinite(Number(packSize)) && Number(packSize) >= 1
+      ? Math.floor(Number(packSize))
+      : 1;
+    const normalizedPackName = typeof packName === 'string' && packName.trim().length > 0
+      ? packName.trim().slice(0, 40)
+      : null;
 
     if (normalizedBarcode) {
       const existing = await prisma.product.findFirst({
@@ -79,6 +85,8 @@ export async function POST(request: NextRequest) {
         supplierId: supplierId || null,
         costPrice: costPrice || null,
         barcode: normalizedBarcode,
+        packSize: normalizedPackSize,
+        packName: normalizedPackName,
       },
     });
 

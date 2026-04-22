@@ -82,9 +82,14 @@ export async function POST(request: NextRequest) {
       bankName,
       accountNumber,
       amountPaid,
+      notes,
       installments = [],
       pointsRedeemed = 0,
     } = body;
+
+    const trimmedNotes = typeof notes === 'string' && notes.trim().length > 0
+      ? notes.trim().slice(0, 500)
+      : null;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'At least one item is required' }, { status: 400 });
@@ -158,6 +163,9 @@ export async function POST(request: NextRequest) {
       // Create installment records if any
       if (installments.length > 0) {
         for (const inst of installments) {
+          const instNotes = typeof inst.notes === 'string' && inst.notes.trim().length > 0
+            ? inst.notes.trim().slice(0, 500)
+            : null;
           await tx.installment.create({
             data: {
               saleId: newSale.id,
@@ -165,6 +173,7 @@ export async function POST(request: NextRequest) {
               paymentMethod: inst.paymentMethod || 'cash',
               bankName: inst.bankName || null,
               accountNumber: inst.accountNumber || null,
+              notes: instNotes,
             },
           });
         }
@@ -177,6 +186,7 @@ export async function POST(request: NextRequest) {
             paymentMethod: paymentMethod || 'cash',
             bankName: bankName || null,
             accountNumber: accountNumber || null,
+            notes: trimmedNotes,
           },
         });
       }
@@ -226,7 +236,10 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return newSale;
+      return tx.sale.findUnique({
+        where: { id: newSale.id },
+        include: { installments: { orderBy: { createdAt: 'asc' } } },
+      });
     });
 
     // Update customer stats if customer was provided

@@ -53,6 +53,8 @@ export interface Product {
     name: string;
   } | null;
   barcode?: string | null;
+  packSize?: number;
+  packName?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -128,6 +130,7 @@ export interface InstallmentInput {
   paymentMethod: 'cash' | 'bank_transfer' | 'card';
   bankName?: string;
   accountNumber?: string;
+  notes?: string;
 }
 
 export interface Staff {
@@ -372,6 +375,8 @@ export const products = {
     categoryName?: string;
     supplierId?: string;
     barcode?: string | null;
+    packSize?: number;
+    packName?: string | null;
   }): Promise<Product> => {
     return apiCall('/products', {
       method: 'POST',
@@ -387,6 +392,8 @@ export const products = {
     categoryName?: string;
     supplierId?: string;
     barcode?: string | null;
+    packSize?: number;
+    packName?: string | null;
   }): Promise<Product> => {
     return apiCall(`/products/${id}`, {
       method: 'PUT',
@@ -439,6 +446,7 @@ export const sales = {
     bankName?: string;
     accountNumber?: string;
     amountPaid?: number;
+    notes?: string;
     installments?: InstallmentInput[];
     pointsRedeemed?: number;
   }): Promise<Sale> => {
@@ -1198,6 +1206,64 @@ export const loyalty = {
   },
 };
 
+export interface Expense {
+  id: string;
+  shopId: string;
+  category: string;
+  amount: string | number;
+  note?: string | null;
+  attachmentUrl?: string | null;
+  paidBy?: string | null;
+  expenseDate: string;
+  createdAt: string;
+  paidByUser?: { id: string; name: string; email: string } | null;
+}
+
+export const expenses = {
+  getAll: async (params?: {
+    from?: string;
+    to?: string;
+    category?: string;
+    limit?: number;
+  }): Promise<{ expenses: Expense[]; total: number }> => {
+    const query = new URLSearchParams();
+    if (params?.from) query.set('from', params.from);
+    if (params?.to) query.set('to', params.to);
+    if (params?.category) query.set('category', params.category);
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return apiCall(`/expenses${qs ? `?${qs}` : ''}`, {}, true);
+  },
+  create: async (data: {
+    category: string;
+    amount: number;
+    note?: string;
+    attachmentUrl?: string;
+    paidBy?: string;
+    expenseDate?: string;
+  }): Promise<Expense> => {
+    return apiCall('/expenses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }, true);
+  },
+  update: async (id: string, data: {
+    category?: string;
+    amount?: number;
+    note?: string;
+    attachmentUrl?: string;
+    expenseDate?: string;
+  }): Promise<Expense> => {
+    return apiCall(`/expenses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }, true);
+  },
+  delete: async (id: string): Promise<{ success: boolean }> => {
+    return apiCall(`/expenses/${id}`, { method: 'DELETE' }, true);
+  },
+};
+
 export const api = {
   auth,
   shops,
@@ -1214,6 +1280,7 @@ export const api = {
   loyalty,
   branches: branchesApi,
   stockTransfers: stockTransfersApi,
+  expenses,
 };
 
 export default api;

@@ -59,11 +59,13 @@ type PaymentOptions = {
   bankName?: string;
   accountNumber?: string;
   amountPaid?: number;
+  notes?: string;
   installments?: Array<{
     amount: number;
     paymentMethod: 'cash' | 'bank_transfer' | 'card';
     bankName?: string;
     accountNumber?: string;
+    notes?: string;
   }>;
   pointsRedeemed?: number;
   redemptionDiscount?: number;
@@ -85,6 +87,8 @@ export const getProducts = async (): Promise<Product[]> => {
       created_at: item.createdAt,
       category: item.categoryName || '',
       barcode: item.barcode ?? null,
+      packSize: item.packSize ?? 1,
+      packName: item.packName ?? null,
     }));
   } catch (error) {
     console.error('Failed to get products:', error);
@@ -278,7 +282,9 @@ export const addProduct = async (
   price: number,
   costPrice?: number,
   supplierId?: string,
-  barcode?: string | null
+  barcode?: string | null,
+  packSize?: number,
+  packName?: string | null,
 ) => {
   try {
     const product = await api.products.create({
@@ -289,6 +295,8 @@ export const addProduct = async (
       costPrice,
       supplierId: supplierId || undefined,
       barcode: barcode ? barcode.trim() : null,
+      packSize: packSize && packSize >= 1 ? Math.floor(packSize) : 1,
+      packName: packName && packName.trim().length > 0 ? packName.trim() : null,
     } as any);
 
     return { success: true, data: product };
@@ -322,11 +330,11 @@ export const record_sale = async (
   items: Item[],
   customerId?: string,
   paymentOptions?: PaymentOptions
-): Promise<boolean> => {
+): Promise<any | null> => {
   try {
     if (!Array.isArray(items) || items.length === 0) {
       console.error('Invalid items array');
-      return false;
+      return null;
     }
 
     // Calculate total with discounts
@@ -353,7 +361,7 @@ export const record_sale = async (
     const { redemptionDiscount: _drop, ...sendOptions } = paymentOptions || {};
 
     // Create sale with optional customer and payment info
-    await api.sales.create({
+    const sale = await api.sales.create({
       items: saleItems,
       totalAmount: finalTotal,
       customerId,
@@ -361,10 +369,10 @@ export const record_sale = async (
     });
 
     console.log('Sale recorded successfully');
-    return true;
+    return sale;
   } catch (error) {
     console.error('Failed to record sale:', error);
-    return false;
+    return null;
   }
 };
 

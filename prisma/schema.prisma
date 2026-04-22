@@ -18,6 +18,7 @@ model User {
   notifications Notification[]
   refreshTokens RefreshToken[]
   sales         Sale[]
+  expensesPaid  Expense[]      @relation("ExpensePaidBy")
   ownedShops    Shop[]         @relation("ShopOwner")
   staffShops    StaffShop[]
 
@@ -67,6 +68,7 @@ model Shop {
   incomingTransfers   StockTransfer[]   @relation("TransferToShop")
   activityLogs        ActivityLog[]
   customers           Customer[]
+  expenses            Expense[]
   notifications       Notification[]
   offlineSaleSyncs    OfflineSaleSync[]
   products            Product[]
@@ -202,6 +204,8 @@ model Product {
   costPrice          Decimal?            @map("cost_price") @db.Decimal(10, 2)
   isFeatured         Boolean             @default(false) @map("is_featured")
   barcode            String?
+  packSize           Int                 @default(1) @map("pack_size")
+  packName           String?             @map("pack_name")
   originProductId    String?             @map("origin_product_id")
   shop               Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
   supplier           Supplier?           @relation(fields: [supplierId], references: [id])
@@ -286,6 +290,23 @@ model ActivityLog {
   staff     User     @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   @@map("activity_logs")
+}
+
+model Expense {
+  id            String   @id @default(uuid())
+  shopId        String   @map("shop_id")
+  category      String
+  amount        Decimal  @db.Decimal(10, 2)
+  note          String?
+  attachmentUrl String?  @map("attachment_url")
+  paidBy        String?  @map("paid_by")
+  expenseDate   DateTime @default(now()) @map("expense_date")
+  createdAt     DateTime @default(now()) @map("created_at")
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  paidByUser    User?    @relation("ExpensePaidBy", fields: [paidBy], references: [id], onDelete: SetNull)
+
+  @@index([shopId, expenseDate])
+  @@map("expenses")
 }
 
 model Notification {

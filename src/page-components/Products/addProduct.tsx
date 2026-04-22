@@ -146,6 +146,10 @@ const formSchema = z.object({
     error: "Cost price is required.",
   }),
   barcode: z.string().optional(),
+  pack_size: z.number().int().min(1, {
+    error: "Pack size must be at least 1.",
+  }).default(1),
+  pack_name: z.string().optional(),
 });
 
 export default function AddProducts() {
@@ -168,6 +172,8 @@ export default function AddProducts() {
       price: "",
       cost_price: "",
       barcode: "",
+      pack_size: 1,
+      pack_name: "",
     },
   });
 
@@ -181,7 +187,9 @@ export default function AddProducts() {
         parseFloat(values.price),
         values.cost_price ? parseFloat(values.cost_price) : undefined,
         selectedSupplier?.id,
-        values.barcode?.trim() || null
+        values.barcode?.trim() || null,
+        values.pack_size || 1,
+        values.pack_name?.trim() || null,
       );
 
       if (response) {
@@ -230,6 +238,8 @@ export default function AddProducts() {
         costPrice: pendingFormValues.cost_price ? parseFloat(pendingFormValues.cost_price) : undefined,
         supplierId: selectedSupplier?.id,
         barcode: pendingFormValues.barcode?.trim() || null,
+        packSize: pendingFormValues.pack_size || 1,
+        packName: pendingFormValues.pack_name?.trim() || null,
       });
 
       setLoading(false);
@@ -449,6 +459,55 @@ export default function AddProducts() {
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-md p-4">
+              <div className="sm:col-span-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Pack / Wholesale Unit <span className="text-gray-400 font-normal">(optional)</span>
+              </div>
+              <FormField
+                control={form.control}
+                name="pack_size"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pieces per pack</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={field.value || 1}
+                        onChange={(e) => field.onChange(Math.max(1, parseInt(e.target.value) || 1))}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      e.g. 12 for a crate of 12
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="pack_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pack unit name</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="crate, carton, dozen, bag..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Label shown in the sell screen
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <Button className="disabled:bg-white/75" type="submit" disabled={loading}>{loading ? '...' : 'Publish Product'}</Button>
           </form>
         </Form>
